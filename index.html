@@ -1,0 +1,1123 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1C1F22">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Uhrenbox</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%23FBFBF8' stroke='%231C1F22' stroke-width='2.4'/%3E%3Cpath d='M16 16V7' stroke='%231C1F22' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M16 16l6 3' stroke='%23C4521E' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+/* Layout: sticky band with tabs; one working view at a time; detail opens as its own view with a sidebar of facts beside photo + logs */
+:root {
+  --bg: #EFEFEA;
+  --surface: #FBFBF8;
+  --sunk: #E4E5DF;
+  --ink: #1C1F22;
+  --muted: #5E646B;
+  --line: #D3D4CD;
+  --accent: #C4521E;        /* seconds-hand orange */
+  --accent-ink: #FFFFFF;
+  --lume: #4E9C7A;
+  --good: #2F7D4F;
+  --warn: #A86A12;
+  --bad: #B23A2E;
+  --band: rgba(78,156,122,.16);
+  --shadow: 0 1px 2px rgba(28,31,34,.06), 0 6px 18px rgba(28,31,34,.06);
+  --f-display: "Saira Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #131517; --surface: #1B1E21; --sunk: #23272B; --ink: #E7E7E2; --muted: #9AA0A6; --line: #30353A;
+  --accent: #EE7A42; --accent-ink: #1B1E21; --lume: #7CCBA6; --good: #6CC08A; --warn: #E0A84A; --bad: #EB7A6E;
+  --band: rgba(124,203,166,.14); --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.25); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #131517; --surface: #1B1E21; --sunk: #23272B; --ink: #E7E7E2; --muted: #9AA0A6; --line: #30353A;
+  --accent: #EE7A42; --accent-ink: #1B1E21; --lume: #7CCBA6; --good: #6CC08A; --warn: #E0A84A; --bad: #EB7A6E;
+  --band: rgba(124,203,166,.14); --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.25); color-scheme: dark; }
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 600; letter-spacing: .01em; line-height: 1.1; margin: 0; text-wrap: balance; }
+h2 { font-size: 26px; }
+h3 { font-size: 19px; }
+.mono, .num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.label { font-size: 11.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 500; }
+.muted { color: var(--muted); }
+a { color: var(--accent); }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* top band */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+.top .wrap { display: flex; align-items: center; gap: 20px; padding-block: 10px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand h1 { font-size: 26px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.brand svg { width: 28px; height: 28px; flex: none; }
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-left: auto; }
+.tab { border: 0; background: none; padding: 7px 12px; border-radius: 999px; cursor: pointer; color: var(--muted); font-weight: 500; }
+.tab:hover { color: var(--ink); background: var(--sunk); }
+.tab[aria-current="page"] { background: var(--ink); color: var(--surface); }
+
+main { padding-block: 24px 64px; }
+.view-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+.view-head p { margin: 4px 0 0; color: var(--muted); }
+
+.btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); padding: 7px 12px; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 14px; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.05); }
+.btn.ghost { border-color: transparent; background: none; }
+.btn.danger { color: var(--bad); }
+.btn[disabled] { opacity: .5; cursor: default; }
+.btn.small { padding: 4px 9px; font-size: 13px; }
+
+/* summary strip */
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; margin-bottom: 20px; }
+.summary > div { background: var(--surface); padding: 12px 14px; min-width: 0; }
+.summary .big { font-family: var(--f-display); font-size: 30px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.summary .sub { font-size: 12.5px; color: var(--muted); }
+
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 11px; font-size: 13px; cursor: pointer; color: var(--muted); }
+.chip[aria-pressed="true"] { border-color: var(--ink); color: var(--ink); background: var(--sunk); font-weight: 500; }
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--sunk); color: var(--muted); white-space: nowrap; }
+.pill.fav { background: var(--accent); color: var(--accent-ink); }
+.pill.ordered { background: transparent; border: 1px dashed var(--muted); }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+
+/* watch grid */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; display: flex; flex-direction: column; cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+.card:hover { border-color: var(--muted); box-shadow: var(--shadow); }
+.card .ph { aspect-ratio: 4 / 3; background: var(--sunk); position: relative; overflow: hidden; max-width: 100%; }
+.card .ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card .ph .nr { position: absolute; left: 10px; top: 8px; font-family: var(--f-display); font-weight: 700; font-size: 22px; color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,.55); }
+.card .ph .badges { position: absolute; right: 8px; top: 8px; display: flex; gap: 4px; }
+.card .body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.card .title { display: flex; align-items: baseline; gap: 8px; justify-content: space-between; }
+.card .title h3 { font-size: 21px; }
+.card .homage { font-size: 13px; color: var(--muted); line-height: 1.35; }
+.card .specs { display: flex; gap: 12px; font-family: var(--f-mono); font-size: 12.5px; color: var(--muted); flex-wrap: wrap; }
+.card .foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
+.wear-btn { border: 1px solid var(--line); background: none; border-radius: 999px; padding: 3px 10px; font-size: 12.5px; cursor: pointer; color: var(--muted); }
+.wear-btn[aria-pressed="true"] { background: var(--lume); border-color: var(--lume); color: var(--surface); font-weight: 500; }
+.dial-ph { width: 100%; height: 100%; display: grid; place-items: center; }
+.dial-ph svg { width: 56%; height: auto; }
+
+/* detail */
+.back { margin-bottom: 14px; }
+.detail { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 860px) { .detail { grid-template-columns: minmax(0, 1fr); } }
+.hero { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.hero .ph { aspect-ratio: 4 / 3; background: var(--sunk); max-width: 100%; }
+.hero .ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hero .cap { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.hero h2 { font-size: 34px; }
+.hero .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.panel-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.stack { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+dl.facts { display: grid; grid-template-columns: minmax(110px, auto) minmax(0, 1fr); gap: 7px 14px; margin: 0; font-size: 14px; }
+dl.facts dt { color: var(--muted); }
+dl.facts dd { margin: 0; overflow-wrap: anywhere; }
+dl.facts dd.open { color: var(--muted); font-style: italic; }
+.todo { display: flex; gap: 9px; align-items: flex-start; font-size: 14px; }
+.todo input { margin-top: 3px; accent-color: var(--accent); }
+.todo.done span { color: var(--muted); text-decoration: line-through; }
+.todo-add { display: flex; gap: 8px; }
+.todo-add input { flex: 1; min-width: 0; }
+
+/* timegrapher readout */
+.tg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
+.tg > div { background: var(--ink); color: var(--surface); padding: 10px 12px; min-width: 0; }
+.tg .v { font-family: var(--f-mono); font-size: 24px; font-weight: 500; font-variant-numeric: tabular-nums; line-height: 1.15; }
+.tg .k { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; opacity: .7; }
+.tg .ok { color: var(--lume); }
+.tg .warn { color: #F2B45A; }
+
+/* tables */
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 11.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 500; background: var(--sunk); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; }
+.state-ok { color: var(--good); }
+.state-warn { color: var(--warn); }
+.state-bad { color: var(--bad); }
+
+/* forms */
+form.grid-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field.wide { grid-column: 1 / -1; }
+.field label { font-size: 12.5px; color: var(--muted); }
+input[type=text], input[type=number], input[type=date], input[type=datetime-local], select, textarea {
+  width: 100%; border: 1px solid var(--line); background: var(--bg); border-radius: 7px; padding: 7px 9px; min-width: 0; }
+textarea { min-height: 80px; resize: vertical; }
+input[type=color] { width: 44px; height: 34px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); padding: 2px; }
+fieldset { border: 0; padding: 0; margin: 0; display: contents; }
+.form-group-title { grid-column: 1 / -1; font-family: var(--f-display); font-size: 18px; font-weight: 600; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
+.form-group-title:first-child { border-top: 0; margin-top: 0; padding-top: 0; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.photo-prev img { width: 96px; height: 72px; object-fit: cover; border-radius: 6px; display: block; border: 1px solid var(--line); }
+.photo-prev:empty { display: none; }
+
+/* gallery */
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+.gallery.big { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+.thumb { position: relative; margin: 0; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.thumb > button.img { border: 0; padding: 0; background: var(--sunk); border-radius: 8px; overflow: hidden; aspect-ratio: 1; cursor: zoom-in; display: block; width: 100%; max-width: 100%; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .2s; }
+.thumb > button.img:hover img { transform: scale(1.03); }
+.thumb .cover-tag { position: absolute; left: 6px; top: 6px; font-size: 11px; padding: 1px 7px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); pointer-events: none; }
+.thumb .tools { display: flex; gap: 2px; flex-wrap: wrap; }
+.thumb figcaption { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.thumb figcaption a { color: var(--ink); text-decoration: none; }
+.thumb figcaption a:hover { color: var(--accent); }
+.add-tile { border: 1px dashed var(--line); border-radius: 8px; aspect-ratio: 1; display: grid; place-items: center; color: var(--muted); cursor: pointer; font-size: 13px; text-align: center; padding: 8px; background: var(--surface); max-width: 100%; }
+.add-tile:hover { border-color: var(--muted); color: var(--ink); }
+/* lightbox: deliberately dark in both themes, like a photo viewer */
+.lb { position: fixed; inset: 0; z-index: 30; background: rgba(10,11,12,.94); color: #EDEDE8; display: flex; flex-direction: column; gap: 10px;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.lb .bar { display: flex; align-items: center; gap: 12px; }
+.lb .cap { font-size: 15px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb .cnt { font-family: var(--f-mono); font-size: 13px; opacity: .7; }
+.lb .stage { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; gap: 8px; }
+.lb .stage img { max-width: calc(100% - 112px); max-height: calc(100vh - 120px); object-fit: contain; border-radius: 4px; }
+.lb button { background: rgba(255,255,255,.12); border: 0; color: #EDEDE8; border-radius: 999px; width: 44px; height: 44px; font-size: 24px; line-height: 1; cursor: pointer; flex: none; }
+.lb button:hover { background: rgba(255,255,255,.22); }
+.lb :focus-visible { outline-color: #EDEDE8; }
+@media (max-width: 560px) { .lb .stage img { max-width: 100%; } .lb .stage { position: relative; } .lb .stage button { position: absolute; bottom: 0; } .lb .stage button[data-lb-step="-1"] { left: 0; } .lb .stage button[data-lb-step="1"] { right: 0; } }
+
+/* chart */
+.chart svg { width: 100%; height: auto; display: block; }
+.chart .axis { fill: var(--muted); font-family: var(--f-mono); font-size: 11px; }
+.chart .grid-line { stroke: var(--line); stroke-width: 1; }
+.chart .zero { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.chart .band { fill: var(--band); }
+.chart .band-edge { stroke: var(--lume); stroke-width: 1; stroke-dasharray: 2 3; opacity: .8; }
+.chart .line { fill: none; stroke: var(--accent); stroke-width: 2; }
+.chart .pt { fill: var(--surface); stroke: var(--accent); stroke-width: 2; }
+.chart .pt.last { fill: var(--accent); }
+.chart .val { fill: var(--ink); font-family: var(--f-mono); font-size: 11.5px; }
+
+/* diary */
+.diary { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 900px) { .diary { grid-template-columns: minmax(0, 1fr); } }
+.pick { display: flex; flex-wrap: wrap; gap: 8px; }
+.pick button { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 12px 6px 8px; cursor: pointer; font-size: 14px; }
+.pick button[aria-pressed="true"] { border-color: var(--ink); background: var(--sunk); font-weight: 600; }
+.cal-wrap { overflow-x: auto; }
+.cal { display: grid; grid-auto-flow: column; grid-template-rows: auto repeat(7, 16px); gap: 3px; width: max-content; }
+.cal .m { font-size: 10.5px; color: var(--muted); height: 14px; white-space: nowrap; font-family: var(--f-mono); }
+.cal .d { width: 16px; height: 16px; border-radius: 3px; background: var(--sunk); border: 0; padding: 0; cursor: pointer; }
+.cal .d.today { outline: 2px solid var(--ink); outline-offset: -2px; }
+.cal .d.sel { outline: 2px solid var(--accent); outline-offset: 1px; }
+.cal .d.future { opacity: .35; cursor: default; }
+.wd-labels { display: grid; grid-template-rows: 14px repeat(7, 16px); gap: 3px; font-size: 10.5px; color: var(--muted); font-family: var(--f-mono); }
+.cal-row { display: flex; gap: 6px; }
+.bars { display: flex; flex-direction: column; gap: 8px; }
+.bar-row { display: grid; grid-template-columns: minmax(90px, 140px) minmax(0, 1fr) 36px; gap: 10px; align-items: center; font-size: 13.5px; }
+.bar-row .track { height: 12px; background: var(--sunk); border-radius: 3px; overflow: hidden; }
+.bar-row .fill { height: 100%; border-radius: 3px; }
+.bar-row .n { text-align: right; font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.bar-row .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* compare */
+.cmp th:first-child, .cmp td:first-child { position: sticky; left: 0; background: var(--surface); z-index: 1; }
+.cmp th:first-child { background: var(--sunk); }
+.cmp td { min-width: 120px; }
+.cmp .mini { height: 4px; background: var(--sunk); border-radius: 2px; margin-top: 5px; }
+.cmp .mini span { display: block; height: 100%; background: var(--muted); border-radius: 2px; }
+.cmp .hi { font-weight: 600; }
+.cmp thead th { white-space: normal; min-width: 120px; vertical-align: bottom; }
+.cmp thead th .t { font-family: var(--f-display); font-size: 16px; text-transform: none; letter-spacing: 0; color: var(--ink); font-weight: 600; display: block; }
+
+.empty { border: 1px dashed var(--line); border-radius: var(--r); padding: 28px; text-align: center; color: var(--muted); background: var(--surface); }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--surface); padding: 9px 16px; border-radius: 8px; font-size: 14px; z-index: 20; box-shadow: var(--shadow); max-width: calc(100% - 32px); }
+.notice { background: var(--sunk); border-radius: 8px; padding: 10px 12px; font-size: 13.5px; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+[hidden] { display: none !important; }
+img { max-width: 100%; }
+.foot-note { text-align: center; color: var(--muted); font-size: 12.5px; padding: 0 16px 32px; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M16 16 L16 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M16 16 L22 19" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="16" r="1.8" fill="currentColor"/></svg>
+      <h1>Uhrenbox</h1>
+    </div>
+    <nav class="tabs" aria-label="Ansichten">
+      <button class="tab" data-nav="sammlung">Sammlung</button>
+      <button class="tab" data-nav="galerie">Galerie</button>
+      <button class="tab" data-nav="messungen">Messungen</button>
+      <button class="tab" data-nav="tagebuch">Tragetagebuch</button>
+      <button class="tab" data-nav="vergleich">Vergleich</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap" id="app">
+  <div class="empty" id="boot">
+    <h3>Sammlung wird geladen</h3>
+    <p>Hier erscheinen gleich deine Uhren mit Fotos, Messungen und Tragetagen.</p>
+  </div>
+</main>
+<div id="toast" class="toast" hidden></div>
+<div id="lb" class="lb" hidden role="dialog" aria-modal="true" aria-label="Foto ansehen"></div>
+<p class="foot-note">Alle Daten bleiben auf diesem Gerät, in diesem Browser. Denk ab und zu an „Sichern“.</p>
+
+<script>
+(() => {
+  // ---------- state ----------
+  const S = {
+    db: null, assets: null, canWrite: true,
+    watches: [], measurements: [], wear: {},   // wear: { 'YYYY-MM-DD': [ids] }
+    loaded: { watches: false, measurements: false, wear: false },
+    view: 'sammlung', detailId: null, editing: false, creating: false,
+    filter: 'alle', mFilter: 'alle', diaryDate: todayStr(), statRange: '90',
+    cmpSel: null, confirm: null, mEditing: null,
+    galleryFilter: 'alle', galleryItems: [], lb: null,   // lb: { list: [{id, cap}], i }
+  };
+  const PHOTO_URLS = new Map();   // Foto-ID -> lokale Bild-URL
+  const VIEWS = ['sammlung', 'galerie', 'messungen', 'tagebuch', 'vergleich'];
+  const app = document.getElementById('app');
+
+  // ---------- helpers ----------
+  function todayStr(d = new Date()) {
+    const p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  }
+  function parseDay(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
+  const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const nf = (v, d = 1) => (v == null || v === '' || isNaN(v)) ? null : Number(v).toLocaleString('de-DE', { maximumFractionDigits: d });
+  const signed = (v, d = 1) => v == null ? '–' : (v > 0 ? '+' : v < 0 ? '−' : '±') + Math.abs(v).toLocaleString('de-DE', { maximumFractionDigits: d });
+  const fmtDate = s => { if (!s) return '–'; const d = new Date(s); return isNaN(d) ? esc(s) : d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }); };
+  const fmtDT = s => { const d = new Date(s); return isNaN(d) ? esc(s) : d.toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); };
+  const blobUrl = id => id ? (PHOTO_URLS.get(id) || '') : null;
+  const byNr = (a, b) => (a.nr ?? 999) - (b.nr ?? 999) || String(a.name).localeCompare(b.name);
+  const W = id => S.watches.find(w => w.id === id);
+  const isMech = w => ['Automatik', 'Handaufzug'].includes(w?.movementKind);
+  const watchLabel = w => w ? `${w.brand ? w.brand + ' ' : ''}${w.name}` : 'Unbekannte Uhr';
+  let toastT;
+  function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2600); }
+  function fail(e, what) {
+    console.error(e);
+    if (e?.code === 'invalid_argument') { S.canWrite = false; render(); toast(`${what} nicht möglich: Du hast hier nur Leserechte.`); }
+    else if (e?.code === 'quota_exceeded') toast(`${what} fehlgeschlagen: Der Speicher ist voll.`);
+    else toast(`${what} fehlgeschlagen. Bitte noch einmal versuchen.`);
+  }
+  const photoErr = er => er?.code === 'unsupported_type' ? 'Dieses Bildformat geht nicht. Nimm JPG, PNG oder WebP.' : er?.code === 'too_large' ? 'Das Foto ist zu groß.' : 'Hochladen fehlgeschlagen. Bitte noch einmal versuchen.';
+
+  // value of a measurement in the watch's tolerance unit
+  function mValue(m, w) {
+    if (m.kind === 'waage') return m.rate ?? null;
+    if (m.deviation == null || !m.days) return null;
+    const perDay = m.deviation / m.days;
+    return (w?.tolUnit === 's/Monat') ? perDay * 30 : perDay;
+  }
+  function tolState(v, w) {
+    if (v == null || w?.tolMin == null || w?.tolMax == null) return '';
+    if (v >= w.tolMin && v <= w.tolMax) return 'ok';
+    const over = v < w.tolMin ? w.tolMin - v : v - w.tolMax;
+    return over <= (w.tolMax - w.tolMin) * 0.25 ? 'warn' : 'bad';
+  }
+  const unitOf = (m, w) => m.kind === 'waage' ? 's/Tag' : (w?.tolUnit || 's/Tag');
+  const wearDaysOf = id => Object.keys(S.wear).filter(d => S.wear[d].includes(id)).sort();
+  const uniq = a => [...new Set(a.filter(Boolean))];
+  const photosOf = w => uniq([w?.photo, ...(w?.photos || [])]);   // cover first, then the rest
+  const photoInUse = (id, exceptWatch) => S.watches.some(w => w.id !== exceptWatch && photosOf(w).includes(id)) || S.measurements.some(m => m.photo === id);
+
+  // ---------- dial placeholder ----------
+  function dialSvg(color) {
+    let ticks = '';
+    for (let i = 0; i < 12; i++) {
+      const a = i * Math.PI / 6, r1 = i % 3 ? 40 : 36, r2 = 45;
+      ticks += `<line x1="${50 + r1 * Math.sin(a)}" y1="${50 - r1 * Math.cos(a)}" x2="${50 + r2 * Math.sin(a)}" y2="${50 - r2 * Math.cos(a)}" stroke="var(--muted)" stroke-width="${i % 3 ? 1.5 : 3}"/>`;
+    }
+    return `<div class="dial-ph"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="48" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>${ticks}<line x1="50" y1="50" x2="50" y2="22" stroke="var(--ink)" stroke-width="3.5" stroke-linecap="round"/><line x1="50" y1="50" x2="70" y2="58" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/><line x1="50" y1="60" x2="50" y2="12" stroke="${esc(color || 'var(--accent)')}" stroke-width="1.5"/><circle cx="50" cy="50" r="3" fill="${esc(color || 'var(--accent)')}"/></svg></div>`;
+  }
+  const photoHtml = w => w.photo ? `<img src="${blobUrl(w.photo)}" alt="${esc(watchLabel(w))}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'dial-ph',innerHTML:''}))">` : dialSvg(w.color);
+
+  // ---------- navigation ----------
+  function go(view, id = null) {
+    S.view = view; S.detailId = id; S.editing = false; S.creating = false; S.confirm = null; S.mEditing = null;
+    const token = view === 'detail' ? 'uhr-' + id : view;
+    try { history.replaceState(null, '', '#' + token); } catch (e) {}
+    render(); window.scrollTo({ top: 0 });
+  }
+  function fromHash() {
+    const h = (location.hash || '').slice(1);
+    if (h.startsWith('uhr-')) { S.view = 'detail'; S.detailId = h.slice(4); }
+    else if (VIEWS.includes(h)) S.view = h;
+  }
+
+  // ---------- render ----------
+  function render() {
+    document.querySelectorAll('[data-nav]').forEach(b => b.setAttribute('aria-current', (b.dataset.nav === S.view || (S.view === 'detail' && b.dataset.nav === 'sammlung')) ? 'page' : 'false'));
+    if (!S.db) return;
+    if (!S.loaded.watches) return;
+    const v = S.view;
+    app.innerHTML = v === 'detail' ? renderDetail() : v === 'galerie' ? renderGallery() : v === 'messungen' ? renderMeasurements() : v === 'tagebuch' ? renderDiary() : v === 'vergleich' ? renderCompare() : renderCollection();
+  }
+
+  // ----- Sammlung -----
+  function renderCollection() {
+    if (S.creating) return renderWatchForm(null);
+    const ws = [...S.watches].sort(byNr);
+    const owned = ws.filter(w => w.status !== 'Bestellt' && w.status !== 'Verkauft');
+    const priced = owned.filter(w => typeof w.price === 'number');
+    const sum = priced.reduce((a, w) => a + w.price, 0);
+    const today = S.wear[todayStr()] || [];
+    const mech = owned.filter(isMech).length;
+    const last30 = Object.keys(S.wear).filter(d => (new Date() - parseDay(d)) / 864e5 < 30).length;
+    const filters = [['alle', 'Alle'], ['mech', 'Mechanisch'], ['quarz', 'Quarz'], ['taucher', 'Taucher'], ['chrono', 'Chronograph'], ['bestellt', 'Bestellt']];
+    const shown = ws.filter(w => {
+      switch (S.filter) {
+        case 'mech': return isMech(w);
+        case 'quarz': return !isMech(w) && w.movementKind;
+        case 'taucher': return w.category === 'Taucher';
+        case 'chrono': return w.category === 'Chronograph';
+        case 'bestellt': return w.status === 'Bestellt';
+        default: return true;
+      }
+    });
+    return `
+      <div class="view-head">
+        <div><h2>Sammlung</h2><p>${owned.length} ${owned.length === 1 ? 'Uhr' : 'Uhren'} im Kasten${ws.length > owned.length ? `, ${ws.length - owned.length} bestellt` : ''}</p></div>
+        <div class="actions"><button class="btn" data-act="export" title="Alle Uhren, Messungen, Tragetage und Fotos als Datei sichern">Sichern</button><label class="btn" for="import-in" title="Eine Sicherung wieder einlesen">Laden</label><input id="import-in" type="file" accept=".json,application/json" hidden>${S.canWrite ? `<button class="btn primary" data-act="new-watch">+ Uhr hinzufügen</button>` : ''}</div>
+      </div>
+      <div class="summary">
+        <div><div class="label">Uhren</div><div class="big">${owned.length}</div><div class="sub">${mech} mechanisch, ${owned.length - mech} Quarz</div></div>
+        <div><div class="label">Bekannter Kaufpreis</div><div class="big">${sum ? nf(sum, 0) + ' €' : '–'}</div><div class="sub">${priced.length} von ${owned.length} Preisen eingetragen</div></div>
+        <div><div class="label">Heute am Handgelenk</div><div class="big" style="font-size:22px;padding-block:4px">${today.length ? today.map(id => esc(W(id)?.name || '?')).join(', ') : '–'}</div><div class="sub">${last30} ${last30 === 1 ? 'Tragetag' : 'Tragetage'} in den letzten 30 Tagen</div></div>
+        <div><div class="label">Messungen</div><div class="big">${S.measurements.length}</div><div class="sub">${new Set(S.measurements.map(m => m.watchId)).size === 1 ? '1 Uhr' : new Set(S.measurements.map(m => m.watchId)).size + ' Uhren'} gemessen</div></div>
+      </div>
+      <div class="chips" style="margin-bottom:16px">${filters.map(([k, l]) => `<button class="chip" data-filter="${k}" aria-pressed="${S.filter === k}">${l}</button>`).join('')}</div>
+      ${shown.length ? `<div class="grid">${shown.map(card).join('')}</div>` : `<div class="empty">${ws.length ? 'Keine Uhr passt zu diesem Filter.' : 'Noch keine Uhren gespeichert. Füge oben deine erste Uhr hinzu.'}</div>`}
+    `;
+  }
+  function card(w) {
+    const days = wearDaysOf(w.id);
+    const wornToday = (S.wear[todayStr()] || []).includes(w.id);
+    const specs = [w.diameter && `⌀ ${nf(w.diameter)} mm`, w.lugToLug && `L2L ${nf(w.lugToLug)}`, w.waterM && `${nf(w.waterM, 0)} m`].filter(Boolean);
+    return `<article class="card" data-open="${esc(w.id)}" tabindex="0" aria-label="${esc(watchLabel(w))} öffnen">
+      <div class="ph">${photoHtml(w)}<span class="nr">${w.nr ?? ''}</span>
+        <div class="badges">${w.favorite ? '<span class="pill fav">Favorit</span>' : ''}${w.status === 'Bestellt' ? '<span class="pill ordered" style="background:var(--surface)">Bestellt</span>' : ''}</div></div>
+      <div class="body">
+        <div class="title"><h3>${esc(w.name)}</h3><span class="pill"><span class="dot" style="background:${esc(w.color || 'var(--muted)')}"></span>${esc(w.movementKind || '–')}</span></div>
+        <div class="homage">${esc(w.brand || '')}${w.homage ? ` · nach ${esc(w.homage)}` : ''}</div>
+        <div class="specs">${specs.map(s => `<span>${s}</span>`).join('')}</div>
+        <div class="foot">
+          <span>${days.length ? `${days.length} Tragetag${days.length > 1 ? 'e' : ''} · zuletzt ${fmtDate(parseDay(days[days.length - 1]))}` : 'Noch nicht getragen'}</span>
+          ${S.canWrite && w.status !== 'Bestellt' ? `<button class="wear-btn" data-wear-today="${esc(w.id)}" aria-pressed="${wornToday}">${wornToday ? 'Heute getragen' : 'Heute tragen'}</button>` : ''}
+        </div>
+      </div>
+    </article>`;
+  }
+
+  // ----- Detail -----
+  function renderDetail() {
+    const w = W(S.detailId);
+    if (!w) return `<button class="btn ghost back" data-nav="sammlung">← Sammlung</button><div class="empty">Diese Uhr gibt es nicht (mehr).</div>`;
+    if (S.editing) return renderWatchForm(w);
+    const ms = S.measurements.filter(m => m.watchId === w.id).sort((a, b) => String(a.at).localeCompare(String(b.at)));
+    const days = wearDaysOf(w.id);
+    const f = (k, l, v) => { const val = v ?? w[k]; const has = val != null && val !== ''; return `<dt>${l}</dt><dd class="${has ? '' : 'open'}">${has ? esc(val) : 'offen'}</dd>`; };
+    const mm = (k) => w[k] != null && w[k] !== '' ? nf(w[k], 2) + ' mm' : null;
+    const todos = w.todos || [];
+    const tol = w.tolMin != null && w.tolMax != null ? `${signed(w.tolMin, 0)} bis ${signed(w.tolMax, 0)} ${esc(w.tolUnit || 's/Tag')}` : null;
+    const priceTxt = typeof w.price === 'number' ? `${nf(w.price, 0)} €${w.priceNote ? ' · ' + w.priceNote : ''}` : (w.priceNote || null);
+    return `
+      <button class="btn ghost back" data-nav="sammlung">← Sammlung</button>
+      <div class="detail">
+        <div class="stack">
+          <section class="hero">
+            <div class="ph">${photoHtml(w)}</div>
+            <div class="cap">
+              <div class="label">Uhr ${w.nr ?? ''} · ${esc(w.brand || '')}</div>
+              <h2>${esc(w.name)}</h2>
+              ${w.model ? `<div class="muted">${esc(w.model)}</div>` : ''}
+              <div class="row">
+                ${w.favorite ? '<span class="pill fav">Favorit</span>' : ''}
+                <span class="pill">${esc(w.status || 'Sammlung')}</span>
+                <span class="pill">${esc(w.category || '–')}</span>
+                <span class="pill"><span class="dot" style="background:${esc(w.color || 'var(--muted)')}"></span>${esc(w.movementKind || '–')}</span>
+              </div>
+              ${S.canWrite ? `<div class="actions" style="margin-top:6px">
+                <button class="btn" data-act="edit">Bearbeiten</button>
+                ${S.assets ? `<label class="btn" for="photo-in">${w.photo ? 'Titelbild ersetzen' : 'Foto hinzufügen'}</label><input id="photo-in" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden data-photo="${esc(w.id)}">` : ''}
+                ${w.status !== 'Bestellt' ? `<button class="wear-btn" data-wear-today="${esc(w.id)}" aria-pressed="${(S.wear[todayStr()] || []).includes(w.id)}">${(S.wear[todayStr()] || []).includes(w.id) ? 'Heute getragen' : 'Heute tragen'}</button>` : ''}
+              </div>` : ''}
+            </div>
+          </section>
+          ${galleryPanel(w)}
+          ${measurePanel(w, ms)}
+        </div>
+        <div class="stack">
+          <section class="panel"><h3>Stammdaten</h3><dl class="facts">
+            ${f('homage', 'Vorbild')}${f('dial', 'Zifferblatt')}${f('hands', 'Zeiger')}${f('bezel', 'Lünette')}
+            ${f('purchased', 'Gekauft')}${f('price', 'Kaufpreis', priceTxt)}${f('dealer', 'Händler')}${f('serial', 'Seriennummer')}
+          </dl></section>
+          <section class="panel"><h3>Gehäuse</h3><dl class="facts">
+            ${f('diameter', 'Durchmesser', mm('diameter'))}${f('lugToLug', 'Lug-to-Lug', mm('lugToLug'))}${f('height', 'Höhe', mm('height'))}${f('lugWidth', 'Bandanstoß', mm('lugWidth'))}
+            ${f('waterM', 'Wasserdicht', w.waterM ? nf(w.waterM, 0) + ' m' : null)}${f('crystal', 'Glas')}${f('crown', 'Krone')}${f('lume', 'Leuchtmasse')}${f('weight', 'Gewicht')}
+          </dl></section>
+          <section class="panel"><h3>Werk</h3><dl class="facts">
+            ${f('movement', 'Kaliber')}${f('movementKind', 'Art')}${f('bph', 'Frequenz', w.bph ? nf(w.bph, 0) + ' A/h' : null)}${f('tol', 'Toleranz', tol)}
+          </dl></section>
+          <section class="panel"><h3>Band</h3><dl class="facts">${f('strap', 'Aktuell')}${f('strapExtra', 'Weitere')}</dl></section>
+          <section class="panel">
+            <div class="panel-head"><h3>Offene Punkte</h3><span class="label">${todos.filter(t => !t.done).length} offen</span></div>
+            ${todos.length ? todos.map((t, i) => `<label class="todo ${t.done ? 'done' : ''}"><input type="checkbox" data-todo="${i}" ${t.done ? 'checked' : ''} ${S.canWrite ? '' : 'disabled'}><span>${esc(t.t)}</span>${S.canWrite ? `<button class="btn ghost small" data-todo-del="${i}" aria-label="Punkt entfernen" style="margin-left:auto">×</button>` : ''}</label>`).join('') : '<p class="muted" style="margin:0">Nichts offen.</p>'}
+            ${S.canWrite ? `<form class="todo-add" data-form="todo"><input type="text" id="todo-new" name="t" placeholder="Neuer Punkt, z. B. Lug-to-Lug nachmessen" maxlength="200"><button class="btn small">Hinzufügen</button></form>` : ''}
+          </section>
+          ${w.notes ? `<section class="panel"><h3>Notizen</h3><p style="margin:0;white-space:pre-wrap">${esc(w.notes)}</p></section>` : ''}
+          <section class="panel"><h3>Tragetage</h3>
+            <p style="margin:0">${days.length ? `${days.length} Tag${days.length > 1 ? 'e' : ''} getragen, zuerst am ${fmtDate(parseDay(days[0]))}, zuletzt am ${fmtDate(parseDay(days[days.length - 1]))}.` : 'Noch keine Tragetage eingetragen.'}</p>
+            <div><button class="btn small" data-nav="tagebuch">Zum Tragetagebuch</button></div>
+          </section>
+          ${S.canWrite ? `<div class="actions">${S.confirm === 'del-watch' ? `<span class="muted">Uhr mit allen Messungen löschen?</span><button class="btn danger" data-act="del-watch-yes">Ja, löschen</button><button class="btn ghost" data-act="cancel-confirm">Abbrechen</button>` : `<button class="btn ghost danger" data-act="del-watch">Uhr löschen</button>`}</div>` : ''}
+        </div>
+      </div>`;
+  }
+
+  function galleryPanel(w) {
+    const ps = photosOf(w);
+    const canUp = S.canWrite && S.assets;
+    if (!ps.length && !canUp) return '';
+    return `<section class="panel">
+      <div class="panel-head"><h3>Fotos</h3><span class="label">${ps.length} Foto${ps.length === 1 ? '' : 's'}</span></div>
+      <div class="gallery">
+        ${ps.map((id, i) => `<figure class="thumb">
+          <button class="img" data-lb-watch="${esc(w.id)}" data-i="${i}" aria-label="Foto ${i + 1} groß ansehen"><img src="${blobUrl(id)}" alt="${esc(w.name)}, Foto ${i + 1}" loading="lazy"></button>
+          ${id === w.photo ? '<span class="cover-tag">Titelbild</span>' : ''}
+          ${S.canWrite ? `<div class="tools">${S.confirm === 'ph-' + id
+            ? `<button class="btn small danger" data-ph-del-yes="${esc(id)}">Entfernen</button><button class="btn small ghost" data-act="cancel-confirm">Nein</button>`
+            : `${id !== w.photo ? `<button class="btn small ghost" data-cover="${esc(id)}">Als Titelbild</button>` : ''}<button class="btn small ghost" data-ph-del="${esc(id)}" aria-label="Foto entfernen">×</button>`}</div>` : ''}
+        </figure>`).join('')}
+        ${canUp ? `<label class="add-tile" for="gal-in">+ Fotos hinzufügen</label>` : ''}
+      </div>
+      ${canUp ? `<input id="gal-in" type="file" multiple accept="image/png,image/jpeg,image/webp,image/gif" hidden data-gallery-add="${esc(w.id)}">` : ''}
+      ${!ps.length ? '<p class="muted" style="margin:0">Noch keine Fotos. Füge Bilder vom Zifferblatt, vom Band oder vom Gehäuseboden hinzu.</p>' : ''}
+    </section>`;
+  }
+
+  // ----- Galerie -----
+  function renderGallery() {
+    const ws = [...S.watches].sort(byNr);
+    const byId = new Map();   // one tile per photo; a shared photo (the WD1965 pair) names both watches
+    const push = (id, watchId, cap) => { const x = byId.get(id); if (x) { if (!x.watchIds.includes(watchId)) { x.watchIds.push(watchId); x.cap += ' und ' + cap; } } else byId.set(id, { id, watchIds: [watchId], cap }); };
+    for (const w of ws) photosOf(w).forEach(id => push(id, w.id, w.name));
+    for (const m of [...S.measurements].sort((a, b) => String(a.at).localeCompare(String(b.at)))) if (m.photo) push(m.photo, m.watchId, `${W(m.watchId)?.name || '?'}, Messung vom ${fmtDate(m.at)}`);
+    const items = [...byId.values()];
+    const shown = items.filter(x => S.galleryFilter === 'alle' || x.watchIds.includes(S.galleryFilter));
+    const withPh = new Set(items.flatMap(x => x.watchIds));
+    const without = ws.filter(w => !withPh.has(w.id));
+    S.galleryItems = shown;
+    return `
+      <div class="view-head"><div><h2>Galerie</h2><p>${items.length} Fotos von ${withPh.size} Uhren. Neue Fotos fügst du auf der Seite der jeweiligen Uhr hinzu.</p></div></div>
+      <div class="chips" style="margin-bottom:16px">
+        <button class="chip" data-gfilter="alle" aria-pressed="${S.galleryFilter === 'alle'}">Alle</button>
+        ${ws.filter(w => withPh.has(w.id)).map(w => `<button class="chip" data-gfilter="${esc(w.id)}" aria-pressed="${S.galleryFilter === w.id}"><span class="dot" style="background:${esc(w.color || 'var(--muted)')};margin-right:5px"></span>${esc(w.name)}</button>`).join('')}
+      </div>
+      ${shown.length ? `<div class="gallery big">${shown.map((x, i) => `<figure class="thumb">
+          <button class="img" data-lb-gal="${i}" aria-label="${esc(x.cap)} groß ansehen"><img src="${blobUrl(x.id)}" alt="${esc(x.cap)}" loading="lazy"></button>
+          <figcaption><a href="#uhr-${esc(x.watchIds[0])}" data-open="${esc(x.watchIds[0])}">${esc(x.cap)}</a></figcaption>
+        </figure>`).join('')}</div>` : '<div class="empty">Noch keine Fotos. Öffne eine Uhr und füge dort Fotos hinzu.</div>'}
+      ${without.length && S.galleryFilter === 'alle' ? `<p class="notice" style="margin-top:16px">Ohne Foto: ${without.map(w => `<a href="#uhr-${esc(w.id)}" data-open="${esc(w.id)}">${esc(w.name)}</a>`).join(', ')}.</p>` : ''}
+    `;
+  }
+
+  // ----- Lightbox -----
+  function openLb(list, i) { if (!list.length) return; S.lb = { list, i: Math.max(0, Math.min(i, list.length - 1)) }; renderLb(); }
+  function stepLb(n) { const L = S.lb.list.length; S.lb.i = (S.lb.i + n + L) % L; renderLb(); }
+  function closeLb() { const back = S.lb?.from; S.lb = null; renderLb(); back?.focus?.(); }
+  function renderLb() {
+    const el = document.getElementById('lb');
+    if (!S.lb) { el.hidden = true; el.innerHTML = ''; document.body.style.overflow = ''; return; }
+    const { list, i } = S.lb; const x = list[i]; const many = list.length > 1;
+    el.hidden = false; document.body.style.overflow = 'hidden';
+    el.innerHTML = `<div class="bar"><span class="cap">${esc(x.cap)}</span>${many ? `<span class="cnt">${i + 1} / ${list.length}</span>` : ''}<button data-lb-close aria-label="Schließen">×</button></div>
+      <div class="stage">${many ? '<button data-lb-step="-1" aria-label="Vorheriges Foto">‹</button>' : ''}<img src="${blobUrl(x.id)}" alt="${esc(x.cap)}">${many ? '<button data-lb-step="1" aria-label="Nächstes Foto">›</button>' : ''}</div>`;
+    el.querySelector('[data-lb-close]').focus();
+  }
+
+  function measurePanel(w, ms) {
+    const mech = isMech(w);
+    const lastW = [...ms].reverse().find(m => m.kind === 'waage');
+    const unit = mech ? 's/Tag' : (w.tolUnit || 's/Tag');
+    let readout = '';
+    if (lastW) {
+      const st = tolState(lastW.rate, w);
+      const be = lastW.beatError, amp = lastW.amplitude;
+      readout = `<div class="tg" role="group" aria-label="Letzte Zeitwaagen-Messung">
+        <div><div class="k">Gang</div><div class="v ${st === 'ok' ? 'ok' : st ? 'warn' : ''}">${signed(lastW.rate)}</div><div class="k">s/Tag</div></div>
+        <div><div class="k">Amplitude</div><div class="v ${amp >= 270 ? 'ok' : amp != null && amp < 220 ? 'warn' : ''}">${amp != null ? nf(amp, 0) + '°' : '–'}</div><div class="k">${esc(lastW.position || '')}</div></div>
+        <div><div class="k">Abfallfehler</div><div class="v ${be != null && be <= 0.6 ? 'ok' : be != null ? 'warn' : ''}">${be != null ? nf(be, 1) : '–'}</div><div class="k">ms</div></div>
+      </div><p class="muted" style="margin:0;font-size:13px">Letzte Messung am ${fmtDT(lastW.at)}${lastW.bph ? ` bei ${nf(lastW.bph, 0)} A/h` : ''}.</p>`;
+    }
+    return `<section class="panel">
+      <div class="panel-head"><h3>Messungen</h3>${S.canWrite ? `<button class="btn small" data-act="add-m" data-w="${esc(w.id)}">+ Messung</button>` : ''}</div>
+      ${S.mEditing && S.mEditing.watchId === w.id ? measureForm(S.mEditing) : ''}
+      ${readout}
+      ${ms.length >= 1 ? `<div class="chart">${rateChart(ms, w)}</div>` : `<p class="muted" style="margin:0">${mech ? 'Noch keine Zeitwaagen-Messung. Trage Gang, Amplitude und Abfallfehler ein.' : 'Quarzwerke misst du über einige Wochen gegen eine Funkuhr: Abweichung in Sekunden und Zeitraum in Tagen eintragen.'}</p>`}
+      ${ms.length ? measureTable(ms, false) : ''}
+      ${w.tolMin != null ? `<p class="muted" style="margin:0;font-size:12.5px">Grünes Band: Werkstoleranz ${signed(w.tolMin, 0)} bis ${signed(w.tolMax, 0)} ${esc(unit)}.</p>` : ''}
+    </section>`;
+  }
+
+  function rateChart(ms, w) {
+    const pts = ms.map(m => ({ m, v: mValue(m, w), t: new Date(m.at).getTime() })).filter(p => p.v != null && !isNaN(p.t));
+    if (!pts.length) return '';
+    const unit = pts[0].m.kind === 'waage' ? 's/Tag' : (w.tolUnit || 's/Tag');
+    const Wd = 600, H = 210, L = 46, R = 18, T = 18, B = 30;
+    let lo = Math.min(...pts.map(p => p.v), 0), hi = Math.max(...pts.map(p => p.v), 0);
+    if (w.tolMin != null) { lo = Math.min(lo, w.tolMin); hi = Math.max(hi, w.tolMax); }
+    const span = hi - lo || 10; lo -= span * 0.12; hi += span * 0.12;
+    const step = niceStep((hi - lo) / 4);
+    lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step;
+    const t0 = Math.min(...pts.map(p => p.t)), t1 = Math.max(...pts.map(p => p.t));
+    const x = t => t1 === t0 ? (L + (Wd - L - R) / 2) : L + (t - t0) / (t1 - t0) * (Wd - L - R);
+    const y = v => T + (hi - v) / (hi - lo) * (H - T - B);
+    let g = '';
+    for (let v = lo; v <= hi + 1e-9; v += step) g += `<line class="grid-line" x1="${L}" x2="${Wd - R}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${signed(Math.round(v * 10) / 10, 1).replace('±0', '0')}</text>`;
+    const band = w.tolMin != null ? `<rect class="band" x="${L}" width="${Wd - L - R}" y="${y(w.tolMax)}" height="${y(w.tolMin) - y(w.tolMax)}"/><line class="band-edge" x1="${L}" x2="${Wd - R}" y1="${y(w.tolMax)}" y2="${y(w.tolMax)}"/><line class="band-edge" x1="${L}" x2="${Wd - R}" y1="${y(w.tolMin)}" y2="${y(w.tolMin)}"/>` : '';
+    const zero = `<line class="zero" x1="${L}" x2="${Wd - R}" y1="${y(0)}" y2="${y(0)}"/>`;
+    const path = pts.length > 1 ? `<path class="line" d="${pts.map((p, i) => (i ? 'L' : 'M') + x(p.t).toFixed(1) + ' ' + y(p.v).toFixed(1)).join(' ')}"/>` : '';
+    const dots = pts.map((p, i) => `<circle class="pt ${i === pts.length - 1 ? 'last' : ''}" cx="${x(p.t)}" cy="${y(p.v)}" r="${i === pts.length - 1 ? 5 : 4}"><title>${fmtDT(p.m.at)}: ${signed(p.v)} ${unit}</title></circle>`).join('');
+    const lp = pts[pts.length - 1];
+    const lab = `<text class="val" x="${Math.min(x(lp.t) + 9, Wd - R - 4)}" y="${y(lp.v) - 9}" text-anchor="${x(lp.t) > Wd - 90 ? 'end' : 'start'}">${signed(lp.v)} ${unit}</text>`;
+    const xl = `<text class="axis" x="${pts.length > 1 ? L : x(t0)}" y="${H - 8}" text-anchor="${pts.length > 1 ? 'start' : 'middle'}">${fmtDate(new Date(t0))}</text>${pts.length > 1 ? `<text class="axis" x="${Wd - R}" y="${H - 8}" text-anchor="end">${fmtDate(new Date(t1))}</text>` : ''}`;
+    return `<svg viewBox="0 0 ${Wd} ${H}" role="img" aria-label="Gangverlauf in ${unit}">${g}${band}${zero}${path}${dots}${lab}${xl}</svg>`;
+  }
+  function niceStep(raw) { const p = Math.pow(10, Math.floor(Math.log10(raw || 1))); const n = raw / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p; }
+
+  function measureTable(ms, withWatch) {
+    const rows = [...ms].sort((a, b) => String(b.at).localeCompare(String(a.at)));
+    return `<div class="tbl-wrap"><table>
+      <thead><tr><th>Datum</th>${withWatch ? '<th>Uhr</th>' : ''}<th>Lage / Zeitraum</th><th class="num">Gang</th><th class="num">Amplitude</th><th class="num">Abfallfehler</th><th>Notiz</th>${S.canWrite ? '<th></th>' : ''}</tr></thead>
+      <tbody>${rows.map(m => {
+        const w = W(m.watchId); const v = mValue(m, w); const st = tolState(v, w);
+        const del = S.confirm === 'm-' + m.id;
+        return `<tr>
+          <td class="mono" style="white-space:nowrap">${fmtDT(m.at)}</td>
+          ${withWatch ? `<td><a href="#uhr-${esc(m.watchId)}" data-open="${esc(m.watchId)}"><span class="dot" style="background:${esc(w?.color || 'var(--muted)')};margin-right:6px"></span>${esc(w?.name || '?')}</a></td>` : ''}
+          <td>${m.kind === 'waage' ? esc(m.position || '–') : `${nf(m.days, 1) ?? '–'} Tage, ${signed(m.deviation)} s`}</td>
+          <td class="num mono state-${st}">${v != null ? signed(v) + ' ' + esc(unitOf(m, w)) : '–'}</td>
+          <td class="num mono">${m.amplitude != null ? nf(m.amplitude, 0) + '°' : '–'}</td>
+          <td class="num mono">${m.beatError != null ? nf(m.beatError, 1) + ' ms' : '–'}</td>
+          <td>${esc(m.note || '')}${m.photo ? ` <a href="${blobUrl(m.photo)}" target="_blank" rel="noopener">Foto</a>` : ''}</td>
+          ${S.canWrite ? `<td style="white-space:nowrap">${del ? `<button class="btn small danger" data-m-del-yes="${esc(m.id)}">Löschen</button> <button class="btn small ghost" data-act="cancel-confirm">Nein</button>` : `<button class="btn small ghost" data-m-edit="${esc(m.id)}">Ändern</button><button class="btn small ghost" data-m-del="${esc(m.id)}" aria-label="Messung löschen">×</button>`}</td>` : ''}
+        </tr>`;
+      }).join('')}</tbody></table></div>`;
+  }
+
+  function measureForm(m) {
+    const w = W(m.watchId);
+    const kind = m.kind || (isMech(w) ? 'waage' : 'vergleich');
+    const sel = (v, o) => v === o ? 'selected' : '';
+    const positions = ['Zifferblatt oben', 'Zifferblatt unten', 'Krone unten', 'Krone oben', 'Krone links', 'Krone rechts', 'Am Handgelenk'];
+    return `<form class="grid-form" data-form="measure" style="background:var(--sunk);padding:12px;border-radius:8px">
+      <div class="field"><label for="m-watch">Uhr</label><select id="m-watch" name="watchId">${[...S.watches].sort(byNr).map(x => `<option value="${esc(x.id)}" ${sel(x.id, m.watchId)}>${x.nr ?? ''} · ${esc(x.name)}</option>`).join('')}</select></div>
+      <div class="field"><label for="m-kind">Art</label><select id="m-kind" name="kind"><option value="waage" ${sel(kind, 'waage')}>Zeitwaage</option><option value="vergleich" ${sel(kind, 'vergleich')}>Abgleich mit Funkuhr</option></select></div>
+      <div class="field"><label for="m-at">Zeitpunkt</label><input id="m-at" type="datetime-local" name="at" value="${esc((m.at || new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString()).slice(0, 16))}" required></div>
+      ${kind === 'waage' ? `
+        <div class="field"><label for="m-pos">Lage</label><select id="m-pos" name="position">${positions.map(p => `<option ${sel(p, m.position || 'Zifferblatt oben')}>${p}</option>`).join('')}</select></div>
+        <div class="field"><label for="m-rate">Gang (s/Tag)</label><input id="m-rate" type="number" step="0.1" name="rate" value="${m.rate ?? ''}" placeholder="+15" required></div>
+        <div class="field"><label for="m-amp">Amplitude (°)</label><input id="m-amp" type="number" step="1" name="amplitude" value="${m.amplitude ?? ''}" placeholder="270"></div>
+        <div class="field"><label for="m-be">Abfallfehler (ms)</label><input id="m-be" type="number" step="0.1" min="0" name="beatError" value="${m.beatError ?? ''}" placeholder="0,4"></div>
+        <div class="field"><label for="m-bph">Frequenz (A/h)</label><input id="m-bph" type="number" step="1" name="bph" value="${m.bph ?? w?.bph ?? ''}"></div>`
+      : `
+        <div class="field"><label for="m-dev">Abweichung (s)</label><input id="m-dev" type="number" step="0.1" name="deviation" value="${m.deviation ?? ''}" placeholder="+4" required></div>
+        <div class="field"><label for="m-days">Zeitraum (Tage)</label><input id="m-days" type="number" step="0.1" min="0.1" name="days" value="${m.days ?? ''}" placeholder="14" required></div>`}
+      <div class="field wide"><label for="m-note">Notiz</label><input id="m-note" type="text" name="note" value="${esc(m.note || '')}" placeholder="z. B. voll aufgezogen, nach 24 h Ablauf"></div>
+      <div class="actions field wide"><button class="btn primary">${m.id ? 'Messung speichern' : 'Messung eintragen'}</button><button type="button" class="btn ghost" data-act="cancel-m">Abbrechen</button></div>
+    </form>`;
+  }
+
+  // ----- Messungen -----
+  function renderMeasurements() {
+    const ws = [...S.watches].sort(byNr);
+    const ms = S.measurements.filter(m => S.mFilter === 'alle' || m.watchId === S.mFilter);
+    const w = S.mFilter !== 'alle' ? W(S.mFilter) : null;
+    const measured = new Set(S.measurements.map(m => m.watchId));
+    const missing = ws.filter(x => isMech(x) && x.status !== 'Bestellt' && !measured.has(x.id));
+    return `
+      <div class="view-head">
+        <div><h2>Messungen</h2><p>Zeitwaage für mechanische Werke, Abgleich mit der Funkuhr für Quarz.</p></div>
+        ${S.canWrite ? `<button class="btn primary" data-act="add-m" data-w="${esc(S.mFilter !== 'alle' ? S.mFilter : (ws.find(isMech)?.id || ws[0]?.id || ''))}">+ Messung</button>` : ''}
+      </div>
+      ${S.mEditing && S.view === 'messungen' ? `<section class="panel" style="margin-bottom:16px">${measureForm(S.mEditing)}</section>` : ''}
+      <div class="chips" style="margin-bottom:16px">
+        <button class="chip" data-mfilter="alle" aria-pressed="${S.mFilter === 'alle'}">Alle Uhren</button>
+        ${ws.map(x => `<button class="chip" data-mfilter="${esc(x.id)}" aria-pressed="${S.mFilter === x.id}">${esc(x.name)}${measured.has(x.id) ? '' : ' ·'}</button>`).join('')}
+      </div>
+      ${w && ms.length ? `<section class="panel" style="margin-bottom:16px"><div class="panel-head"><h3>Gangverlauf ${esc(w.name)}</h3>${w.tolMin != null ? `<span class="label">Toleranz ${signed(w.tolMin, 0)} bis ${signed(w.tolMax, 0)} ${esc(w.tolUnit || 's/Tag')}</span>` : ''}</div><div class="chart">${rateChart(ms.filter(m => m.watchId === w.id).sort((a, b) => String(a.at).localeCompare(String(b.at))), w)}</div></section>` : ''}
+      ${ms.length ? measureTable(ms, S.mFilter === 'alle') : `<div class="empty">${w ? `Für die ${esc(w.name)} gibt es noch keine Messung.` : 'Noch keine Messungen eingetragen.'}</div>`}
+      ${missing.length && S.mFilter === 'alle' ? `<p class="notice" style="margin-top:16px">Noch nicht mit der Zeitwaage gemessen: ${missing.map(x => esc(x.name)).join(', ')}.</p>` : ''}
+    `;
+  }
+
+  // ----- Tragetagebuch -----
+  function renderDiary() {
+    const ws = [...S.watches].filter(w => w.status !== 'Bestellt' && w.status !== 'Verkauft').sort(byNr);
+    const sel = S.diaryDate; const selW = S.wear[sel] || [];
+    const today = parseDay(todayStr());
+    // calendar: 18 weeks ending this week, Monday first
+    const weeks = 18;
+    const start = new Date(today); start.setDate(start.getDate() - ((start.getDay() + 6) % 7) - (weeks - 1) * 7);
+    let cells = '', lastMonth = -1;
+    for (let wk = 0; wk < weeks; wk++) {
+      const first = new Date(start); first.setDate(first.getDate() + wk * 7);
+      const mon = first.getMonth();
+      cells += `<div class="m">${mon !== lastMonth ? first.toLocaleDateString('de-DE', { month: 'short' }) : ''}</div>`; lastMonth = mon;
+      for (let d = 0; d < 7; d++) {
+        const day = new Date(first); day.setDate(day.getDate() + d);
+        const ds = todayStr(day); const ids = S.wear[ds] || [];
+        const cols = ids.map(id => W(id)?.color || 'var(--muted)');
+        const bg = cols.length === 0 ? '' : cols.length === 1 ? `background:${esc(cols[0])}` : `background:linear-gradient(135deg, ${esc(cols[0])} 50%, ${esc(cols[1])} 50%)`;
+        const fut = day > today;
+        cells += `<button class="d ${ds === todayStr() ? 'today' : ''} ${ds === sel ? 'sel' : ''} ${fut ? 'future' : ''}" style="${bg}" ${fut ? 'disabled' : `data-day="${ds}"`} title="${day.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })}${ids.length ? ': ' + esc(ids.map(id => W(id)?.name || '?').join(', ')) : ''}" aria-label="${ds}${ids.length ? ', ' + esc(ids.map(id => W(id)?.name || '?').join(', ')) : ''}"></button>`;
+      }
+    }
+    const range = S.statRange; const cutoff = range === 'alle' ? null : new Date(today.getTime() - Number(range) * 864e5);
+    const counts = {}; let totalDays = 0;
+    for (const [d, ids] of Object.entries(S.wear)) { if (cutoff && parseDay(d) <= cutoff) continue; if (ids.length) totalDays++; ids.forEach(id => counts[id] = (counts[id] || 0) + 1); }
+    const max = Math.max(1, ...Object.values(counts));
+    const ranked = ws.map(w => ({ w, n: counts[w.id] || 0 })).sort((a, b) => b.n - a.n || byNr(a.w, b.w));
+    const neglected = ranked.filter(r => r.n === 0).map(r => r.w);
+    const selDate = parseDay(sel);
+    return `
+      <div class="view-head"><div><h2>Tragetagebuch</h2><p>Halte fest, welche Uhr du wann getragen hast.</p></div></div>
+      <div class="diary">
+        <div class="stack">
+          <section class="panel">
+            <div class="panel-head"><h3>${sel === todayStr() ? 'Heute' : selDate.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}</h3>
+              <div class="actions"><input type="date" id="diary-date" value="${sel}" max="${todayStr()}" aria-label="Tag wählen" style="width:auto">${sel !== todayStr() ? '<button class="btn small" data-act="diary-today">Heute</button>' : ''}</div></div>
+            ${ws.length ? `<div class="pick">${ws.map(w => `<button data-wear="${esc(w.id)}" aria-pressed="${selW.includes(w.id)}" ${S.canWrite ? '' : 'disabled'}><span class="dot" style="background:${esc(w.color || 'var(--muted)')};width:14px;height:14px"></span>${esc(w.name)}</button>`).join('')}</div>` : '<p class="muted">Noch keine Uhren in der Sammlung.</p>'}
+            <p class="muted" style="margin:0;font-size:13px">${selW.length ? `Getragen: ${selW.map(id => esc(W(id)?.name || '?')).join(' und ')}. Tippe erneut, um es zu entfernen.` : 'Tippe auf eine Uhr, um sie für diesen Tag einzutragen. Ein Uhrwechsel am Tag geht auch.'}</p>
+          </section>
+          <section class="panel">
+            <div class="panel-head"><h3>Die letzten ${weeks} Wochen</h3><span class="label">${Object.values(S.wear).filter(a => a.length).length} Tage eingetragen</span></div>
+            <div class="cal-row"><div class="wd-labels"><span></span><span>Mo</span><span></span><span>Mi</span><span></span><span>Fr</span><span></span><span>So</span></div>
+            <div class="cal-wrap"><div class="cal">${cells}</div></div></div>
+            <p class="muted" style="margin:0;font-size:12.5px">Jedes Feld ist ein Tag in der Farbe der getragenen Uhr. Tippe auf einen Tag, um ihn oben zu bearbeiten.</p>
+          </section>
+        </div>
+        <section class="panel">
+          <div class="panel-head"><h3>Rotation</h3>
+            <div class="chips">${[['30', '30 Tage'], ['90', '90 Tage'], ['alle', 'Gesamt']].map(([k, l]) => `<button class="chip" data-range="${k}" aria-pressed="${range === k}">${l}</button>`).join('')}</div></div>
+          ${totalDays ? `<div class="bars">${ranked.map(r => `<div class="bar-row"><span class="nm" title="${esc(watchLabel(r.w))}">${esc(r.w.name)}</span><div class="track"><div class="fill" style="width:${r.n / max * 100}%;background:${esc(r.w.color || 'var(--muted)')}"></div></div><span class="n">${r.n}</span></div>`).join('')}</div>
+            <p class="muted" style="margin:0;font-size:13px">${totalDays} Tragetage im Zeitraum.${neglected.length ? ` Länger nicht am Arm: ${neglected.map(w => esc(w.name)).join(', ')}.` : ' Jede Uhr kam dran.'}</p>`
+            : `<div class="empty" style="padding:18px">Noch keine Tragetage in diesem Zeitraum. Trag links ein, welche Uhr du heute trägst.</div>`}
+        </section>
+      </div>`;
+  }
+
+  // ----- Vergleich -----
+  function renderCompare() {
+    const all = [...S.watches].sort(byNr);
+    if (!S.cmpSel) S.cmpSel = all.map(w => w.id);
+    const ws = all.filter(w => S.cmpSel.includes(w.id));
+    const numRows = [['diameter', 'Durchmesser', 'mm'], ['lugToLug', 'Lug-to-Lug', 'mm'], ['height', 'Höhe', 'mm'], ['lugWidth', 'Bandanstoß', 'mm'], ['waterM', 'Wasserdicht', 'm'], ['price', 'Kaufpreis', '€']];
+    const txtRows = [['movement', 'Werk'], ['movementKind', 'Art'], ['homage', 'Vorbild'], ['crystal', 'Glas'], ['strap', 'Band']];
+    const wearN = id => wearDaysOf(id).length;
+    const numRow = ([k, l, u]) => {
+      const vals = ws.map(w => typeof w[k] === 'number' ? w[k] : null); const known = vals.filter(v => v != null);
+      const mx = Math.max(...known, 0), mn = Math.min(...known);
+      return `<tr><td class="label" style="white-space:nowrap">${l}</td>${ws.map((w, i) => { const v = vals[i]; return `<td class="mono ${v != null && known.length > 1 && (v === mx || v === mn) ? 'hi' : ''}">${v != null ? nf(v, 2) + ' ' + u : '<span class="muted">offen</span>'}${v != null && mx ? `<div class="mini"><span style="width:${v / mx * 100}%"></span></div>` : ''}</td>`; }).join('')}</tr>`;
+    };
+    return `
+      <div class="view-head"><div><h2>Vergleich</h2><p>Maße und Werke nebeneinander. Fett: größter und kleinster Wert der Zeile.</p></div></div>
+      <div class="chips" style="margin-bottom:16px">${all.map(w => `<button class="chip" data-cmp="${esc(w.id)}" aria-pressed="${S.cmpSel.includes(w.id)}"><span class="dot" style="background:${esc(w.color || 'var(--muted)')};margin-right:5px"></span>${esc(w.name)}</button>`).join('')}</div>
+      ${ws.length ? `<div class="tbl-wrap"><table class="cmp">
+        <thead><tr><th>Merkmal</th>${ws.map(w => `<th><span class="label">Uhr ${w.nr ?? ''}</span><a class="t" href="#uhr-${esc(w.id)}" data-open="${esc(w.id)}">${esc(w.name)}</a></th>`).join('')}</tr></thead>
+        <tbody>${numRows.map(numRow).join('')}
+          ${txtRows.map(([k, l]) => `<tr><td class="label" style="white-space:nowrap">${l}</td>${ws.map(w => `<td>${w[k] ? esc(w[k]) : '<span class="muted">offen</span>'}</td>`).join('')}</tr>`).join('')}
+          <tr><td class="label">Tragetage</td>${ws.map(w => `<td class="mono">${wearN(w.id)}</td>`).join('')}</tr>
+          <tr><td class="label">Letzter Gang</td>${ws.map(w => { const m = S.measurements.filter(x => x.watchId === w.id).sort((a, b) => String(b.at).localeCompare(String(a.at)))[0]; const v = m ? mValue(m, w) : null; return `<td class="mono state-${tolState(v, w)}">${v != null ? signed(v) + ' ' + esc(unitOf(m, w)) : '<span class="muted">–</span>'}</td>`; }).join('')}</tr>
+        </tbody></table></div>` : '<div class="empty">Wähle oben mindestens eine Uhr.</div>'}
+    `;
+  }
+
+  // ----- watch form (create / edit) -----
+  const FORM = [
+    ['Stammdaten', [
+      ['name', 'Kurzname', 'text', { req: 1, ph: 'z. B. PH-2' }], ['brand', 'Marke'], ['model', 'Modell / Variante'], ['nr', 'Nummer', 'number'],
+      ['homage', 'Vorbild'], ['category', 'Kategorie', 'select', { opts: ['Taucher', 'Chronograph', 'Alltag', 'Dress', 'Sonstige'] }],
+      ['status', 'Status', 'select', { opts: ['Sammlung', 'Bestellt', 'Verkauft'] }], ['favorite', 'Favorit', 'check'],
+      ['dial', 'Zifferblatt', 'text', { wide: 1 }], ['hands', 'Zeiger'], ['bezel', 'Lünette'],
+      ['purchased', 'Gekauft (Monat/Jahr)', 'text', { ph: '10/2025' }], ['price', 'Kaufpreis (€)', 'number'], ['priceNote', 'Preisnotiz', 'text', { ph: 'z. B. im Sale' }], ['dealer', 'Händler'], ['serial', 'Seriennummer'],
+    ]],
+    ['Gehäuse', [
+      ['diameter', 'Durchmesser (mm)', 'number'], ['lugToLug', 'Lug-to-Lug (mm)', 'number'], ['height', 'Höhe (mm)', 'number'], ['lugWidth', 'Bandanstoß (mm)', 'number'],
+      ['waterM', 'Wasserdicht (m)', 'number'], ['crystal', 'Glas'], ['crown', 'Krone'], ['lume', 'Leuchtmasse'], ['weight', 'Gewicht'],
+    ]],
+    ['Werk', [
+      ['movement', 'Kaliber'], ['movementKind', 'Art', 'select', { opts: ['Automatik', 'Handaufzug', 'Quarz', 'Mecaquartz'] }], ['bph', 'Frequenz (A/h)', 'number'],
+      ['tolMin', 'Toleranz von', 'number'], ['tolMax', 'Toleranz bis', 'number'], ['tolUnit', 'Toleranz-Einheit', 'select', { opts: ['s/Tag', 's/Monat'] }],
+    ]],
+    ['Band und Sonstiges', [
+      ['strap', 'Aktuelles Band', 'text', { wide: 1 }], ['strapExtra', 'Weitere Bänder', 'text', { wide: 1 }], ['color', 'Farbe im Tagebuch', 'color'], ['notes', 'Notizen', 'textarea', { wide: 1 }],
+    ]],
+  ];
+  function renderWatchForm(w) {
+    const v = w || { status: 'Sammlung', category: 'Taucher', movementKind: 'Automatik', tolUnit: 's/Tag', color: '#C4521E', nr: Math.max(0, ...S.watches.map(x => x.nr || 0)) + 1 };
+    const fld = ([k, l, t = 'text', o = {}]) => {
+      const id = 'wf-' + k; const val = v[k] ?? '';
+      let input;
+      if (t === 'select') input = `<select id="${id}" name="${k}">${o.opts.map(x => `<option ${x === val ? 'selected' : ''}>${x}</option>`).join('')}</select>`;
+      else if (t === 'textarea') input = `<textarea id="${id}" name="${k}">${esc(val)}</textarea>`;
+      else if (t === 'check') return `<div class="field"><label for="${id}">${l}</label><input id="${id}" type="checkbox" name="${k}" ${val ? 'checked' : ''} style="width:20px;height:20px;accent-color:var(--accent)"></div>`;
+      else if (t === 'color') input = `<input id="${id}" type="color" name="${k}" value="${esc(val || '#888888')}">`;
+      else input = `<input id="${id}" type="${t}" name="${k}" value="${esc(val)}" ${t === 'number' ? 'step="any"' : ''} ${o.req ? 'required' : ''} ${o.ph ? `placeholder="${esc(o.ph)}"` : ''}>`;
+      return `<div class="field ${o.wide ? 'wide' : ''}"><label for="${id}">${l}</label>${input}</div>`;
+    };
+    return `
+      <button class="btn ghost back" data-act="cancel-edit">← ${w ? 'Zurück zur Uhr' : 'Sammlung'}</button>
+      <section class="panel">
+        <h2>${w ? esc(w.name) + ' bearbeiten' : 'Neue Uhr'}</h2>
+        <form class="grid-form" data-form="watch">
+          ${FORM.map(([title, fs]) => `<div class="form-group-title">${title}</div>${fs.map(fld).join('')}`).join('')}
+          ${S.assets ? `<div class="form-group-title">Foto</div>
+          <div class="field wide"><label for="wf-photo">${w?.photo ? 'Foto ersetzen (optional)' : 'Foto hochladen (optional)'}</label>
+            <div class="actions"><div id="wf-photo-prev" class="photo-prev">${w?.photo ? `<img src="${blobUrl(w.photo)}" alt="Aktuelles Foto">` : ''}</div><input id="wf-photo" type="file" name="photoFile" accept="image/png,image/jpeg,image/webp,image/gif"></div>
+            <span class="muted" style="font-size:12.5px">JPG, PNG, WebP oder GIF, große Fotos werden automatisch verkleinert.</span></div>` : ''}
+          <div class="actions field wide" style="margin-top:8px"><button class="btn primary">${w ? 'Änderungen speichern' : 'Uhr anlegen'}</button><button type="button" class="btn ghost" data-act="cancel-edit">Abbrechen</button></div>
+        </form>
+      </section>`;
+  }
+  function readWatchForm(form, base) {
+    const out = { ...(base || {}) }; delete out.id;
+    for (const [, fs] of FORM) for (const [k, , t = 'text'] of fs) {
+      const el = form.elements[k]; if (!el) continue;
+      if (t === 'check') out[k] = el.checked;
+      else if (t === 'number') out[k] = el.value === '' ? null : Number(el.value);
+      else out[k] = el.value.trim() || null;
+    }
+    if (!out.todos) out.todos = [];
+    return out;
+  }
+  function slug(s) { const b = String(s || 'uhr').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'uhr'; let id = b, i = 2; while (W(id)) id = b + '-' + i++; return id; }
+
+  // ---------- sichern / laden ----------
+  function blobToDataUrl(blob) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(blob); }); }
+  async function exportJson() {
+    toast('Sicherung wird erstellt …');
+    const photos = {};
+    for (const [id, blob] of await LOCAL.allPhotos()) photos[id] = await blobToDataUrl(blob);
+    const data = {
+      app: 'Uhrenbox', version: 2, exportedAt: new Date().toISOString(),
+      watches: [...S.watches].sort(byNr),
+      measurements: [...S.measurements].sort((a, b) => String(a.at).localeCompare(String(b.at))),
+      wear: Object.keys(S.wear).sort().map(d => ({ date: d, watches: S.wear[d] })),
+      photos,
+    };
+    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `uhrenbox-sicherung-${todayStr()}.json` });
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    toast('Sicherung gespeichert');
+  }
+  async function importJson(file) {
+    let data;
+    try { data = JSON.parse(await file.text()); } catch { return toast('Diese Datei ist keine Uhrenbox-Sicherung.'); }
+    if (!data || data.app !== 'Uhrenbox' || !Array.isArray(data.watches)) return toast('Diese Datei ist keine Uhrenbox-Sicherung.');
+    const n = data.watches.length;
+    if (!confirm(`Sicherung vom ${fmtDate(data.exportedAt)} mit ${n} Uhr${n === 1 ? '' : 'en'} laden?\n\nDie aktuelle Sammlung auf diesem Gerät wird dabei ersetzt.`)) return;
+    try {
+      const photos = new Map();
+      for (const [id, url] of Object.entries(data.photos || {})) { try { photos.set(id, await (await fetch(url)).blob()); } catch {} }
+      await LOCAL.replaceAll({
+        watches: data.watches,
+        measurements: data.measurements || [],
+        wear: (data.wear || []).map(x => ({ id: x.date, date: x.date, watches: x.watches })),
+      }, photos);
+      S.cmpSel = null; go('sammlung');
+      toast(`${n} Uhr${n === 1 ? '' : 'en'} geladen`);
+    } catch (er) { console.error(er); toast('Laden fehlgeschlagen.'); }
+  }
+
+  // ---------- writes ----------
+  async function saveWatch(id, data) { await S.db.collection('watches').doc(id).set(data); }
+  async function toggleWear(day, id) {
+    const cur = S.wear[day] || [];
+    const next = cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id];
+    const ref = S.db.collection('wear').doc(day);
+    try { if (next.length) await ref.set({ date: day, watches: next }); else await ref.delete(); }
+    catch (e) { fail(e, 'Eintragen'); }
+  }
+
+  // ---------- events ----------
+  document.addEventListener('click', async e => {
+    const t = e.target.closest('[data-nav],[data-open],[data-act],[data-filter],[data-mfilter],[data-wear-today],[data-wear],[data-day],[data-range],[data-cmp],[data-todo-del],[data-m-del],[data-m-del-yes],[data-m-edit],[data-lb-watch],[data-lb-gal],[data-gfilter],[data-cover],[data-ph-del],[data-ph-del-yes]');
+    if (S.lb) {
+      if (e.target.closest('[data-lb-close]') || e.target.id === 'lb' || e.target.classList?.contains('stage')) return closeLb();
+      const st = e.target.closest('[data-lb-step]'); if (st) return stepLb(Number(st.dataset.lbStep));
+      return;
+    }
+    if (!t) return;
+    const d = t.dataset;
+    if (d.lbWatch) { const w = W(d.lbWatch); openLb(photosOf(w).map((id, i) => ({ id, cap: `${w.name}, Foto ${i + 1}` })), Number(d.i)); S.lb.from = t; return; }
+    if (d.lbGal != null) { openLb(S.galleryItems, Number(d.lbGal)); S.lb.from = t; return; }
+    if (d.gfilter) { S.galleryFilter = d.gfilter; return render(); }
+    if (d.cover) { try { await S.db.collection('watches').doc(S.detailId).update({ photo: d.cover }); toast('Titelbild geändert'); } catch (er) { fail(er, 'Speichern'); } return; }
+    if (d.phDel) { S.confirm = 'ph-' + d.phDel; return render(); }
+    if (d.phDelYes) {
+      const w = W(S.detailId); const id = d.phDelYes; S.confirm = null;
+      const rest = photosOf(w).filter(x => x !== id);
+      try {
+        await S.db.collection('watches').doc(w.id).update({ photos: rest, photo: w.photo === id ? (rest[0] || null) : w.photo });
+        if (S.assets && !photoInUse(id, w.id)) { try { await S.assets.delete(id); } catch (er) { console.error(er); } }
+        toast('Foto entfernt');
+      } catch (er) { fail(er, 'Entfernen'); }
+      return;
+    }
+    if (d.nav) { e.preventDefault(); return go(d.nav); }
+    if (d.wearToday) { e.stopPropagation(); return toggleWear(todayStr(), d.wearToday); }
+    if (d.open && !e.target.closest('button,input,label')) { e.preventDefault(); return go('detail', d.open); }
+    if (d.open && t.tagName === 'A') { e.preventDefault(); return go('detail', d.open); }
+    if (d.filter) { S.filter = d.filter; return render(); }
+    if (d.mfilter) { S.mFilter = d.mfilter; S.mEditing = null; return render(); }
+    if (d.range) { S.statRange = d.range; return render(); }
+    if (d.day) { S.diaryDate = d.day; return render(); }
+    if (d.wear) return toggleWear(S.diaryDate, d.wear);
+    if (d.cmp) { S.cmpSel = S.cmpSel.includes(d.cmp) ? S.cmpSel.filter(x => x !== d.cmp) : [...S.cmpSel, d.cmp]; return render(); }
+    if (d.todoDel != null) { const w = W(S.detailId); const todos = (w.todos || []).filter((_, i) => i !== Number(d.todoDel)); try { await S.db.collection('watches').doc(w.id).update({ todos }); } catch (er) { fail(er, 'Entfernen'); } return; }
+    if (d.mDel) { S.confirm = 'm-' + d.mDel; return render(); }
+    if (d.mDelYes) { S.confirm = null; try { await S.db.collection('measurements').doc(d.mDelYes).delete(); toast('Messung gelöscht'); } catch (er) { fail(er, 'Löschen'); } return; }
+    if (d.mEdit) { const m = S.measurements.find(x => x.id === d.mEdit); S.mEditing = { ...m }; if (S.view !== 'messungen' && S.view !== 'detail') S.view = 'messungen'; render(); document.getElementById('m-rate')?.focus() || document.getElementById('m-dev')?.focus(); return; }
+    switch (d.act) {
+      case 'new-watch': S.creating = true; render(); document.getElementById('wf-name')?.focus(); break;
+      case 'edit': S.editing = true; render(); window.scrollTo({ top: 0 }); break;
+      case 'cancel-edit': S.editing = false; S.creating = false; render(); break;
+      case 'del-watch': S.confirm = 'del-watch'; render(); break;
+      case 'cancel-confirm': S.confirm = null; render(); break;
+      case 'del-watch-yes': {
+        const id = S.detailId; S.confirm = null;
+        try {
+          for (const m of S.measurements.filter(x => x.watchId === id)) await S.db.collection('measurements').doc(m.id).delete();
+          await S.db.collection('watches').doc(id).delete();
+          toast('Uhr gelöscht'); go('sammlung');
+        } catch (er) { fail(er, 'Löschen'); }
+        break;
+      }
+      case 'add-m': S.mEditing = { watchId: d.w || S.watches[0]?.id }; render(); break;
+      case 'cancel-m': S.mEditing = null; render(); break;
+      case 'diary-today': S.diaryDate = todayStr(); render(); break;
+      case 'export': exportJson(); break;
+    }
+  });
+  document.addEventListener('keydown', e => {
+    if (S.lb) {
+      if (e.key === 'Escape') { e.preventDefault(); closeLb(); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); stepLb(-1); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); stepLb(1); }
+      return;
+    }
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.card[data-open]')) { e.preventDefault(); go('detail', e.target.dataset.open); }
+  });
+  document.addEventListener('change', async e => {
+    const t = e.target;
+    if (t.id === 'import-in') { const f = t.files?.[0]; t.value = ''; if (f) importJson(f); return; }
+    if (t.id === 'wf-photo') {
+      const file = t.files?.[0]; const prev = document.getElementById('wf-photo-prev');
+      if (prev) { prev.innerHTML = ''; if (file) { const img = new Image(); img.src = URL.createObjectURL(file); img.alt = 'Vorschau'; prev.appendChild(img); } }
+      return;
+    }
+    if (t.dataset.galleryAdd) {
+      const files = [...(t.files || [])]; if (!files.length || !S.assets) return;
+      const big = files.filter(f => f.size > 20 * 1024 * 1024);
+      if (big.length) toast(`${big.length} Foto${big.length > 1 ? 's sind' : ' ist'} größer als 20 MB und ${big.length > 1 ? 'werden' : 'wird'} übersprungen.`);
+      const ok = files.filter(f => f.size <= 20 * 1024 * 1024); const ids = [];
+      for (const [i, file] of ok.entries()) {
+        toast(ok.length > 1 ? `Foto ${i + 1} von ${ok.length} wird hochgeladen …` : 'Foto wird hochgeladen …');
+        try { ids.push((await S.assets.upload(file, file.type ? undefined : { type: 'image/jpeg' })).id); }
+        catch (er) { console.error(er); toast(`${file.name}: ${photoErr(er)}`); }
+      }
+      if (!ids.length) return;
+      const w = W(t.dataset.galleryAdd);
+      try {
+        await S.db.collection('watches').doc(w.id).update({ photos: uniq([...photosOf(w), ...ids]), photo: w.photo || ids[0] });
+        toast(ids.length > 1 ? `${ids.length} Fotos hinzugefügt` : 'Foto hinzugefügt');
+      } catch (er) { fail(er, 'Speichern'); }
+      return;
+    }
+    if (t.id === 'diary-date' && t.value) { S.diaryDate = t.value > todayStr() ? todayStr() : t.value; return render(); }
+    if (t.id === 'm-kind' || t.id === 'm-watch') {
+      const f = t.form; const keep = { ...S.mEditing, watchId: f.elements.watchId.value, kind: f.elements.kind.value, at: f.elements.at.value };
+      if (t.id === 'm-watch') keep.kind = isMech(W(keep.watchId)) ? 'waage' : 'vergleich';
+      S.mEditing = keep; return render();
+    }
+    if (t.dataset.todo != null) {
+      const w = W(S.detailId); const todos = (w.todos || []).map((x, i) => i === Number(t.dataset.todo) ? { ...x, done: t.checked } : x);
+      try { await S.db.collection('watches').doc(w.id).update({ todos }); } catch (er) { fail(er, 'Speichern'); }
+      return;
+    }
+    if (t.dataset.photo) {
+      const file = t.files?.[0]; if (!file || !S.assets) return;
+      if (file.size > 20 * 1024 * 1024) return toast('Das Foto ist größer als 20 MB. Bitte ein kleineres wählen.');
+      toast('Foto wird hochgeladen …');
+      try {
+        const res = await S.assets.upload(file, file.type ? undefined : { type: 'image/jpeg' });
+        await S.db.collection('watches').doc(t.dataset.photo).update({ photo: res.id, photos: uniq([res.id, ...photosOf(W(t.dataset.photo))]) });
+        toast('Foto gespeichert');
+      } catch (er) {
+        console.error(er);
+        toast(photoErr(er));
+      }
+    }
+  });
+  document.addEventListener('submit', async e => {
+    const f = e.target; if (!f.dataset.form) return; e.preventDefault();
+    if (f.dataset.form === 'watch') {
+      const base = S.editing ? W(S.detailId) : null;
+      const data = readWatchForm(f, base);
+      if (!data.name) return toast('Bitte einen Kurznamen eingeben.');
+      const id = base ? base.id : slug(data.name);
+      const file = f.elements.photoFile?.files?.[0];
+      if (file && S.assets) {
+        if (file.size > 20 * 1024 * 1024) return toast('Das Foto ist größer als 20 MB. Bitte ein kleineres wählen.');
+        const btn = f.querySelector('button.primary'); const label = btn?.textContent;
+        if (btn) { btn.disabled = true; btn.textContent = 'Foto wird hochgeladen …'; }
+        try { const res = await S.assets.upload(file, file.type ? undefined : { type: 'image/jpeg' }); data.photos = uniq([res.id, ...photosOf(data)]); data.photo = res.id; }
+        catch (er) { console.error(er); if (btn) { btn.disabled = false; btn.textContent = label; } return toast(photoErr(er)); }
+      }
+      try { await saveWatch(id, data); toast(base ? 'Gespeichert' : 'Uhr angelegt'); S.editing = false; S.creating = false; go('detail', id); }
+      catch (er) { fail(er, 'Speichern'); }
+    }
+    if (f.dataset.form === 'todo') {
+      const txt = f.elements.t.value.trim(); if (!txt) return;
+      const w = W(S.detailId);
+      try { await S.db.collection('watches').doc(w.id).update({ todos: [...(w.todos || []), { t: txt, done: false }] }); }
+      catch (er) { fail(er, 'Hinzufügen'); }
+    }
+    if (f.dataset.form === 'measure') {
+      const el = f.elements; const num = n => el[n] && el[n].value !== '' ? Number(el[n].value) : null;
+      const kind = el.kind.value;
+      const at = el.at.value ? new Date(el.at.value).toISOString() : new Date().toISOString();
+      const data = { watchId: el.watchId.value, kind, at, note: el.note.value.trim() || null };
+      if (kind === 'waage') Object.assign(data, { position: el.position.value, rate: num('rate'), amplitude: num('amplitude'), beatError: num('beatError'), bph: num('bph') });
+      else Object.assign(data, { deviation: num('deviation'), days: num('days') });
+      if (S.mEditing?.photo) data.photo = S.mEditing.photo;
+      try {
+        if (S.mEditing?.id) await S.db.collection('measurements').doc(S.mEditing.id).set(data);
+        else await S.db.collection('measurements').add(data);
+        S.mEditing = null; toast('Messung gespeichert'); render();
+      } catch (er) { fail(er, 'Speichern'); }
+    }
+  });
+
+  // ---------- lokaler Speicher (IndexedDB, bleibt auf diesem Gerät) ----------
+  const COLS = ['watches', 'measurements', 'wear'];
+  const LOCAL = (() => {
+    let idb; const cache = { watches: new Map(), measurements: new Map(), wear: new Map() }; const subs = { watches: [], measurements: [], wear: [] };
+    const open = () => new Promise((res, rej) => {
+      const r = indexedDB.open('uhrenbox', 1);
+      r.onupgradeneeded = () => { for (const c of [...COLS, 'photos']) r.result.createObjectStore(c); };
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    });
+    const tx = (stores, mode, fn) => new Promise((res, rej) => { const t = idb.transaction(stores, mode); const out = fn(t); t.oncomplete = () => res(out); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error); });
+    const getAll = store => new Promise((res, rej) => { const out = []; const r = idb.transaction(store).objectStore(store).openCursor(); r.onsuccess = () => { const c = r.result; if (c) { out.push([c.key, c.value]); c.continue(); } else res(out); }; r.onerror = () => rej(r.error); });
+    const emit = col => { const snap = { docs: [...cache[col]].map(([id, v]) => ({ id, data: () => structuredClone(v) })) }; subs[col].forEach(fn => fn(snap)); };
+    const clean = o => JSON.parse(JSON.stringify(o ?? {}));
+    async function put(col, id, data) { data = clean(data); delete data.id; await tx(col, 'readwrite', t => t.objectStore(col).put(data, id)); cache[col].set(id, data); emit(col); }
+    async function del(col, id) { await tx(col, 'readwrite', t => t.objectStore(col).delete(id)); cache[col].delete(id); emit(col); }
+    const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    const db = {
+      collection: col => ({
+        doc: id => ({
+          set: data => put(col, id, data),
+          update: patch => put(col, id, { ...(cache[col].get(id) || {}), ...clean(patch) }),
+          delete: () => del(col, id),
+        }),
+        add: async data => { const id = newId(); await put(col, id, data); return { id }; },
+        onSnapshot: fn => { subs[col].push(fn); queueMicrotask(() => emit(col)); return () => { subs[col] = subs[col].filter(x => x !== fn); }; },
+      }),
+    };
+    async function shrink(file) {
+      // grosse Handyfotos auf max. 1600 px verkleinern, spart Platz und macht Sicherungen handlich
+      try {
+        const bmp = await createImageBitmap(file); const max = 1600; const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
+        if (k === 1 && file.size < 1.5e6) return file;
+        const c = Object.assign(document.createElement('canvas'), { width: Math.round(bmp.width * k), height: Math.round(bmp.height * k) });
+        c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+        return await new Promise(res => c.toBlob(b => res(b || file), 'image/jpeg', 0.85));
+      } catch { return file; }
+    }
+    const assets = {
+      upload: async file => {
+        if (!file.type?.startsWith('image/')) throw { code: 'unsupported_type' };
+        const blob = await shrink(file); const id = 'foto-' + newId();
+        await tx('photos', 'readwrite', t => t.objectStore('photos').put(blob, id));
+        PHOTO_URLS.set(id, URL.createObjectURL(blob));
+        return { id };
+      },
+      delete: async id => { await tx('photos', 'readwrite', t => t.objectStore('photos').delete(id)); const u = PHOTO_URLS.get(id); if (u) URL.revokeObjectURL(u); PHOTO_URLS.delete(id); },
+    };
+    return {
+      db, assets,
+      async init() {
+        idb = await open();
+        for (const col of COLS) for (const [id, v] of await getAll(col)) cache[col].set(id, v);
+        for (const [id, blob] of await getAll('photos')) PHOTO_URLS.set(id, URL.createObjectURL(blob));
+      },
+      allPhotos: () => getAll('photos'),
+      async replaceAll(cols, photos) {
+        await tx([...COLS, 'photos'], 'readwrite', t => {
+          for (const c of [...COLS, 'photos']) t.objectStore(c).clear();
+          for (const c of COLS) for (const d of cols[c]) { const { id, ...rest } = d; if (id) t.objectStore(c).put(clean(rest), String(id)); }
+          for (const [id, blob] of photos) t.objectStore('photos').put(blob, id);
+        });
+        for (const u of PHOTO_URLS.values()) URL.revokeObjectURL(u);
+        PHOTO_URLS.clear();
+        for (const [id, blob] of photos) PHOTO_URLS.set(id, URL.createObjectURL(blob));
+        for (const c of COLS) { cache[c].clear(); for (const d of cols[c]) { const { id, ...rest } = d; if (id) cache[c].set(String(id), clean(rest)); } emit(c); }
+      },
+    };
+  })();
+
+  // ---------- boot ----------
+  fromHash(); render();
+  (async () => {
+    try { await LOCAL.init(); }
+    catch (e) { console.error(e); app.innerHTML = `<div class="empty"><h3>Speicher nicht verfügbar</h3><p>Dieser Browser erlaubt der Uhrenbox keinen lokalen Speicher (z. B. im privaten Modus). Öffne sie in einem normalen Browserfenster.</p></div>`; return; }
+    try { navigator.storage?.persist?.(); } catch (e) {}
+    S.db = LOCAL.db; S.assets = LOCAL.assets;
+    const db = S.db;
+    db.collection('watches').onSnapshot(snap => {
+      S.watches = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      S.loaded.watches = true;
+      if (S.cmpSel) S.cmpSel = S.cmpSel.filter(id => W(id)).concat(S.watches.filter(w => !S.cmpSel.includes(w.id) && !S._seen?.has(w.id)).map(w => w.id));
+      S._seen = new Set(S.watches.map(w => w.id));
+      if (!S.editing && !S.creating && !S.mEditing) render(); else if (S.view === 'detail' && !S.editing) render();
+    });
+    db.collection('measurements').onSnapshot(snap => {
+      S.measurements = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      S.loaded.measurements = true;
+      if (!S.editing && !S.creating && !S.mEditing) render();
+    });
+    db.collection('wear').onSnapshot(snap => {
+      const w = {}; snap.docs.forEach(d => { const x = d.data(); if (Array.isArray(x.watches)) w[d.id] = x.watches; });
+      S.wear = w; S.loaded.wear = true;
+      if (!S.editing && !S.creating && !S.mEditing) render();
+    });
+  })();
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+
+</body></html>
