@@ -1,13 +1,16 @@
 {
+  "id": "/Uhrenbox/",
   "name": "Uhrenbox",
   "short_name": "Uhrenbox",
   "description": "Uhrensammlung mit Fotos, Messungen und Tragetagebuch. Alle Daten bleiben auf dem Gerät.",
   "lang": "de",
+  "dir": "ltr",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#EFEFEA",
-  "theme_color": "#1C1F22",
+  "theme_color": "#FBFBF8",
+  "categories": ["lifestyle", "utilities"],
   "icons": [
     {
       "src": "icon-192.png",
@@ -24,6 +27,38 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Messung erfassen",
+      "short_name": "Messung",
+      "description": "Neue Gangmessung eintragen",
+      "url": "./?aktion=messung",
+      "icons": [{ "src": "shortcut-messung.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
+      "name": "Heute getragen",
+      "short_name": "Tragen",
+      "description": "Im Tragetagebuch die Uhr von heute eintragen",
+      "url": "./?aktion=tragen",
+      "icons": [{ "src": "shortcut-tragen.png", "sizes": "96x96", "type": "image/png" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot-handy.png",
+      "sizes": "824x1830",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Sammlung am Handy"
+    },
+    {
+      "src": "screenshot-desktop.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Sammlung am Computer"
     }
   ]
 }

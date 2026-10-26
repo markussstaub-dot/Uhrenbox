@@ -3,9 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#1C1F22">
+<meta name="theme-color" content="#FBFBF8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1B1E21" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Uhrenbox">
 <title>Uhrenbox</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%23FBFBF8' stroke='%231C1F22' stroke-width='2.4'/%3E%3Cpath d='M16 16V7' stroke='%231C1F22' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M16 16l6 3' stroke='%23C4521E' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
@@ -247,6 +251,10 @@ fieldset { border: 0; padding: 0; margin: 0; display: contents; }
 [hidden] { display: none !important; }
 img { max-width: 100%; }
 .foot-note { text-align: center; color: var(--muted); font-size: 12.5px; padding: 0 16px 32px; }
+.foot-note .linkish { background: none; border: 0; padding: 0; color: var(--accent); text-decoration: underline; cursor: pointer; font-size: inherit; }
+.foot-note .warn-text { color: var(--warn); }
+.backup-due { display: flex; align-items: center; justify-content: space-between; gap: 10px 16px; flex-wrap: wrap; margin-bottom: 16px; color: var(--ink); border-left: 3px solid var(--warn); }
+.update { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 19; display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); padding: 8px 8px 8px 14px; border-radius: 10px; font-size: 14px; max-width: calc(100% - 32px); }
 </style>
 </head>
 <body>
@@ -275,7 +283,8 @@ img { max-width: 100%; }
 </main>
 <div id="toast" class="toast" hidden></div>
 <div id="lb" class="lb" hidden role="dialog" aria-modal="true" aria-label="Foto ansehen"></div>
-<p class="foot-note">Alle Daten bleiben auf diesem Gerät, in diesem Browser. Denk ab und zu an „Sichern“.</p>
+<div id="update" class="update" hidden role="status"><span>Neue Version der Uhrenbox ist da.</span><button class="btn small primary">Neu laden</button></div>
+<p class="foot-note" id="foot">Alle Daten bleiben auf diesem Gerät, in diesem Browser. Denk ab und zu an „Sichern“.</p>
 
 <script>
 (() => {
@@ -318,6 +327,57 @@ img { max-width: 100%; }
     else toast(`${what} fehlgeschlagen. Bitte noch einmal versuchen.`);
   }
   const photoErr = er => er?.code === 'unsupported_type' ? 'Dieses Bildformat geht nicht. Nimm JPG, PNG oder WebP.' : er?.code === 'too_large' ? 'Das Foto ist zu groß.' : 'Hochladen fehlgeschlagen. Bitte noch einmal versuchen.';
+
+  // ---------- Sicherungs-Status und Speicher (pro Gerät) ----------
+  // meta: { lastBackup: ISO, changes: Anzahl Änderungen seit der letzten Sicherung, snoozeUntil: ISO }
+  const META_KEY = 'uhrenbox.meta';
+  const meta = (() => { try { return JSON.parse(localStorage.getItem(META_KEY)) || {}; } catch { return {}; } })();
+  function saveMeta(patch) { Object.assign(meta, patch); try { localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch (e) {} }
+  const daysSince = iso => Math.floor((Date.now() - new Date(iso)) / 864e5);
+  const relDays = iso => { const n = daysSince(iso); return n <= 0 ? 'heute' : n === 1 ? 'gestern' : `vor ${n} Tagen`; };
+  const fmtBytes = n => n < 1e6 ? `${Math.max(1, Math.round(n / 1e3))} KB` : `${nf(n / 1e6, 1)} MB`;
+  const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const INSTALL = { prompt: null };   // gemerktes beforeinstallprompt-Ereignis
+
+  function backupDue() {
+    if (!S.watches.length) return false;
+    if (meta.snoozeUntil && new Date(meta.snoozeUntil) > new Date()) return false;
+    return !meta.lastBackup || daysSince(meta.lastBackup) >= 14 || (meta.changes || 0) >= 10;
+  }
+  function backupBanner() {
+    if (!backupDue()) return '';
+    const n = meta.changes || 0;
+    const why = meta.lastBackup ? `Letzte Sicherung ${relDays(meta.lastBackup)}${n ? `, seitdem ${n} Änderung${n === 1 ? '' : 'en'}` : ''}.` : 'Auf diesem Gerät gibt es noch keine Sicherung.';
+    return `<div class="notice backup-due" role="status"><span><b>Zeit zum Sichern.</b> ${why}</span><span class="actions"><button class="btn small primary" data-act="export">Jetzt sichern</button><button class="btn small ghost" data-act="snooze-backup">Später</button></span></div>`;
+  }
+  function noteChange() { saveMeta({ changes: (meta.changes || 0) + 1 }); scheduleStore(); }
+
+  async function refreshStore() {
+    try {
+      const st = navigator.storage;
+      S.store = { persisted: st?.persisted ? await st.persisted() : null, usage: st?.estimate ? (await st.estimate()).usage : null };
+    } catch { S.store = null; }
+    renderFoot();
+  }
+  let storeT;
+  function scheduleStore() { clearTimeout(storeT); storeT = setTimeout(refreshStore, 1500); }
+
+  function renderFoot() {
+    const el = document.getElementById('foot'); if (!el) return;
+    const st = S.store, parts = [];
+    if (st?.persisted === true) parts.push('Speicher dauerhaft ✓');
+    else if (st?.persisted === false) parts.push('<span class="warn-text">Speicher nicht dauerhaft</span>');
+    if (st?.usage) parts.push(`${fmtBytes(st.usage)} belegt`);
+    parts.push(meta.lastBackup ? `Letzte Sicherung ${relDays(meta.lastBackup)}` : 'Noch nie gesichert');
+    let html = parts.join(' · ');
+    if (!isStandalone()) {
+      if (INSTALL.prompt) html += ` · <button class="linkish" data-act="install">Als App installieren</button>`;
+      else if (isIOS()) html += `<br>Tipp: In Safari über <b>Teilen → Zum Home-Bildschirm</b> als App installieren.`;
+      if (st?.persisted === false) html += `<br>Als App installiert behält der Browser deine Daten zuverlässiger.`;
+    }
+    el.innerHTML = `${html}<br>Alle Daten bleiben auf diesem Gerät, in diesem Browser.`;
+  }
 
   // value of a measurement in the watch's tolerance unit
   function mValue(m, w) {
@@ -365,6 +425,7 @@ img { max-width: 100%; }
   // ---------- render ----------
   function render() {
     document.querySelectorAll('[data-nav]').forEach(b => b.setAttribute('aria-current', (b.dataset.nav === S.view || (S.view === 'detail' && b.dataset.nav === 'sammlung')) ? 'page' : 'false'));
+    renderFoot();
     if (!S.db) return;
     if (!S.loaded.watches) return;
     const v = S.view;
@@ -397,6 +458,7 @@ img { max-width: 100%; }
         <div><h2>Sammlung</h2><p>${owned.length} ${owned.length === 1 ? 'Uhr' : 'Uhren'} im Kasten${ws.length > owned.length ? `, ${ws.length - owned.length} bestellt` : ''}</p></div>
         <div class="actions"><button class="btn" data-act="export" title="Alle Uhren, Messungen, Tragetage und Fotos als Datei sichern">Sichern</button><label class="btn" for="import-in" title="Eine Sicherung wieder einlesen">Laden</label><input id="import-in" type="file" accept=".json,application/json" hidden>${S.canWrite ? `<button class="btn primary" data-act="new-watch">+ Uhr hinzufügen</button>` : ''}</div>
       </div>
+      ${backupBanner()}
       <div class="summary">
         <div><div class="label">Uhren</div><div class="big">${owned.length}</div><div class="sub">${mech} mechanisch, ${owned.length - mech} Quarz</div></div>
         <div><div class="label">Bekannter Kaufpreis</div><div class="big">${sum ? nf(sum, 0) + ' €' : '–'}</div><div class="sub">${priced.length} von ${owned.length} Preisen eingetragen</div></div>
@@ -824,11 +886,20 @@ img { max-width: 100%; }
       wear: Object.keys(S.wear).sort().map(d => ({ date: d, watches: S.wear[d] })),
       photos,
     };
-    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `uhrenbox-sicherung-${todayStr()}.json` });
+    const file = new File([JSON.stringify(data)], `uhrenbox-sicherung-${todayStr()}.json`, { type: 'application/json' });
+    // am Handy übers Teilen-Menü (OneDrive, Drive, Mail …), sonst als normaler Download
+    if (matchMedia('(pointer: coarse)').matches && navigator.canShare?.({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: 'Uhrenbox-Sicherung' }); return backupDone(); }
+      catch (er) { if (er?.name === 'AbortError') return toast('Sichern abgebrochen'); console.error(er); }
+    }
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(file), download: file.name });
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 10000);
-    toast('Sicherung gespeichert');
+    backupDone();
+  }
+  function backupDone() {
+    saveMeta({ lastBackup: new Date().toISOString(), changes: 0, snoozeUntil: null });
+    toast('Sicherung gespeichert'); render();
   }
   async function importJson(file) {
     let data;
@@ -844,6 +915,8 @@ img { max-width: 100%; }
         measurements: data.measurements || [],
         wear: (data.wear || []).map(x => ({ id: x.date, date: x.date, watches: x.watches })),
       }, photos);
+      saveMeta({ lastBackup: data.exportedAt || new Date().toISOString(), changes: 0 });   // Stand entspricht genau dieser Sicherung
+      scheduleStore();
       S.cmpSel = null; go('sammlung');
       toast(`${n} Uhr${n === 1 ? '' : 'en'} geladen`);
     } catch (er) { console.error(er); toast('Laden fehlgeschlagen.'); }
@@ -917,6 +990,13 @@ img { max-width: 100%; }
       case 'cancel-m': S.mEditing = null; render(); break;
       case 'diary-today': S.diaryDate = todayStr(); render(); break;
       case 'export': exportJson(); break;
+      case 'snooze-backup': saveMeta({ snoozeUntil: new Date(Date.now() + 3 * 864e5).toISOString() }); render(); break;
+      case 'install': {
+        const p = INSTALL.prompt; if (!p) break;
+        INSTALL.prompt = null; p.prompt();
+        try { await p.userChoice; } catch (e) {}
+        renderFoot(); break;
+      }
     }
   });
   document.addEventListener('keydown', e => {
@@ -1032,8 +1112,8 @@ img { max-width: 100%; }
     const getAll = store => new Promise((res, rej) => { const out = []; const r = idb.transaction(store).objectStore(store).openCursor(); r.onsuccess = () => { const c = r.result; if (c) { out.push([c.key, c.value]); c.continue(); } else res(out); }; r.onerror = () => rej(r.error); });
     const emit = col => { const snap = { docs: [...cache[col]].map(([id, v]) => ({ id, data: () => structuredClone(v) })) }; subs[col].forEach(fn => fn(snap)); };
     const clean = o => JSON.parse(JSON.stringify(o ?? {}));
-    async function put(col, id, data) { data = clean(data); delete data.id; await tx(col, 'readwrite', t => t.objectStore(col).put(data, id)); cache[col].set(id, data); emit(col); }
-    async function del(col, id) { await tx(col, 'readwrite', t => t.objectStore(col).delete(id)); cache[col].delete(id); emit(col); }
+    async function put(col, id, data) { data = clean(data); delete data.id; await tx(col, 'readwrite', t => t.objectStore(col).put(data, id)); cache[col].set(id, data); noteChange(); emit(col); }
+    async function del(col, id) { await tx(col, 'readwrite', t => t.objectStore(col).delete(id)); cache[col].delete(id); noteChange(); emit(col); }
     const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
     const db = {
       collection: col => ({
@@ -1088,12 +1168,43 @@ img { max-width: 100%; }
     };
   })();
 
+  // ---------- PWA: Installieren, Offline-Speicher, Updates ----------
+  addEventListener('beforeinstallprompt', e => { INSTALL.prompt = e; renderFoot(); });
+  addEventListener('appinstalled', () => { INSTALL.prompt = null; renderFoot(); toast('Uhrenbox ist jetzt als App installiert'); });
+  function setupSW() {
+    if (!('serviceWorker' in navigator) || !(location.protocol === 'https:' || location.hostname === 'localhost')) return;
+    let reloading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (reloading) location.reload(); });
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      // neue Version liegt bereit: erst auf Knopfdruck übernehmen, damit nichts Halbfertiges verloren geht
+      const offer = w => {
+        if (!w || !navigator.serviceWorker.controller) return;
+        const bar = document.getElementById('update'); bar.hidden = false;
+        bar.querySelector('button').onclick = () => { reloading = true; w.postMessage('skipWaiting'); };
+      };
+      offer(reg.waiting);
+      reg.addEventListener('updatefound', () => { const w = reg.installing; w?.addEventListener('statechange', () => { if (w.state === 'installed') offer(w); }); });
+      setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);   // bei langer Nutzung ab und zu nachsehen
+    }).catch(() => {});
+  }
+  // Kurzbefehle aus dem App-Icon (siehe manifest.webmanifest)
+  function runShortcut(act) {
+    if (act === 'messung') {
+      go('messungen');
+      if (S.canWrite && S.watches.length) { S.mEditing = { watchId: (S.watches.find(isMech) || S.watches[0]).id }; render(); }
+    } else if (act === 'tragen') go('tagebuch');
+  }
+
   // ---------- boot ----------
+  setupSW();
+  const shortcut = new URLSearchParams(location.search).get('aktion');
+  if (shortcut) { try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {} }
   fromHash(); render();
   (async () => {
     try { await LOCAL.init(); }
     catch (e) { console.error(e); app.innerHTML = `<div class="empty"><h3>Speicher nicht verfügbar</h3><p>Dieser Browser erlaubt der Uhrenbox keinen lokalen Speicher (z. B. im privaten Modus). Öffne sie in einem normalen Browserfenster.</p></div>`; return; }
-    try { navigator.storage?.persist?.(); } catch (e) {}
+    try { await navigator.storage?.persist?.(); } catch (e) {}
+    refreshStore();
     S.db = LOCAL.db; S.assets = LOCAL.assets;
     const db = S.db;
     db.collection('watches').onSnapshot(snap => {
@@ -1113,11 +1224,9 @@ img { max-width: 100%; }
       S.wear = w; S.loaded.wear = true;
       if (!S.editing && !S.creating && !S.mEditing) render();
     });
+    if (shortcut) queueMicrotask(() => runShortcut(shortcut));   // nach den ersten Snapshots
   })();
 })();
-</script>
-<script>
-if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 
 </body></html>
