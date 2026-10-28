@@ -31,6 +31,21 @@ Gang direkt in der Uhrenbox messen statt mit der App „Watch Accuracy Meter“.
 - **[Vorschlag]** Messung als vorhandene Art `kind: 'vergleich'` mit `deviation` (s) und `days`. Dazu neue, optionale Felder `method: 'tipp'`, `offStart`, `offEnd` (Abweichungen in s). Gangverlauf, Tabelle, Vergleich und ältere App-Versionen zeigen das ohne Änderung. Lage optional (`position`, Voreinstellung „Am Handgelenk“).
 - **[Vorschlag]** Der offene Startpunkt liegt an der Uhr: `tippStart: { at, offset }`. Damit ist er automatisch in „Sichern/Laden“, ohne neue Sammlung.
 
+### Variante „Gang per Foto“ (Idee 28.10.2026)
+
+- **[Vorschlag]** Statt im richtigen Moment zu tippen: Uhr oder Wecker **fotografieren**. Das Foto friert den Moment
+  ein, die Reaktionszeit fällt weg. Die App zeigt das Foto groß (zoombar) und schlägt die Handyzeit vor; der Nutzer
+  korrigiert auf die abgelesene Zeit **mit Sekunden**. Danach wie oben: erstes Foto = Startpunkt, jedes weitere eine
+  Messung gegen das vorige (Kette, `method: 'foto'`).
+- **[Vorschlag]** Genauigkeit: mit Sekundenzeiger ±0,5 s je Ablesung, über 7 Tage ≈ 0,15 s/Tag. Ohne Sekundenzeiger
+  ±15–30 s je Ablesung, dann nur über Wochen sinnvoll; die App sagt das dazu. Gut für Quarz, Wecker und den Gang am Arm.
+- **[fest]** Kein automatisches Ablesen der Zeiger: auf beliebigen Zifferblättern offline zu unsicher, Abtippen dauert
+  Sekunden. (Später allenfalls KI-Premium bzw. Digitalanzeigen.)
+- **[offen]** Zeitstempel: EXIF `DateTimeOriginal` (+ `SubSecTimeOriginal`) des Fotos, falls Chrome ihn beim Weiterreichen
+  an die Web-App behält; sonst `file.lastModified` bzw. Zeitpunkt der Ankunft in der App mit einmal ausgemessenem
+  Versatz. Am Fold prüfen.
+- **[Vorschlag]** Das Foto bleibt optional an der Messung (wie beim Wristcheck verkleinert), als Beleg.
+
 ### Nur am echten Handy prüfbar
 
 - Wie gut der Tipp auf dem Fold-Innendisplay trifft (Reaktionszeit, versehentliche Gesten).
