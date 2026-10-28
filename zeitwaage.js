@@ -262,12 +262,23 @@ export function analyse(samples, sr, opts = {}) {
   const hp = hochpass(samples, sr, o.hochpass), env = huellkurve(hp, sr, o.glaettung);
   const ds = verkleinern(env, sr);
   const fq = frequenz(ds.y, ds.sr, o.nurMech);
-  const bph = o.bph || fq.bph;
-  const { ticks, boden } = ticksFinden(env, sr, bph, o);
-  // Template-Matching (Stufe 4b): senkt die Streuung, verschiebt beim Quarz aber den Gang (30-s-Abschnitte +2,6…+6,6
-  // statt um 0), deshalb nur auf Wunsch
-  if (o.verfeinern) verfeinern(env, sr, ticks, bph);
-  const f = gerade(ticks);
+  const spur = b => {
+    const { ticks, boden } = ticksFinden(env, sr, b, o);
+    // Template-Matching (Stufe 4b): senkt die Streuung, verschiebt beim Quarz aber den Gang (30-s-Abschnitte +2,6…+6,6
+    // statt um 0), deshalb nur auf Wunsch
+    if (o.verfeinern) verfeinern(env, sr, ticks, b);
+    const f = gerade(ticks);
+    return { ticks, boden, f, guete: f ? f.genutzt.size / ticks.length : 0 };
+  };
+  let bph = o.bph || fq.bph, s = spur(bph);
+  // Gegenprobe Quarz (gefunden an Quarzuhren am Fold6, Güte nie über 20 %):Unter ≈ 20 s Aufnahme hält die Autokorrelation eine
+  // Quarzuhr oft für mechanisch (18.000 / 36.000), weil für die Spitze bei 1 s nur wenige Tick-Paare da sind. Dann passt
+  // höchstens jeder 5. bis 10. erwartete Tick, die Güte bleibt unter 20 %. Ist die Güte schlecht, mit 1 Tick/s nachrechnen.
+  if (!o.bph && !o.nurMech && bph !== QUARZ && s.guete < 0.5) {
+    const q = spur(QUARZ);
+    if (q.guete >= GUETE_MIN && q.guete > s.guete) { bph = QUARZ; s = q; fq.quarz = true; fq.gegenprobe = true; }
+  }
+  const { ticks, boden, f } = s;
   const erg = { sr, hp, env, ds, frequenz: fq, bph, ticks, boden, gefunden: ticks.filter(k => k.ok).length, erwartet: ticks.length };
   if (!f) return { ...erg, fehler: 'Zu wenige Ticks erkannt' };
   // Zeiten in Samples gerechnet: mit der kalibrierten Abtastrate in echte Sekunden umrechnen
