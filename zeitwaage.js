@@ -328,3 +328,66 @@ export function taktPpm(takt, sr) {
   const steigung = (n * sxy - sx * sy) / (n * sxx - sx * sx);   // Samples pro ms
   return (steigung * 1000 / sr - 1) * 1e6;
 }
+
+// ---------- Quarz: Faltung im bekannten Takt (Befund VH31, 28.10.2026) ----------
+// Schrittmotoren sind oft so leise, dass einzelne Ticks im Rauschen verschwinden. Ein Quarzwerk läuft aber so gleichmäßig,
+// dass man einige Sekunden im Soll-Takt übereinanderlegen kann (5 s bei 4 Schritten/s = 20 Schritte, Rauschen sinkt um
+// ≈ √20). Je Abschnitt: Lage der gefalteten Spitze gegen das Muster aller ANDEREN Abschnitte (sonst passt Rauschen immer
+// auf sich selbst), nur ±10 ms um die vorige Lage (Quarz driftet kaum, ein Schritt kann zwei ähnliche Teilgeräusche haben).
+// Gerade durch die Lagen: Steigung = Gang. Streuung der Lagen um die Gerade ist das Gütemaß.
+export function analyseQuarz(samples, sr, opts = {}) {
+  const o = { hochpass: 4000, abschnitt: 5, kalibPpm: 0, ...opts }, P = o.periode;
+  const env = huellkurve(hochpass(samples, sr, o.hochpass), sr, 0.3);
+  const dez = 4, er = sr / dez, e = new Float32Array(Math.floor(env.length / dez));
+  for (let i = 0; i < e.length; i++) e[i] = env[i * dez];
+  const pE = P * er, L = Math.floor(pE), seg = Math.round(o.abschnitt * er);
+  const falte = (von, bis) => { const f = new Float32Array(L); for (let i = von; i < bis; i++) f[Math.floor((i - von) % pE) % L] += e[i]; return f; };
+  const erg = { sr, bph: Math.round(3600 / P), frequenz: { bph: Math.round(3600 / P), bphRoh: 3600 / P, quarz: true }, gefunden: 0, erwartet: Math.floor(e.length / seg) };
+  if (erg.erwartet < 3) return { ...erg, fehler: 'Zu kurz für die Faltung' };
+  const ganz = falte(0, erg.erwartet * seg), w = Math.round(0.010 * er), punkte = [];
+  let vorher = null;
+  for (let a = 0; a < erg.erwartet; a++) {
+    const von = a * seg, f = falte(von, von + seg), off = von % pE, verschub = Math.round(off) % L;
+    const ohne = ganz.map((v, j) => v - f[((j - verschub) % L + L) % L]);
+    const k = new Float32Array(L);
+    for (let sh = 0; sh < L; sh++) { let q = 0; for (let j = 0; j < L; j++) q += ohne[(j + sh) % L] * f[j]; k[sh] = q; }
+    const erw = vorher == null ? null : ((off - vorher) % L + L) % L;
+    let best = -1;
+    for (let sh = 0; sh < L; sh++) {
+      const d = erw == null ? 0 : Math.min(Math.abs(sh - erw), L - Math.abs(sh - erw));
+      if (d <= (erw == null ? L : w) && (best < 0 || k[sh] > k[best])) best = sh;
+    }
+    const x = k[(best - 1 + L) % L], y = k[best], z = k[(best + 1) % L], fein = best + (x - z) / (2 * (x - 2 * y + z) || 1);
+    const ph = ((off - fein) % L + L) % L; vorher = ph;
+    punkte.push({ t: (von + seg / 2) / er, ms: ph / er * 1000 });
+  }
+  for (let i = 1; i < punkte.length; i++) {   // Lagen auswickeln (Sprung über das Periodenende)
+    while (punkte[i].ms - punkte[i - 1].ms > P * 500) punkte[i].ms -= P * 1000;
+    while (punkte[i].ms - punkte[i - 1].ms < -P * 500) punkte[i].ms += P * 1000;
+  }
+  const n = punkte.length, mt = punkte.reduce((q, p) => q + p.t, 0) / n, mm = punkte.reduce((q, p) => q + p.ms, 0) / n;
+  const steig = punkte.reduce((q, p) => q + (p.t - mt) * (p.ms - mm), 0) / punkte.reduce((q, p) => q + (p.t - mt) ** 2, 0);   // ms je s
+  const rest = p => p.ms - (mm + steig * (p.t - mt));
+  const streuung = Math.sqrt(punkte.reduce((q, p) => q + rest(p) ** 2, 0) / n);
+  // Lage wandert zu späteren Zeiten = Uhr geht nach; Kalibrierung wie in analyse(): echte Sekunden sind um ppm länger
+  const gang = -steig / 1000 * 86400 + o.kalibPpm * 0.0864;
+  const gut = punkte.filter(p => Math.abs(rest(p)) < 1);
+  const ms0 = punkte[0].ms;
+  return { ...erg, gang, abfall: null, streuung, guete: gut.length / n, gefunden: gut.length, faltung: true,
+    streifen: punkte.map(p => ({ t: p.t, ms: p.ms - ms0, n: 0, genutzt: Math.abs(rest(p)) < 1 })) };
+}
+
+// ---------- Kaliber: welcher Takt ist zu erwarten? ----------
+// Schlüssel ist das Kaliber (Uhrenfeld „Kaliber“), nicht die Werk-Art: Daraus folgt, welche Ticks wie oft kommen sollten.
+// Erste Einträge aus der eigenen Sammlung, am Fold6 gemessen bzw. mit den Werten des Nutzers.
+export const KALIBER = [
+  { muster: /^nh3[56]/, name: 'Seiko NH35/NH36', art: 'Automatik', bph: 21600, hebung: 53 },
+  { muster: /^2824|^pt5000/, name: 'ETA 2824 / PT5000', art: 'Automatik', bph: 28800, hebung: 50 },
+  { muster: /^st2130/, name: 'Sea-Gull ST2130', art: 'Automatik', bph: 28800, hebung: 50 },
+  { muster: /^vh31/, name: 'Seiko VH31', art: 'Quarz', periode: 0.25 },   // 4 Schritte/s, sehr leise: nur per Faltung
+  { muster: /^vk63/, name: 'Seiko VK63', art: 'Mecaquartz', nichtHoerbar: true },
+];
+export function kaliber(text) {
+  const s = String(text || '').toLowerCase().replace(/[^a-z0-9]/g, '').replace(/^(seiko|eta|seagull|tianjin|caliber|kaliber|cal)+/, '');
+  return s ? KALIBER.find(k => k.muster.test(s)) || null : null;
+}

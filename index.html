@@ -942,13 +942,18 @@ img { max-width: 100%; }
   const medianOf = a => { const s = a.filter(v => v != null && isFinite(v)).sort((x, y) => x - y); return s.length ? s[s.length >> 1] : null; };
   const deN = (v, d = 1) => v == null ? '–' : Number(v).toLocaleString('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d });
   const sgn = (v, d = 1) => v == null ? '–' : (v >= 0 ? '+' : '−') + deN(Math.abs(v), d);
-  const bphTxt = b => b === 3600 ? 'Quarz (1 Tick/s)' : `${nf(b, 0)} A/h`;
+  const bphTxt = b => b === 3600 ? 'Quarz (1 Tick/s)' : b === 14400 ? 'Quarz (4 Schritte/s)' : `${nf(b, 0)} A/h`;
 
-  // Frequenz aus der Uhr, Rangfolge laut Spec: von Hand (Erweitert) → A/h an der Uhr → Werk-Art → erkennen
+  // Frequenz aus der Uhr, Rangfolge laut Spec: von Hand (Erweitert) → A/h an der Uhr → Kaliber → Werk-Art → erkennen
   function zwFreq(z) {
     const w = z.w;
     if (z.manual) return { bph: z.manual, how: 'von Hand gewählt' };
     if (w?.bph) return { bph: w.bph, how: 'an der Uhr eingetragen', check: true };
+    // Das Kaliber sagt, welche Ticks wie oft kommen sollten (VH31: 4 leise Schritte/s → Faltung statt Tick-Suche)
+    const k = z.lib.kaliber(w?.movement);
+    if (k?.nichtHoerbar) return { bph: null, stumm: true, how: `Kaliber ${k.name}` };
+    if (k?.periode) return { bph: Math.round(3600 / k.periode), periode: k.periode, how: `Kaliber ${k.name}` };
+    if (k?.bph) return { bph: k.bph, how: `Kaliber ${k.name}`, check: true };
     if (w?.movementKind && !isMech(w)) return { bph: 3600, how: `Werk-Art ${w.movementKind}` };
     if (isMech(w)) return { bph: null, nurMech: true, how: 'mechanisch, wird erkannt' };
     return { bph: null, how: 'wird erkannt' };
@@ -999,9 +1004,9 @@ img { max-width: 100%; }
     $('zw-go').textContent = z.run ? 'Stoppen' : z.last ? 'Neu starten' : 'Messung starten';
     $('zw-take').disabled = !g.length;
     $('zw-wav').disabled = !(z.run || z.rest)?.gesamt;
-    $('zw-msg').innerHTML = z.msg;
+    $('zw-msg').innerHTML = (zwFreq(z).stumm ? `<p class="notice warn" style="margin:0">${esc(zwFreq(z).how)} ist mit dem Handymikrofon nicht hörbar (am Fold6 gemessen). Zuverlässiger: „Abgleich mit Funkuhr“.</p>` : '') + z.msg;
     const box = (wert, text, cls = '') => `<div class="val ${cls}"><b>${wert}</b><span>${text}</span></div>`;
-    const ruhig = g.length >= 3 ? medianOf(g.map(x => x.gang)) : null, quarz = r?.bph === 3600;
+    const ruhig = g.length >= 3 ? medianOf(g.map(x => x.gang)) : null, quarz = r?.bph === 3600 || !!r?.faltung;
     let html = box(ruhig != null ? sgn(ruhig) : '–', `s/Tag ruhiger Wert${g.length >= 3 ? ` (Median der letzten ${g.length} guten Messungen)` : ', nach 3 guten Messungen'}`, 'big');
     if (r && !r.fehler) {
       const bad = z.lib.unsicher(r);
@@ -1010,7 +1015,8 @@ img { max-width: 100%; }
         + box(`${deN(r.guete * 100, 0)} %`, `Güte · Streuung ${deN(r.streuung, 2)} ms`, bad ? 'off' : '')
         + box(bphTxt(r.bph), `gehört: ${r.frequenz.quarz ? 'Quarz' : nf(r.frequenz.bph, 0) + ' A/h'}`);
       if (z.w?.liftAngle && !quarz) html += box(r.amplitude ? `${deN(medianOf(g.map(x => x.amplitude)) ?? r.amplitude, 0)}°` : '–', `Amplitude (L ${nf(z.w.liftAngle, 0)}°), experimentell`);
-      if (bad) html += `<p class="notice warn" style="margin:0;grid-column:1/-1">Unsicher (Störung? zu leise?): Güte ${deN(r.guete * 100, 0)} %, Streuung ${deN(r.streuung, 2)} ms. Der Wert zählt nicht.</p>`;
+      if (r.gestoert) html += `<p class="notice warn" style="margin:0;grid-column:1/-1">Aufnahme gestört: Der Handy-Takt weicht um ${sgn(r.ppm, 0)} ppm ab (Bildschirm aus oder Aussetzer). Display anlassen und neu starten.</p>`;
+      else if (bad) html += `<p class="notice warn" style="margin:0;grid-column:1/-1">Unsicher (Störung? zu leise?): Güte ${deN(r.guete * 100, 0)} %, Streuung ${deN(r.streuung, 2)} ms. Der Wert zählt nicht.</p>`;
     } else if (r?.fehler) html += `<p class="notice warn" style="margin:0;grid-column:1/-1">${esc(r.fehler)} (${r.gefunden}/${r.erwartet}). Uhr direkt aufs Mikrofon legen, leiser Raum.</p>`;
     $('zw-vals').innerHTML = html;
     zwStrip(r);
@@ -1062,7 +1068,7 @@ img { max-width: 100%; }
       quelle.connect(node);   // nicht an die Lautsprecher, sonst Rückkopplung
       quelle.start?.();
       const sr = ctx.sampleRate, ring = new Float32Array(sr * 120);
-      const run = z.run = { stream, ctx, quelle, sr, ring, pos: 0, gesamt: 0, seit: 2 * sr, takt: [] };
+      const run = z.run = { stream, ctx, quelle, sr, ring, pos: 0, gesamt: 0, seit: 2 * sr, takt: [], test: !!test };
       node.port.onmessage = ({ data: { k, t, f } }) => {
         for (const v of k) { ring[run.pos] = v; run.pos = (run.pos + 1) % ring.length; } run.gesamt += k.length;
         if (f > 5 * sr && (!run.takt.length || t - run.takt.at(-1)[0] >= 1000)) run.takt.push([t, f]);
@@ -1101,15 +1107,20 @@ img { max-width: 100%; }
     if (da < 4) return zwShow(da < 0 ? 'Uhr liegt still …' : `nimmt auf … ${deN(da, 0)} s`);
     // Quarz: 1 Tick pro Sekunde, deshalb bis zu 2 min auswerten (Genauigkeit wächst mit Dauer^1,5); ebenso mechanisch,
     // wenn die Ticks über 20 s mäßig stark streuen (Co-Axial: 0,9–1,5 ms, Tick und Tack klingen verschieden)
-    const quarz = (f.bph ?? z.last?.bph) === 3600, fenster = quarz || z.lang ? 120 : 20;
+    const quarz = !!f.periode || (f.bph ?? z.last?.bph) === 3600, fenster = quarz || z.lang ? 120 : 20;
     const n = Math.round(Math.min(fenster, da) * sr), samples = new Float32Array(n);
     for (let i = 0; i < n; i++) samples[i] = run.ring[(run.pos - n + i + run.ring.length) % run.ring.length];
-    const r = lib.analyse(samples, sr, { bph: f.bph, nurMech: f.nurMech, hebung: z.w?.liftAngle || 52, kalibPpm: z.calib, verwerfen: 0 });
+    const r = f.periode ? lib.analyseQuarz(samples, sr, { periode: f.periode, kalibPpm: z.calib })
+      : lib.analyse(samples, sr, { bph: f.bph, nurMech: f.nurMech, hebung: z.w?.liftAngle || 52, kalibPpm: z.calib, verwerfen: 0 });
     delete r.hp; delete r.env; delete r.ds;   // große Puffer nicht festhalten
     z.last = r;
     // Quarz: unter 2 min schwankt der Gang noch um mehrere s/Tag (Prototyp: 60 s → +2,5…+8,5), deshalb erst dann zählen
-    r.vorlaeufig = r.bph === 3600 && n / sr < 110;
-    const bad = !r.fehler && (lib.unsicher(r) || r.vorlaeufig);
+    r.vorlaeufig = (r.bph === 3600 || !!r.faltung) && n / sr < 110;
+    // Takt-Wächter: Bei Bildschirm aus liefert Android das Audio lückenhaft, die Aufnahme sieht aber normal aus (Befund
+    // 28.10.2026: −382 ppm und ein Schein-Takt). Weicht der Takt gegen die Systemuhr um mehr als 20 ppm ab, zählt nichts.
+    const ppm = lib.taktPpm(run.takt, sr);
+    r.ppm = ppm; r.gestoert = !run.test && ppm != null && Math.abs(ppm) > 20;   // Testmodus: Takt der PC-Soundkarte, ohne Aussage
+    const bad = !r.fehler && (lib.unsicher(r) || r.vorlaeufig || r.gestoert);
     // Amplitude ist experimentell (M3): nur glaubhafte Werte, sonst lieber keine (Teilgeräusche oft nicht getrennt hörbar)
     if (!(r.amplitude >= 150 && r.amplitude <= 360)) r.amplitude = null;
     if (!r.fehler && !bad) z.gute = [...z.gute, { gang: r.gang, abfall: r.abfall, amplitude: r.amplitude, guete: r.guete, bph: r.bph }].slice(-5);
@@ -1122,7 +1133,6 @@ img { max-width: 100%; }
     else if (!f.bph && z.gute.length && !z.saved && z.w)
       z.msg = `<p class="notice" style="margin:0">Erkannt: ${bphTxt(r.bph)}. <button class="btn small" data-act="zw-save-bph" data-bph="${r.bph}">${r.bph === 3600 ? 'Als Quarzwerk an der Uhr speichern' : 'An der Uhr speichern'}</button></p>`;
     else if (!z.saved) z.msg = '';
-    const ppm = lib.taktPpm(run.takt, sr);
     zwShow(`live · ${deN(n / sr, 0)} s ausgewertet${quarz ? ' (bis 120 s)' : z.lang ? ' (Streuung hoch: bis 120 s)' : ''}${ppm != null ? ` · Handy-Takt ${sgn(ppm, 0)} ppm` : ''}`);
   }
 
@@ -1409,6 +1419,14 @@ img { max-width: 100%; }
       if (t.id === 'zw-bph') { z.manual = t.value ? Number(t.value) : null; z.msg = ''; renderZw(); if (z.run) zwStart(); }
       if (t.id === 'zw-dev') { z.devId = t.value; if (z.run) zwStart(); }
       return;
+    }
+    if (t.id === 'wf-movement') {   // Kaliber bekannt → Werk-Art, A/h und Hebungswinkel vorbelegen
+      const k = (S.zwLib ||= await import('./zeitwaage.js').catch(() => null))?.kaliber(t.value), el = t.form.elements;
+      if (!k) return;
+      if (k.art) el.movementKind.value = k.art;
+      if (k.bph && !el.bph.value) el.bph.value = k.bph;
+      if (k.hebung && !el.liftAngle.value) el.liftAngle.value = k.hebung;
+      return toast(`${k.name}: ${[k.art, k.bph && nf(k.bph, 0) + ' A/h', k.periode && `${1 / k.periode} Schritte/s`, k.hebung && `Hebungswinkel ${k.hebung}°`, k.nichtHoerbar && 'akustisch nicht messbar'].filter(Boolean).join(', ')}`);
     }
     if (t.id === 'import-in') { const f = t.files?.[0]; t.value = ''; if (f) importJson(f); return; }
     if (t.id === 'wc-cam' || t.id === 'wc-gal') { const f = t.files?.[0]; t.value = ''; return wcPhoto(f); }
