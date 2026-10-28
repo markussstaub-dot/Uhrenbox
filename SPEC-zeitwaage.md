@@ -151,6 +151,37 @@ Erkenntnisse, die in die Umsetzung gehören:
 - Testschalter am PC: `?zwtest=<WAV-Pfad>` spielt eine Aufnahme statt des Mikrofons ein (gleicher Weg ab dem Worklet).
 - Noch offen: Kalibrier-Oberfläche (Takt gegen Systemzeit, 15–30 min), Live-Test am Fold6 über GitHub Pages.
 
+### Befund Quarz am Fold6 (28.10.2026, abends, per USB mit dem Labor)
+
+- **Mechanisch ≈ „Watch Accuracy Meter“**: Markus hat mehrere mechanische Uhren mit beiden Apps gemessen, die Werte
+  sind fast identisch.
+- **Quarz als 18.000 erkannt, Güte nie über 20 %**: Unter ≈ 20 s reicht die Autokorrelation nicht für den
+  Quarz-Nachweis. Abhilfe Gegenprobe mit 1 Tick/s bei Güte < 50 % (in `zeitwaage.js`, Test „Quarz in kurzen Fenstern“).
+- **Mecaquartz tickt nicht sicher einmal pro Sekunde.** Die App setzt Mecaquartz heute mit 1 Tick/s gleich, das ist
+  falsch, sobald keine laufende kleine Sekunde da ist bzw. der Chrono läuft.
+- **Seiko VH31**: macht **4 Schritte/s** (Takt 250 ms), extrem leise (Spitze 0,001–0,002, Moonswatch 0,27), nur über
+  4 kHz. Tick für Tick nicht zu finden (Güte < 5 %). Mit **Faltung** (5-s-Abschnitte = 20 Schritte im Soll-Takt
+  übereinanderlegen, Lage der Spitze je Abschnitt, Gerade) Phasenstreuung 0,36 ms, Gang ≈ +0,5 s/Tag. Gegenprobe:
+  falsche Perioden 2,7–5,6 ms, ohne Uhr 8,2 ms. Flach aufgelegt besser als angedrückt (Griffgeräusche).
+- **Seiko VK63** (Chrono gestoppt): mit dem Handymikrofon **nicht hörbar** (Spitze 0,0005, kein Takt bei keiner Periode).
+- **Moonswatch** per Faltung: Gang ≈ +7 … +8,5 s/Tag, sehr gleichmäßig. Ob die Uhr wirklich so vorgeht, klärt erst
+  eine Tipp-Messung über Tage (M1).
+- **Display aus macht Aufnahmen unbrauchbar, unauffällig**: Mit schlafendem Handy zeigte die Takt-Messung −382 ppm und
+  die Aufnahme einen exakt 250 ms periodischen Schein-Takt. Auch einmal mit Display an −1161 ppm (Ursache unklar, die
+  WAV hatte keine erkennbaren Lücken).
+- **[Vorschlag]** Eigenes Quarz-Verfahren: Faltung im bekannten Takt statt Tick-Suche; Muster ohne den jeweiligen
+  Abschnitt bilden (sonst passt Rauschen auf sich selbst und täuscht Präzision vor); schmales Suchfenster (±10 ms)
+  von Abschnitt zu Abschnitt; Hochpass 4 kHz für leise Schrittmotoren prüfen; Quarz-Takte 1/s und 4/s.
+  Versuchsskripte: `zeitwaage-labor/quarz-falten.mjs`, `quarz-takt.mjs`, `quarz-profil.mjs`, `quarz-luecken.mjs`.
+- **[Vorschlag]** Takt-Wächter in der App: Weicht die Takt-Messung um mehr als ≈ 20 ppm ab, Messung als gestört
+  markieren („Bildschirm war aus oder Aufnahme hatte Aussetzer“).
+- **[Vorschlag]** Mecaquartz und nicht hörbare Quarzwerke: klarer Hinweis im Messfenster „akustisch nicht messbar,
+  ‚Abgleich mit Funkuhr‘ nutzen“ statt Messung mit falschem Takt.
+- **[offen]** Werk-Art reicht nicht als Schlüssel (VH31 vs. normaler Quarz vs. Mecaquartz); Takt aus dem Kaliber oder
+  ein Feld „Schritte pro Sekunde“?
+- Aufnahmen: `aufnahmen/2026-10-28-fold6-vh31.wav` (gut), `-vh31-angedrueckt.wav`, `-vh31-display-aus.wav` (gestört),
+  `-vk63.wav`, `-ohne-uhr.wav` (Kontrolle).
+
 ## M3 „Amplitude“ (Stufe danach)
 
 - **[fest]** Amplitude braucht den **Hebungswinkel** L des Kalibers (oft 50–53°) und die **drei Teilgeräusche** eines
