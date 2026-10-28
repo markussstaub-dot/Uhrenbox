@@ -246,6 +246,23 @@ fieldset { border: 0; padding: 0; margin: 0; display: contents; }
 .wc .sugg .nm { font-weight: 600; font-size: 13.5px; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wc .sugg .why { font-size: 11.5px; line-height: 1.25; color: var(--muted); }
 .wc .sugg .tag { position: absolute; top: 9px; left: 9px; background: var(--accent); color: var(--accent-ink); font-size: 11px; font-weight: 600; border-radius: 999px; padding: 1px 7px; }
+/* Zeitwaage: Vollbild-Messfenster über dem Formular */
+.zw { position: fixed; inset: 0; z-index: 26; background: var(--surface); overflow: auto; }
+.zw .in { max-width: 560px; margin: 0 auto; min-height: 100%; display: flex; flex-direction: column; gap: 12px;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.zw .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.zw .actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.zw .vals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.zw .val { background: var(--sunk); border-radius: 8px; padding: 8px 10px; min-width: 0; }
+.zw .val b { display: block; font-family: var(--f-mono); font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.zw .val span { display: block; font-size: 12.5px; color: var(--muted); line-height: 1.3; }
+.zw .val.big { grid-column: 1 / -1; } .zw .val.big b { font-size: 44px; line-height: 1.1; }
+.zw .val.off b { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
+.zw .warn { border-left: 3px solid var(--warn); color: var(--ink); }
+.zw canvas { width: 100%; height: 170px; display: block; background: var(--sunk); border-radius: 8px; }
+.zw details summary { cursor: pointer; color: var(--muted); font-size: 13.5px; }
+.zw .foot { display: flex; gap: 8px; margin-top: auto; padding-top: 4px; }
+.zw .foot .btn { flex: 1; justify-content: center; padding: 11px 12px; font-size: 15px; }
 .wd-labels { display: grid; grid-template-rows: 14px repeat(7, 16px); gap: 3px; font-size: 10.5px; color: var(--muted); font-family: var(--f-mono); }
 .cal-row { display: flex; gap: 6px; }
 .bars { display: flex; flex-direction: column; gap: 8px; }
@@ -305,6 +322,7 @@ img { max-width: 100%; }
 <div id="toast" class="toast" hidden></div>
 <div id="lb" class="lb" hidden role="dialog" aria-modal="true" aria-label="Foto ansehen"></div>
 <div id="wc" class="wc" hidden></div>
+<div id="zw" class="zw" hidden role="dialog" aria-modal="true" aria-label="Zeitwaage"></div>
 <!-- Wristcheck: capture öffnet am Handy direkt die Rückkamera, die zweite Auswahl erlaubt ein schon gemachtes Foto -->
 <input id="wc-cam" type="file" accept="image/*" capture="environment" hidden>
 <input id="wc-gal" type="file" accept="image/*" hidden>
@@ -319,6 +337,7 @@ img { max-width: 100%; }
     watches: [], measurements: [], wear: {},   // wear: { 'YYYY-MM-DD': [ids] }
     wearShots: {},   // Fotos zum Tragetag: { 'YYYY-MM-DD': { uhrId: fotoId } }
     wc: null,        // Wristcheck offen: { blob, url, list, busy }
+    zw: null,        // Zeitwaage-Messfenster offen (Mikrofon, Live-Werte)
     loaded: { watches: false, measurements: false, wear: false },
     view: 'sammlung', detailId: null, editing: false, creating: false,
     filter: 'alle', mFilter: 'alle', diaryDate: todayStr(), statRange: '90',
@@ -563,7 +582,7 @@ img { max-width: 100%; }
             ${f('waterM', 'Wasserdicht', w.waterM ? nf(w.waterM, 0) + ' m' : null)}${f('crystal', 'Glas')}${f('crown', 'Krone')}${f('lume', 'Leuchtmasse')}${f('weight', 'Gewicht')}
           </dl></section>
           <section class="panel"><h3>Werk</h3><dl class="facts">
-            ${f('movement', 'Kaliber')}${f('movementKind', 'Art')}${f('bph', 'Frequenz', w.bph ? nf(w.bph, 0) + ' A/h' : null)}${f('tol', 'Toleranz', tol)}
+            ${f('movement', 'Kaliber')}${f('movementKind', 'Art')}${f('bph', 'Frequenz', w.bph ? nf(w.bph, 0) + ' A/h' : null)}${w.liftAngle ? f('liftAngle', 'Hebungswinkel', nf(w.liftAngle, 0) + '°') : ''}${f('tol', 'Toleranz', tol)}
           </dl></section>
           <section class="panel"><h3>Band</h3><dl class="facts">${f('strap', 'Aktuell')}${f('strapExtra', 'Weitere')}</dl></section>
           <section class="panel">
@@ -702,7 +721,7 @@ img { max-width: 100%; }
         return `<tr>
           <td class="mono" style="white-space:nowrap">${fmtDT(m.at)}</td>
           ${withWatch ? `<td><a href="#uhr-${esc(m.watchId)}" data-open="${esc(m.watchId)}"><span class="dot" style="background:${esc(w?.color || 'var(--muted)')};margin-right:6px"></span>${esc(w?.name || '?')}</a></td>` : ''}
-          <td>${m.kind === 'waage' ? esc(m.position || '–') : `${nf(m.days, 1) ?? '–'} Tage, ${signed(m.deviation)} s`}</td>
+          <td>${m.kind === 'waage' ? esc(m.position || '–') + (m.method === 'mikro' ? ' <span title="per Mikrofon gemessen">🎙</span>' : '') : `${nf(m.days, 1) ?? '–'} Tage, ${signed(m.deviation)} s`}</td>
           <td class="num mono state-${st}">${v != null ? signed(v) + ' ' + esc(unitOf(m, w)) : '–'}</td>
           <td class="num mono">${m.amplitude != null ? nf(m.amplitude, 0) + '°' : '–'}</td>
           <td class="num mono">${m.beatError != null ? nf(m.beatError, 1) + ' ms' : '–'}</td>
@@ -716,16 +735,17 @@ img { max-width: 100%; }
     const w = W(m.watchId);
     const kind = m.kind || (isMech(w) ? 'waage' : 'vergleich');
     const sel = (v, o) => v === o ? 'selected' : '';
-    const positions = ['Zifferblatt oben', 'Zifferblatt unten', 'Krone unten', 'Krone oben', 'Krone links', 'Krone rechts', 'Am Handgelenk'];
+    const positions = POSITIONS;
     return `<form class="grid-form" data-form="measure" style="background:var(--sunk);padding:12px;border-radius:8px">
       <div class="field"><label for="m-watch">Uhr</label><select id="m-watch" name="watchId">${[...S.watches].sort(byNr).map(x => `<option value="${esc(x.id)}" ${sel(x.id, m.watchId)}>${x.nr ?? ''} · ${esc(x.name)}</option>`).join('')}</select></div>
       <div class="field"><label for="m-kind">Art</label><select id="m-kind" name="kind"><option value="waage" ${sel(kind, 'waage')}>Zeitwaage</option><option value="vergleich" ${sel(kind, 'vergleich')}>Abgleich mit Funkuhr</option></select></div>
       <div class="field"><label for="m-at">Zeitpunkt</label><input id="m-at" type="datetime-local" name="at" value="${esc((m.at || new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString()).slice(0, 16))}" required></div>
       ${kind === 'waage' ? `
+        <div class="field wide"><div class="actions"><button type="button" class="btn" data-act="zw-open">🎙 Mit dem Mikrofon messen</button>${m.method === 'mikro' ? `<span class="muted" style="font-size:12.5px">Per Mikrofon gemessen${m.dur ? `, ${m.dur} s` : ''}${m.quality != null ? `, Güte ${nf(m.quality * 100, 0)} %` : ''}${m.calibPpm ? '' : ', Handy-Takt nicht kalibriert'}</span>` : ''}</div></div>
         <div class="field"><label for="m-pos">Lage</label><select id="m-pos" name="position">${positions.map(p => `<option ${sel(p, m.position || 'Zifferblatt oben')}>${p}</option>`).join('')}</select></div>
         <div class="field"><label for="m-rate">Gang (s/Tag)</label><input id="m-rate" type="number" step="0.1" name="rate" value="${m.rate ?? ''}" placeholder="+15" required></div>
         <div class="field"><label for="m-amp">Amplitude (°)</label><input id="m-amp" type="number" step="1" name="amplitude" value="${m.amplitude ?? ''}" placeholder="270"></div>
-        <div class="field"><label for="m-be">Abfallfehler (ms)</label><input id="m-be" type="number" step="0.1" min="0" name="beatError" value="${m.beatError ?? ''}" placeholder="0,4"></div>
+        <div class="field"><label for="m-be">Abfallfehler (ms)</label><input id="m-be" type="number" step="0.01" min="0" name="beatError" value="${m.beatError ?? ''}" placeholder="0,4"></div>
         <div class="field"><label for="m-bph">Frequenz (A/h)</label><input id="m-bph" type="number" step="1" name="bph" value="${m.bph ?? w?.bph ?? ''}"></div>`
       : `
         <div class="field"><label for="m-dev">Abweichung (s)</label><input id="m-dev" type="number" step="0.1" name="deviation" value="${m.deviation ?? ''}" placeholder="+4" required></div>
@@ -911,6 +931,226 @@ img { max-width: 100%; }
     `;
   }
 
+  // ---------- Zeitwaage: Gang per Mikrofon (SPEC-zeitwaage.md, M2) ----------
+  // Vollbild-Fenster über dem Messungs-Formular. Die Auswertung (zeitwaage.js) wird erst hier geladen.
+  // Ablauf: Mikrofon → AudioWorklet → Ringpuffer (2 min) → alle 2 s die letzten 20 s (Quarz: 120 s) auswerten.
+  // Testschalter für den Browser am PC: ?zwtest=<WAV-Pfad> spielt eine Aufnahme statt des Mikrofons ein.
+  const POSITIONS = ['Zifferblatt oben', 'Zifferblatt unten', 'Krone unten', 'Krone oben', 'Krone links', 'Krone rechts', 'Am Handgelenk'];
+  const ZW_KEY = 'uhrenbox.zeitwaage';   // Geräte-Einstellungen (nicht in der Sicherung): { calibPpm }
+  const medianOf = a => { const s = a.filter(v => v != null && isFinite(v)).sort((x, y) => x - y); return s.length ? s[s.length >> 1] : null; };
+  const deN = (v, d = 1) => v == null ? '–' : Number(v).toLocaleString('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d });
+  const sgn = (v, d = 1) => v == null ? '–' : (v >= 0 ? '+' : '−') + deN(Math.abs(v), d);
+  const bphTxt = b => b === 3600 ? 'Quarz (1 Tick/s)' : `${nf(b, 0)} A/h`;
+
+  // Frequenz aus der Uhr, Rangfolge laut Spec: von Hand (Erweitert) → A/h an der Uhr → Werk-Art → erkennen
+  function zwFreq(z) {
+    const w = z.w;
+    if (z.manual) return { bph: z.manual, how: 'von Hand gewählt' };
+    if (w?.bph) return { bph: w.bph, how: 'an der Uhr eingetragen', check: true };
+    if (w?.movementKind && !isMech(w)) return { bph: 3600, how: `Werk-Art ${w.movementKind}` };
+    if (isMech(w)) return { bph: null, nurMech: true, how: 'mechanisch, wird erkannt' };
+    return { bph: null, how: 'wird erkannt' };
+  }
+
+  async function openZw(form) {
+    const w = W(form.elements.watchId.value);
+    let lib;
+    try { lib = S.zwLib ||= await import('./zeitwaage.js'); }
+    catch (er) { console.error(er); return toast('Zeitwaage konnte nicht geladen werden. Einmal mit Netz öffnen, dann geht sie offline.'); }
+    let calib = 0; try { calib = Number(JSON.parse(localStorage.getItem(ZW_KEY))?.calibPpm) || 0; } catch (e) {}
+    S.zw = { w, lib, pos: form.elements.position?.value || POSITIONS[0], calib, manual: null, devId: null, devs: [], run: null,
+      gute: [], hoer: [], unruhig: 0, lang: false, last: null, msg: '', saved: false };
+    document.body.style.overflow = 'hidden';
+    renderZw();
+  }
+  function closeZw() { zwStop(); S.zw = null; document.body.style.overflow = ''; renderZw(); }
+
+  function renderZw() {
+    const el = document.getElementById('zw'), z = S.zw;
+    el.hidden = !z; if (!z) { el.innerHTML = ''; return; }
+    const f = zwFreq(z), opt = (v, l, s) => `<option value="${v}" ${s ? 'selected' : ''}>${l}</option>`;
+    el.innerHTML = `<div class="in">
+      <div class="head"><h2>Zeitwaage</h2><button class="btn ghost" data-act="zw-close" aria-label="Schließen">✕</button></div>
+      <p class="muted" style="margin:0">${esc(watchLabel(z.w))} · Frequenz <span id="zw-fq">${f.bph ? bphTxt(f.bph) + ', ' : ''}${esc(f.how)}</span></p>
+      <div class="field"><label for="zw-pos">Lage</label><select id="zw-pos">${POSITIONS.map(p => opt(esc(p), esc(p), p === z.pos)).join('')}</select></div>
+      <p class="notice" style="margin:0">Uhr mit dem Boden aufs Mikrofon legen (unten am Handy), weiche Unterlage, stiller Raum. Die ersten 2 s nach dem Auflegen zählen nicht.</p>
+      <div class="actions"><button class="btn primary" data-act="zw-go" id="zw-go"></button><span id="zw-status" class="muted" role="status" style="font-size:13.5px"></span></div>
+      <div id="zw-msg"></div>
+      <div class="vals" id="zw-vals"></div>
+      <canvas id="zw-strip" aria-label="Zeitwaagen-Streifen: Abstand jedes Ticks zum Soll-Raster, Steigung = Gang"></canvas>
+      <details><summary>Erweitert</summary><div class="grid-form" style="margin-top:8px">
+        <div class="field"><label for="zw-bph">Frequenz</label><select id="zw-bph">${opt('', 'aus der Uhr', !z.manual)}${[...z.lib.FREQUENZEN, 3600].map(b => opt(b, bphTxt(b), z.manual === b)).join('')}</select></div>
+        ${z.devs.length > 1 ? `<div class="field"><label for="zw-dev">Mikrofon</label><select id="zw-dev">${z.devs.map(d => opt(esc(d.deviceId), esc(d.label || 'Mikrofon'), d.deviceId === z.devId)).join('')}</select></div>` : ''}
+        <p class="muted field wide" style="margin:0;font-size:12.5px">Handy-Takt ${z.calib ? `kalibriert: ${sgn(z.calib, 0)} ppm` : 'nicht kalibriert: Fehler bis ±1–4 s/Tag möglich (am Fold6 gemessen: ±1 ppm ≈ 0,1 s/Tag)'}.</p>
+      </div></details>
+      <div class="foot"><button class="btn primary" data-act="zw-take" id="zw-take">Übernehmen</button><button class="btn" data-act="zw-close">Abbrechen</button></div>
+    </div>`;
+    zwShow();
+  }
+
+  // nur die Live-Teile neu zeichnen (Auswahlfelder bleiben, wie sie sind)
+  function zwShow(status) {
+    const z = S.zw; if (!z) return;
+    const $ = id => document.getElementById(id), r = z.last, g = z.gute;
+    if (status != null) $('zw-status').textContent = status;
+    $('zw-go').textContent = z.run ? 'Stoppen' : z.last ? 'Neu starten' : 'Messung starten';
+    $('zw-take').disabled = !g.length;
+    $('zw-msg').innerHTML = z.msg;
+    const box = (wert, text, cls = '') => `<div class="val ${cls}"><b>${wert}</b><span>${text}</span></div>`;
+    const ruhig = g.length >= 3 ? medianOf(g.map(x => x.gang)) : null, quarz = r?.bph === 3600;
+    let html = box(ruhig != null ? sgn(ruhig) : '–', `s/Tag ruhiger Wert${g.length >= 3 ? ` (Median der letzten ${g.length} guten Messungen)` : ', nach 3 guten Messungen'}`, 'big');
+    if (r && !r.fehler) {
+      const bad = z.lib.unsicher(r);
+      html += box(sgn(r.gang), `s/Tag Gang, letzte Messung${bad ? ' · zählt nicht' : r.vorlaeufig ? ' · vorläufig, zählt ab 2 min' : ''}`, bad || r.vorlaeufig ? 'off' : '')
+        + box(quarz ? '–' : deN(r.abfall, 2), 'ms Abfallfehler')
+        + box(`${deN(r.guete * 100, 0)} %`, `Güte · Streuung ${deN(r.streuung, 2)} ms`, bad ? 'off' : '')
+        + box(bphTxt(r.bph), `gehört: ${r.frequenz.quarz ? 'Quarz' : nf(r.frequenz.bph, 0) + ' A/h'}`);
+      if (z.w?.liftAngle && !quarz) html += box(r.amplitude ? `${deN(medianOf(g.map(x => x.amplitude)) ?? r.amplitude, 0)}°` : '–', `Amplitude (L ${nf(z.w.liftAngle, 0)}°), experimentell`);
+      if (bad) html += `<p class="notice warn" style="margin:0;grid-column:1/-1">Unsicher (Störung? zu leise?): Güte ${deN(r.guete * 100, 0)} %, Streuung ${deN(r.streuung, 2)} ms. Der Wert zählt nicht.</p>`;
+    } else if (r?.fehler) html += `<p class="notice warn" style="margin:0;grid-column:1/-1">${esc(r.fehler)} (${r.gefunden}/${r.erwartet}). Uhr direkt aufs Mikrofon legen, leiser Raum.</p>`;
+    $('zw-vals').innerHTML = html;
+    zwStrip(r);
+  }
+
+  function zwStrip(r) {
+    const c = document.getElementById('zw-strip'); if (!c) return;
+    const dpr = devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight, css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    c.width = w * dpr; c.height = h * dpr;
+    const g = c.getContext('2d'); g.scale(dpr, dpr); g.clearRect(0, 0, w, h); g.font = '11px system-ui';
+    if (!r?.streifen?.length) { g.fillStyle = css('--muted'); g.fillText('Der Zeitwaagen-Streifen erscheint nach den ersten Sekunden.', 10, h / 2); return; }
+    // Vorzeichen wie an einer Zeitwaage: Tick früher als das Soll-Raster = oben, eine vorgehende Uhr steigt also an
+    const ts = r.streifen.map(p => p.t), ms = r.streifen.filter(p => p.genutzt).map(p => -p.ms);
+    const tMin = Math.min(...ts), tMax = Math.max(...ts);
+    let lo = Math.min(...ms), hi = Math.max(...ms); const rand = Math.max(0.5, (hi - lo) * 0.25); lo -= rand; hi += rand;
+    const x = t => 44 + (t - tMin) / ((tMax - tMin) || 1) * (w - 54), y = v => h - 20 - (v - lo) / (hi - lo) * (h - 30);
+    g.strokeStyle = css('--line'); g.fillStyle = css('--muted');
+    for (let i = 0; i <= 4; i++) { const v = lo + (hi - lo) * i / 4; g.beginPath(); g.moveTo(44, y(v)); g.lineTo(w - 10, y(v)); g.stroke(); g.fillText(`${sgn(v, 1)} ms`, 2, y(v) + 4); }
+    g.fillText(`${deN(tMax - tMin, 0)} s`, w - 34, h - 4);
+    // Tick und Tack in zwei Farben: Steigung = Gang, Abstand der beiden Linien = Abfallfehler
+    for (const p of r.streifen) {
+      g.fillStyle = p.genutzt ? css(p.n % 2 ? '--lume' : '--accent') : css('--line');
+      g.fillRect(x(p.t) - 1.5, Math.max(4, Math.min(h - 24, y(-p.ms))) - 1.5, 3, 3);
+    }
+  }
+
+  async function zwStart() {
+    const z = S.zw, lib = z.lib, test = new URLSearchParams(location.search).get('zwtest');
+    if (!test && (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia)) return zwShow('Kein Mikrofon: Die Seite braucht eine sichere Verbindung (HTTPS, z. B. über GitHub Pages).');
+    zwStop();
+    Object.assign(z, { gute: [], hoer: [], unruhig: 0, lang: false, last: null, msg: '' });
+    zwShow('Mikrofon wird geöffnet …');
+    let stream = null, ctx = null;
+    try {
+      let quelle;
+      if (test) {   // Aufnahme statt Mikrofon, gleicher Weg ab dem Worklet
+        ctx = new AudioContext({ sampleRate: 48000 });
+        const buf = await ctx.decodeAudioData(await (await fetch(new URL(test, location.href).href)).arrayBuffer());
+        quelle = ctx.createBufferSource(); quelle.buffer = buf;
+      } else {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: { ...lib.MIKRO, ...(z.devId ? { deviceId: { exact: z.devId } } : {}) } });
+        const s = stream.getAudioTracks()[0].getSettings?.() || {};
+        ctx = new AudioContext(s.sampleRate ? { sampleRate: s.sampleRate } : {});   // eigene Rate des Mikrofons, Chrome rechnet nicht um
+        quelle = ctx.createMediaStreamSource(stream);
+      }
+      await ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([lib.WORKLET], { type: 'text/javascript' })));
+      if (S.zw !== z) throw new Error('geschlossen');
+      const node = new AudioWorkletNode(ctx, 'sammler');
+      quelle.connect(node);   // nicht an die Lautsprecher, sonst Rückkopplung
+      quelle.start?.();
+      const sr = ctx.sampleRate, ring = new Float32Array(sr * 120);
+      const run = z.run = { stream, ctx, quelle, sr, ring, pos: 0, gesamt: 0, seit: 2 * sr, takt: [] };
+      node.port.onmessage = ({ data: { k, t, f } }) => {
+        for (const v of k) { ring[run.pos] = v; run.pos = (run.pos + 1) % ring.length; } run.gesamt += k.length;
+        if (f > 5 * sr && (!run.takt.length || t - run.takt.at(-1)[0] >= 1000)) run.takt.push([t, f]);
+      };
+      run.timer = setInterval(zwTick, 2000);
+      run.sperre = await navigator.wakeLock?.request('screen').catch(() => null);   // Bildschirm aus = Mikrofon aus
+      if (stream && !z.devs.length) {   // Gerätenamen gibt es erst nach der Freigabe
+        z.devs = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'audioinput' && d.deviceId);
+        z.devId ||= stream.getAudioTracks()[0].getSettings?.().deviceId || null;
+        if (z.devs.length > 1) renderZw();
+      }
+      zwShow('nimmt auf …');
+    } catch (er) {
+      if (!z.run) { stream?.getTracks().forEach(t => t.stop()); ctx?.close().catch(() => {}); } else zwStop();
+      if (S.zw !== z) return;
+      console.error(er);
+      zwShow(er?.name === 'NotAllowedError' ? 'Mikrofon nicht erlaubt. In den Website-Einstellungen des Browsers freigeben.' : `Mikrofon nicht verfügbar: ${er?.message || er}`);
+    }
+  }
+  function zwStop() {
+    const run = S.zw?.run; if (!run) return;
+    clearInterval(run.timer);
+    run.stream?.getTracks().forEach(t => t.stop());
+    try { run.quelle.stop?.(); } catch (e) {}
+    run.ctx.close().catch(() => {}); run.sperre?.release().catch(() => {});
+    S.zw.dauer = Math.round(Math.max(0, run.gesamt - run.seit) / run.sr);
+    S.zw.run = null;
+  }
+  // Android stoppt das Mikrofon im Hintergrund: dann lieber sauber beenden als mit Lücken weiterrechnen
+  document.addEventListener('visibilitychange', () => { if (document.hidden && S.zw?.run) { zwStop(); zwShow('unterbrochen: App war im Hintergrund'); } });
+
+  function zwTick() {
+    const z = S.zw, run = z?.run; if (!run) return;
+    const lib = z.lib, f = zwFreq(z), sr = run.sr, da = (run.gesamt - run.seit) / sr;
+    if (da < 4) return zwShow(da < 0 ? 'Uhr liegt still …' : `nimmt auf … ${deN(da, 0)} s`);
+    // Quarz: 1 Tick pro Sekunde, deshalb bis zu 2 min auswerten (Genauigkeit wächst mit Dauer^1,5); ebenso mechanisch,
+    // wenn die Ticks über 20 s mäßig stark streuen (Co-Axial: 0,9–1,5 ms, Tick und Tack klingen verschieden)
+    const quarz = (f.bph ?? z.last?.bph) === 3600, fenster = quarz || z.lang ? 120 : 20;
+    const n = Math.round(Math.min(fenster, da) * sr), samples = new Float32Array(n);
+    for (let i = 0; i < n; i++) samples[i] = run.ring[(run.pos - n + i + run.ring.length) % run.ring.length];
+    const r = lib.analyse(samples, sr, { bph: f.bph, nurMech: f.nurMech, hebung: z.w?.liftAngle || 52, kalibPpm: z.calib, verwerfen: 0 });
+    delete r.hp; delete r.env; delete r.ds;   // große Puffer nicht festhalten
+    z.last = r;
+    // Quarz: unter 2 min schwankt der Gang noch um mehrere s/Tag (Prototyp: 60 s → +2,5…+8,5), deshalb erst dann zählen
+    r.vorlaeufig = r.bph === 3600 && n / sr < 110;
+    const bad = !r.fehler && (lib.unsicher(r) || r.vorlaeufig);
+    // Amplitude ist experimentell (M3): nur glaubhafte Werte, sonst lieber keine (Teilgeräusche oft nicht getrennt hörbar)
+    if (!(r.amplitude >= 150 && r.amplitude <= 360)) r.amplitude = null;
+    if (!r.fehler && !bad) z.gute = [...z.gute, { gang: r.gang, abfall: r.abfall, amplitude: r.amplitude, guete: r.guete, bph: r.bph }].slice(-5);
+    if (!z.lang && !quarz && !r.fehler && r.guete >= lib.GUETE_MIN && r.streuung > lib.STREUUNG_MAX && r.streuung < 4 * lib.STREUUNG_MAX && ++z.unruhig >= 2) z.lang = true;
+    // Widerspruch zur eingetragenen Frequenz erst melden, wenn das Gehörte dreimal gleich war
+    z.hoer = [...z.hoer, r.frequenz.quarz ? 3600 : r.frequenz.bph].slice(-3);
+    const gehoert = z.hoer.length === 3 && z.hoer.every(b => b === z.hoer[0]) ? z.hoer[0] : null;
+    if (f.check && gehoert && gehoert !== f.bph)
+      z.msg = `<p class="notice warn" style="margin:0">Gehört wird ${bphTxt(gehoert)}, eingetragen sind ${bphTxt(f.bph)}. Richtige Uhr? <button class="btn small" data-act="zw-use" data-bph="${gehoert}">Mit ${bphTxt(gehoert)} messen</button></p>`;
+    else if (!f.bph && z.gute.length && !z.saved && z.w)
+      z.msg = `<p class="notice" style="margin:0">Erkannt: ${bphTxt(r.bph)}. <button class="btn small" data-act="zw-save-bph" data-bph="${r.bph}">${r.bph === 3600 ? 'Als Quarzwerk an der Uhr speichern' : 'An der Uhr speichern'}</button></p>`;
+    else if (!z.saved) z.msg = '';
+    const ppm = lib.taktPpm(run.takt, sr);
+    zwShow(`live · ${deN(n / sr, 0)} s ausgewertet${quarz ? ' (bis 120 s)' : z.lang ? ' (Streuung hoch: bis 120 s)' : ''}${ppm != null ? ` · Handy-Takt ${sgn(ppm, 0)} ppm` : ''}`);
+  }
+
+  async function zwSaveBph(bph) {
+    const z = S.zw, w = z.w; if (!w) return;
+    const patch = bph === 3600 ? { movementKind: 'Quarz' } : { bph };
+    try {
+      await S.db.collection('watches').doc(w.id).update(patch);
+      z.w = { ...w, ...patch }; z.saved = true;
+      z.msg = `<p class="notice" style="margin:0">${bph === 3600 ? 'Als Quarzwerk' : bphTxt(bph)} an der Uhr gespeichert.</p>`;
+      document.getElementById('zw-fq').textContent = bph === 3600 ? 'Quarz: 1 Tick pro Sekunde' : `${bphTxt(bph)}, an der Uhr eingetragen`;
+      zwShow();
+    } catch (er) { fail(er, 'Speichern'); }
+  }
+
+  // Werte ins Formular; gespeichert wird wie bisher mit „Messung eintragen“
+  function zwTake() {
+    const z = S.zw, g = z.gute; if (!g.length) return;
+    zwStop();   // Mikrofon sofort freigeben
+    const el = document.querySelector('form[data-form="measure"]')?.elements; if (!el) return closeZw();
+    const rnd = (v, d) => v == null ? null : Math.round(v * 10 ** d) / 10 ** d, bph = g.at(-1).bph, quarz = bph === 3600;
+    const amp = z.w?.liftAngle && !quarz ? medianOf(g.map(x => x.amplitude)) : null;
+    const jetzt = new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 16);
+    Object.assign(S.mEditing, {
+      watchId: el.watchId.value, kind: 'waage', at: S.mEditing.id ? el.at.value : jetzt, note: el.note.value.trim() || null,
+      position: z.pos, rate: rnd(medianOf(g.map(x => x.gang)), 1), beatError: quarz ? null : rnd(medianOf(g.map(x => x.abfall)), 2), bph,
+      amplitude: amp != null ? Math.round(amp) : el.amplitude?.value ? Number(el.amplitude.value) : null,
+      method: 'mikro', dur: z.dauer || null, quality: rnd(medianOf(g.map(x => x.guete)), 2), calibPpm: z.calib,
+    });
+    closeZw(); render();
+    toast('Werte übernommen. Jetzt „Messung eintragen“ tippen.');
+  }
+
   // ----- watch form (create / edit) -----
   const FORM = [
     ['Stammdaten', [
@@ -925,7 +1165,7 @@ img { max-width: 100%; }
       ['waterM', 'Wasserdicht (m)', 'number'], ['crystal', 'Glas'], ['crown', 'Krone'], ['lume', 'Leuchtmasse'], ['weight', 'Gewicht'],
     ]],
     ['Werk', [
-      ['movement', 'Kaliber'], ['movementKind', 'Art', 'select', { opts: ['Automatik', 'Handaufzug', 'Quarz', 'Mecaquartz'] }], ['bph', 'Frequenz (A/h)', 'number'],
+      ['movement', 'Kaliber'], ['movementKind', 'Art', 'select', { opts: ['Automatik', 'Handaufzug', 'Quarz', 'Mecaquartz'] }], ['bph', 'Frequenz (A/h)', 'number'], ['liftAngle', 'Hebungswinkel (°)', 'number', { ph: 'z. B. 52' }],
       ['tolMin', 'Toleranz von', 'number'], ['tolMax', 'Toleranz bis', 'number'], ['tolUnit', 'Toleranz-Einheit', 'select', { opts: ['s/Tag', 's/Monat'] }],
     ]],
     ['Band und Sonstiges', [
@@ -1043,6 +1283,17 @@ img { max-width: 100%; }
       const st = e.target.closest('[data-lb-step]'); if (st) return stepLb(Number(st.dataset.lbStep));
       return;
     }
+    if (S.zw) {
+      const a = e.target.closest('[data-act]');
+      switch (a?.dataset.act) {
+        case 'zw-close': return closeZw();
+        case 'zw-go': if (S.zw.run) { zwStop(); return zwShow('gestoppt'); } return zwStart();
+        case 'zw-take': return zwTake();
+        case 'zw-use': S.zw.manual = Number(a.dataset.bph); S.zw.msg = ''; renderZw(); return S.zw.run && zwStart();
+        case 'zw-save-bph': return zwSaveBph(Number(a.dataset.bph));
+      }
+      return;
+    }
     if (S.wc) {
       if (e.target.id === 'wc') return closeWc();
       const p = e.target.closest('[data-wc-pick]'); if (p) return S.wc.busy || wcPick(p.dataset.wcPick);
@@ -1103,6 +1354,7 @@ img { max-width: 100%; }
       }
       case 'add-m': S.mEditing = { watchId: d.w || S.watches[0]?.id }; render(); break;
       case 'cancel-m': S.mEditing = null; render(); break;
+      case 'zw-open': openZw(t.closest('form')); break;
       case 'diary-today': S.diaryDate = todayStr(); render(); break;
       case 'wristcheck': openWc(true); break;
       case 'export': exportJson(); break;
@@ -1123,10 +1375,19 @@ img { max-width: 100%; }
       return;
     }
     if (S.wc && e.key === 'Escape') { e.preventDefault(); return closeWc(); }
+    if (S.zw && e.key === 'Escape') { e.preventDefault(); return closeZw(); }
     if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.card[data-open]')) { e.preventDefault(); go('detail', e.target.dataset.open); }
   });
   document.addEventListener('change', async e => {
     const t = e.target;
+    if (S.zw && t.id?.startsWith('zw-')) {
+      const z = S.zw;
+      // neue Lage: neu einschwingen lassen, der ruhige Wert beginnt von vorn
+      if (t.id === 'zw-pos') { z.pos = t.value; if (z.run) z.run.seit = z.run.gesamt + 2 * z.run.sr; Object.assign(z, { gute: [], hoer: [], unruhig: 0, lang: false, last: null }); zwShow(); }
+      if (t.id === 'zw-bph') { z.manual = t.value ? Number(t.value) : null; z.msg = ''; renderZw(); if (z.run) zwStart(); }
+      if (t.id === 'zw-dev') { z.devId = t.value; if (z.run) zwStart(); }
+      return;
+    }
     if (t.id === 'import-in') { const f = t.files?.[0]; t.value = ''; if (f) importJson(f); return; }
     if (t.id === 'wc-cam' || t.id === 'wc-gal') { const f = t.files?.[0]; t.value = ''; return wcPhoto(f); }
     if (t.id === 'wf-photo') {
@@ -1207,6 +1468,7 @@ img { max-width: 100%; }
       const at = el.at.value ? new Date(el.at.value).toISOString() : new Date().toISOString();
       const data = { watchId: el.watchId.value, kind, at, note: el.note.value.trim() || null };
       if (kind === 'waage') Object.assign(data, { position: el.position.value, rate: num('rate'), amplitude: num('amplitude'), beatError: num('beatError'), bph: num('bph') });
+      if (kind === 'waage' && S.mEditing?.method === 'mikro') for (const k of ['method', 'dur', 'quality', 'calibPpm']) if (S.mEditing[k] != null) data[k] = S.mEditing[k];
       else Object.assign(data, { deviation: num('deviation'), days: num('days') });
       if (S.mEditing?.photo) data.photo = S.mEditing.photo;
       try {
