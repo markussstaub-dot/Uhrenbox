@@ -43,6 +43,13 @@
       "description": "Im Tragetagebuch die Uhr von heute eintragen",
       "url": "./?aktion=tragen",
       "icons": [{ "src": "shortcut-tragen.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
+      "name": "Was trage ich?",
+      "short_name": "Foto",
+      "description": "Foto vom Handgelenk machen und die Uhr für heute eintragen",
+      "url": "./?aktion=wristcheck",
+      "icons": [{ "src": "shortcut-foto.png", "sizes": "96x96", "type": "image/png" }]
     }
   ],
   "screenshots": [

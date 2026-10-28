@@ -225,6 +225,24 @@ fieldset { border: 0; padding: 0; margin: 0; display: contents; }
 .cal .d.today { outline: 2px solid var(--ink); outline-offset: -2px; }
 .cal .d.sel { outline: 2px solid var(--accent); outline-offset: 1px; }
 .cal .d.future { opacity: .35; cursor: default; }
+.cal .d.shot { position: relative; }
+.cal .d.shot::after { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: var(--surface); }
+.day-shots { display: flex; gap: 8px; flex-wrap: wrap; }
+.day-shots button { border: 0; padding: 0; background: none; cursor: pointer; }
+.day-shots img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; display: block; border: 1px solid var(--line); }
+/* Wristcheck: von unten einfahrendes Blatt am Handy, mittig am Computer */
+.wc { position: fixed; inset: 0; z-index: 25; background: rgba(10,11,12,.5); display: flex; align-items: flex-end; justify-content: center; }
+.wc .sheet { background: var(--surface); width: min(520px, 100%); max-height: 92vh; overflow: auto; border-radius: 14px 14px 0 0; padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 12px; }
+@media (min-width: 600px) { .wc { align-items: center; } .wc .sheet { border-radius: 14px; } }
+.wc .shot img { width: 100%; max-height: 36vh; object-fit: cover; border-radius: 10px; display: block; }
+.wc .sugg { display: flex; flex-direction: column; gap: 8px; }
+.wc .sugg button { display: flex; align-items: center; gap: 12px; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 8px; cursor: pointer; font: inherit; color: inherit; }
+.wc .sugg button:hover { border-color: var(--muted); }
+.wc .sugg button[disabled] { opacity: .5; cursor: default; }
+.wc .sugg .ph { width: 52px; height: 52px; border-radius: 8px; overflow: hidden; flex: none; background: var(--sunk); }
+.wc .sugg .ph img, .wc .sugg .ph .dial-ph, .wc .sugg .ph svg { width: 100%; height: 100%; object-fit: cover; display: block; }
+.wc .sugg .nm { font-weight: 600; display: block; }
+.wc .sugg .why { font-size: 12.5px; color: var(--muted); }
 .wd-labels { display: grid; grid-template-rows: 14px repeat(7, 16px); gap: 3px; font-size: 10.5px; color: var(--muted); font-family: var(--f-mono); }
 .cal-row { display: flex; gap: 6px; }
 .bars { display: flex; flex-direction: column; gap: 8px; }
@@ -283,6 +301,10 @@ img { max-width: 100%; }
 </main>
 <div id="toast" class="toast" hidden></div>
 <div id="lb" class="lb" hidden role="dialog" aria-modal="true" aria-label="Foto ansehen"></div>
+<div id="wc" class="wc" hidden></div>
+<!-- Wristcheck: capture öffnet am Handy direkt die Rückkamera, die zweite Auswahl erlaubt ein schon gemachtes Foto -->
+<input id="wc-cam" type="file" accept="image/*" capture="environment" hidden>
+<input id="wc-gal" type="file" accept="image/*" hidden>
 <div id="update" class="update" hidden role="status"><span>Neue Version der Uhrenbox ist da.</span><button class="btn small primary">Neu laden</button></div>
 <p class="foot-note" id="foot">Alle Daten bleiben auf diesem Gerät, in diesem Browser. Denk ab und zu an „Sichern“.</p>
 
@@ -292,6 +314,8 @@ img { max-width: 100%; }
   const S = {
     db: null, assets: null, canWrite: true,
     watches: [], measurements: [], wear: {},   // wear: { 'YYYY-MM-DD': [ids] }
+    wearShots: {},   // Fotos zum Tragetag: { 'YYYY-MM-DD': { uhrId: fotoId } }
+    wc: null,        // Wristcheck offen: { blob, url, list, all, busy }
     loaded: { watches: false, measurements: false, wear: false },
     view: 'sammlung', detailId: null, editing: false, creating: false,
     filter: 'alle', mFilter: 'alle', diaryDate: todayStr(), statRange: '90',
@@ -396,7 +420,7 @@ img { max-width: 100%; }
   const wearDaysOf = id => Object.keys(S.wear).filter(d => S.wear[d].includes(id)).sort();
   const uniq = a => [...new Set(a.filter(Boolean))];
   const photosOf = w => uniq([w?.photo, ...(w?.photos || [])]);   // cover first, then the rest
-  const photoInUse = (id, exceptWatch) => S.watches.some(w => w.id !== exceptWatch && photosOf(w).includes(id)) || S.measurements.some(m => m.photo === id);
+  const photoInUse = (id, exceptWatch) => S.watches.some(w => w.id !== exceptWatch && photosOf(w).includes(id)) || S.measurements.some(m => m.photo === id) || Object.values(S.wearShots).some(s => Object.values(s).includes(id));
 
   // ---------- dial placeholder ----------
   function dialSvg(color) {
@@ -462,7 +486,7 @@ img { max-width: 100%; }
       <div class="summary">
         <div><div class="label">Uhren</div><div class="big">${owned.length}</div><div class="sub">${mech} mechanisch, ${owned.length - mech} Quarz</div></div>
         <div><div class="label">Bekannter Kaufpreis</div><div class="big">${sum ? nf(sum, 0) + ' €' : '–'}</div><div class="sub">${priced.length} von ${owned.length} Preisen eingetragen</div></div>
-        <div><div class="label">Heute am Handgelenk</div><div class="big" style="font-size:22px;padding-block:4px">${today.length ? today.map(id => esc(W(id)?.name || '?')).join(', ') : '–'}</div><div class="sub">${last30} ${last30 === 1 ? 'Tragetag' : 'Tragetage'} in den letzten 30 Tagen</div></div>
+        <div><div class="label">Heute am Handgelenk</div><div class="big" style="font-size:22px;padding-block:4px">${today.length ? today.map(id => esc(W(id)?.name || '?')).join(', ') : '–'}</div><div class="sub">${last30} ${last30 === 1 ? 'Tragetag' : 'Tragetage'} in den letzten 30 Tagen</div>${S.canWrite && owned.length ? '<button class="btn small" data-act="wristcheck" style="margin-top:8px">📷 Was trage ich?</button>' : ''}</div>
         <div><div class="label">Messungen</div><div class="big">${S.measurements.length}</div><div class="sub">${new Set(S.measurements.map(m => m.watchId)).size === 1 ? '1 Uhr' : new Set(S.measurements.map(m => m.watchId)).size + ' Uhren'} gemessen</div></div>
       </div>
       <div class="chips" style="margin-bottom:16px">${filters.map(([k, l]) => `<button class="chip" data-filter="${k}" aria-pressed="${S.filter === k}">${l}</button>`).join('')}</div>
@@ -750,7 +774,7 @@ img { max-width: 100%; }
         const cols = ids.map(id => W(id)?.color || 'var(--muted)');
         const bg = cols.length === 0 ? '' : cols.length === 1 ? `background:${esc(cols[0])}` : `background:linear-gradient(135deg, ${esc(cols[0])} 50%, ${esc(cols[1])} 50%)`;
         const fut = day > today;
-        cells += `<button class="d ${ds === todayStr() ? 'today' : ''} ${ds === sel ? 'sel' : ''} ${fut ? 'future' : ''}" style="${bg}" ${fut ? 'disabled' : `data-day="${ds}"`} title="${day.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })}${ids.length ? ': ' + esc(ids.map(id => W(id)?.name || '?').join(', ')) : ''}" aria-label="${ds}${ids.length ? ', ' + esc(ids.map(id => W(id)?.name || '?').join(', ')) : ''}"></button>`;
+        cells += `<button class="d ${ds === todayStr() ? 'today' : ''} ${ds === sel ? 'sel' : ''} ${fut ? 'future' : ''} ${ids.some(id => S.wearShots[ds]?.[id]) ? 'shot' : ''}" style="${bg}" ${fut ? 'disabled' : `data-day="${ds}"`} title="${day.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })}${ids.length ? ': ' + esc(ids.map(id => W(id)?.name || '?').join(', ')) : ''}" aria-label="${ds}${ids.length ? ', ' + esc(ids.map(id => W(id)?.name || '?').join(', ')) : ''}"></button>`;
       }
     }
     const range = S.statRange; const cutoff = range === 'alle' ? null : new Date(today.getTime() - Number(range) * 864e5);
@@ -760,15 +784,17 @@ img { max-width: 100%; }
     const ranked = ws.map(w => ({ w, n: counts[w.id] || 0 })).sort((a, b) => b.n - a.n || byNr(a.w, b.w));
     const neglected = ranked.filter(r => r.n === 0).map(r => r.w);
     const selDate = parseDay(sel);
+    const selShots = selW.filter(id => S.wearShots[sel]?.[id]);
     return `
       <div class="view-head"><div><h2>Tragetagebuch</h2><p>Halte fest, welche Uhr du wann getragen hast.</p></div></div>
       <div class="diary">
         <div class="stack">
           <section class="panel">
             <div class="panel-head"><h3>${sel === todayStr() ? 'Heute' : selDate.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}</h3>
-              <div class="actions"><input type="date" id="diary-date" value="${sel}" max="${todayStr()}" aria-label="Tag wählen" style="width:auto">${sel !== todayStr() ? '<button class="btn small" data-act="diary-today">Heute</button>' : ''}</div></div>
+              <div class="actions"><input type="date" id="diary-date" value="${sel}" max="${todayStr()}" aria-label="Tag wählen" style="width:auto">${sel !== todayStr() ? '<button class="btn small" data-act="diary-today">Heute</button>' : S.canWrite && ws.length ? '<button class="btn small" data-act="wristcheck">📷 Was trage ich?</button>' : ''}</div></div>
             ${ws.length ? `<div class="pick">${ws.map(w => `<button data-wear="${esc(w.id)}" aria-pressed="${selW.includes(w.id)}" ${S.canWrite ? '' : 'disabled'}><span class="dot" style="background:${esc(w.color || 'var(--muted)')};width:14px;height:14px"></span>${esc(w.name)}</button>`).join('')}</div>` : '<p class="muted">Noch keine Uhren in der Sammlung.</p>'}
             <p class="muted" style="margin:0;font-size:13px">${selW.length ? `Getragen: ${selW.map(id => esc(W(id)?.name || '?')).join(' und ')}. Tippe erneut, um es zu entfernen.` : 'Tippe auf eine Uhr, um sie für diesen Tag einzutragen. Ein Uhrwechsel am Tag geht auch.'}</p>
+            ${selShots.length ? `<div class="day-shots">${selShots.map((id, i) => `<button data-shot="${i}" aria-label="Foto mit ${esc(W(id)?.name || '?')} groß ansehen"><img src="${blobUrl(S.wearShots[sel][id])}" alt="${esc(W(id)?.name || '?')} am Handgelenk"></button>`).join('')}</div>` : ''}
           </section>
           <section class="panel">
             <div class="panel-head"><h3>Die letzten ${weeks} Wochen</h3><span class="label">${Object.values(S.wear).filter(a => a.length).length} Tage eingetragen</span></div>
@@ -785,6 +811,74 @@ img { max-width: 100%; }
             : `<div class="empty" style="padding:18px">Noch keine Tragetage in diesem Zeitraum. Trag links ein, welche Uhr du heute trägst.</div>`}
         </section>
       </div>`;
+  }
+
+  // ----- Wristcheck Light: Foto → Uhr antippen → Tragetag (ohne KI) -----
+  // Regeln liefern eine sortierte Liste { w, score, why }. Eine spätere lokale Erkennung (Premium) sortiert sie in wcReorder nur um.
+  function wristSuggestions(day = todayStr()) {
+    const d0 = parseDay(day); const wdName = d0.toLocaleDateString('de-DE', { weekday: 'long' });
+    const ago = s => Math.round((d0 - parseDay(s)) / 864e5);
+    return S.watches.filter(w => w.status !== 'Bestellt' && w.status !== 'Verkauft').map(w => {
+      const past = wearDaysOf(w.id).filter(s => s < day);
+      const last = past.length ? ago(past[past.length - 1]) : null;
+      const sameWd = past.filter(s => ago(s) <= 56 && ago(s) % 7 === 0).length;   // gleicher Wochentag, letzte 8 Wochen
+      let score = 0; const why = [];
+      if ((S.wear[day] || []).includes(w.id)) { score += 100; why.push('heute schon eingetragen'); }
+      if (last === 1) { score += 5; why.push('gestern getragen'); }
+      else if (last != null && last <= 3) { score += 2; why.push(last === 2 ? 'vorgestern getragen' : 'vor 3 Tagen getragen'); }
+      if (sameWd) { score += 1.5 * sameWd; why.push(sameWd > 1 ? `${sameWd}× an ${wdName}en getragen` : `an einem ${wdName} getragen`); }
+      // „mal wieder“: kleiner Bonus, der mit der Pause wächst, damit vergessene Uhren auftauchen, wenn sonst nichts passt
+      const gap = last ?? 60;
+      if (gap >= 7) { score += Math.min(gap, 60) / 60; if (!why.length) why.push(last == null ? 'noch nicht getragen' : `seit ${last} Tagen nicht am Arm`); }
+      return { w, score, why: why.join(' · ') };
+    }).sort((a, b) => b.score - a.score || byNr(a.w, b.w));
+  }
+  const wcReorder = async (list, blob) => list;   // Premium später: Wiedererkennung vergleicht das Foto und sortiert um
+
+  function openWc(camera) {
+    S.wc = { blob: null, url: null, list: wristSuggestions(), all: false, busy: false };
+    renderWc();
+    if (camera) document.getElementById('wc-cam').click();   // noch im Tipp, sonst blockt der Browser die Kamera
+  }
+  function closeWc() { if (S.wc?.url) URL.revokeObjectURL(S.wc.url); S.wc = null; renderWc(); }
+  async function wcPhoto(file) {
+    if (!file) return;
+    if (!S.wc) openWc(false);
+    if (S.wc.url) URL.revokeObjectURL(S.wc.url);
+    Object.assign(S.wc, { blob: file, url: URL.createObjectURL(file) });
+    S.wc.list = await wcReorder(wristSuggestions(), file);
+    renderWc();
+  }
+  async function wcPick(id) {
+    const day = todayStr(); const { blob } = S.wc; const w = W(id);
+    S.wc.busy = true; renderWc();
+    try {
+      const shots = { ...(S.wearShots[day] || {}) }; const old = shots[id];
+      if (blob) shots[id] = (await S.assets.upload(blob)).id;
+      await S.db.collection('wear').doc(day).set({ date: day, watches: uniq([...(S.wear[day] || []), id]), ...(Object.keys(shots).length ? { shots } : {}) });
+      if (blob && old && !photoInUse(old)) { try { await S.assets.delete(old); } catch (er) { console.error(er); } }
+      closeWc(); S.diaryDate = day; render();
+      toast(`${w.name} für heute eingetragen${blob ? ', mit Foto' : ''}`);
+    } catch (er) {
+      if (S.wc) { S.wc.busy = false; renderWc(); }
+      if (er?.code === 'unsupported_type') toast(photoErr(er)); else fail(er, 'Eintragen');
+    }
+  }
+  function renderWc() {
+    const el = document.getElementById('wc');
+    if (!S.wc) { el.hidden = true; el.innerHTML = ''; if (!S.lb) document.body.style.overflow = ''; return; }
+    const { blob, url, list, all, busy } = S.wc;
+    const item = r => `<button data-wc-pick="${esc(r.w.id)}" ${busy ? 'disabled' : ''}><span class="ph">${photoHtml(r.w)}</span><span><span class="nm">${esc(r.w.name)}</span>${r.why ? `<span class="why">${esc(r.why)}</span>` : ''}</span></button>`;
+    const rest = list.slice(3);
+    el.hidden = false; document.body.style.overflow = 'hidden';
+    el.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="wc-h">
+      <div class="panel-head"><h3 id="wc-h">Was trage ich?</h3><button class="btn ghost small" data-act="wc-close" aria-label="Schließen">×</button></div>
+      ${blob ? `<div class="shot"><img src="${url}" alt="Dein Foto von heute"></div>` : '<p class="notice" style="margin:0">Mach ein Foto vom Handgelenk und tippe dann die Uhr an. Ohne Foto geht es auch.</p>'}
+      <div class="actions"><button class="btn${blob ? '' : ' primary'}" data-act="wc-cam">📷 ${blob ? 'Neues Foto' : 'Foto machen'}</button><button class="btn ghost" data-act="wc-gal">Aus Galerie</button>${blob ? '<button class="btn ghost" data-act="wc-nophoto">Ohne Foto</button>' : ''}</div>
+      <div class="label">${blob ? 'Welche Uhr ist das?' : 'Welche Uhr trägst du heute?'}</div>
+      ${list.length ? `<div class="sugg">${list.slice(0, 3).map(item).join('')}</div>` : '<p class="muted" style="margin:0">Noch keine Uhren in der Sammlung.</p>'}
+      ${rest.length ? (all ? `<div class="label">Alle anderen</div><div class="sugg">${rest.map(item).join('')}</div>` : `<button class="btn" data-act="wc-all">Andere Uhr wählen (${rest.length})</button>`) : ''}
+    </div>`;
   }
 
   // ----- Vergleich -----
@@ -883,7 +977,7 @@ img { max-width: 100%; }
       app: 'Uhrenbox', version: 2, exportedAt: new Date().toISOString(),
       watches: [...S.watches].sort(byNr),
       measurements: [...S.measurements].sort((a, b) => String(a.at).localeCompare(String(b.at))),
-      wear: Object.keys(S.wear).sort().map(d => ({ date: d, watches: S.wear[d] })),
+      wear: Object.keys(S.wear).sort().map(d => ({ date: d, watches: S.wear[d], ...(S.wearShots[d] ? { shots: S.wearShots[d] } : {}) })),
       photos,
     };
     const file = new File([JSON.stringify(data)], `uhrenbox-sicherung-${todayStr()}.json`, { type: 'application/json' });
@@ -913,7 +1007,7 @@ img { max-width: 100%; }
       await LOCAL.replaceAll({
         watches: data.watches,
         measurements: data.measurements || [],
-        wear: (data.wear || []).map(x => ({ id: x.date, date: x.date, watches: x.watches })),
+        wear: (data.wear || []).map(x => ({ id: x.date, date: x.date, watches: x.watches, ...(x.shots ? { shots: x.shots } : {}) })),
       }, photos);
       saveMeta({ lastBackup: data.exportedAt || new Date().toISOString(), changes: 0 });   // Stand entspricht genau dieser Sicherung
       scheduleStore();
@@ -927,21 +1021,39 @@ img { max-width: 100%; }
   async function toggleWear(day, id) {
     const cur = S.wear[day] || [];
     const next = cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id];
+    const shots = { ...(S.wearShots[day] || {}) }; const gone = next.includes(id) ? null : shots[id];   // Foto fällt mit der Uhr weg
+    delete shots[id];
     const ref = S.db.collection('wear').doc(day);
-    try { if (next.length) await ref.set({ date: day, watches: next }); else await ref.delete(); }
+    try {
+      if (next.length) await ref.set({ date: day, watches: next, ...(Object.keys(shots).length ? { shots } : {}) }); else await ref.delete();
+      if (gone && S.assets && !photoInUse(gone)) { try { await S.assets.delete(gone); } catch (er) { console.error(er); } }
+    }
     catch (e) { fail(e, 'Eintragen'); }
   }
 
   // ---------- events ----------
   document.addEventListener('click', async e => {
-    const t = e.target.closest('[data-nav],[data-open],[data-act],[data-filter],[data-mfilter],[data-wear-today],[data-wear],[data-day],[data-range],[data-cmp],[data-todo-del],[data-m-del],[data-m-del-yes],[data-m-edit],[data-lb-watch],[data-lb-gal],[data-gfilter],[data-cover],[data-ph-del],[data-ph-del-yes]');
+    const t = e.target.closest('[data-nav],[data-open],[data-act],[data-filter],[data-mfilter],[data-wear-today],[data-wear],[data-day],[data-range],[data-cmp],[data-todo-del],[data-m-del],[data-m-del-yes],[data-m-edit],[data-lb-watch],[data-lb-gal],[data-gfilter],[data-cover],[data-ph-del],[data-ph-del-yes],[data-shot]');
     if (S.lb) {
       if (e.target.closest('[data-lb-close]') || e.target.id === 'lb' || e.target.classList?.contains('stage')) return closeLb();
       const st = e.target.closest('[data-lb-step]'); if (st) return stepLb(Number(st.dataset.lbStep));
       return;
     }
+    if (S.wc) {
+      if (e.target.id === 'wc') return closeWc();
+      const p = e.target.closest('[data-wc-pick]'); if (p) return S.wc.busy || wcPick(p.dataset.wcPick);
+      switch (e.target.closest('[data-act]')?.dataset.act) {
+        case 'wc-close': return closeWc();
+        case 'wc-cam': return document.getElementById('wc-cam').click();
+        case 'wc-gal': return document.getElementById('wc-gal').click();
+        case 'wc-all': S.wc.all = true; return renderWc();
+        case 'wc-nophoto': URL.revokeObjectURL(S.wc.url); Object.assign(S.wc, { blob: null, url: null, list: wristSuggestions() }); return renderWc();
+      }
+      return;
+    }
     if (!t) return;
     const d = t.dataset;
+    if (d.shot != null) { const day = S.diaryDate; openLb((S.wear[day] || []).filter(id => S.wearShots[day]?.[id]).map(id => ({ id: S.wearShots[day][id], cap: `${W(id)?.name || '?'} am ${fmtDate(parseDay(day))}` })), Number(d.shot)); S.lb.from = t; return; }
     if (d.lbWatch) { const w = W(d.lbWatch); openLb(photosOf(w).map((id, i) => ({ id, cap: `${w.name}, Foto ${i + 1}` })), Number(d.i)); S.lb.from = t; return; }
     if (d.lbGal != null) { openLb(S.galleryItems, Number(d.lbGal)); S.lb.from = t; return; }
     if (d.gfilter) { S.galleryFilter = d.gfilter; return render(); }
@@ -989,6 +1101,7 @@ img { max-width: 100%; }
       case 'add-m': S.mEditing = { watchId: d.w || S.watches[0]?.id }; render(); break;
       case 'cancel-m': S.mEditing = null; render(); break;
       case 'diary-today': S.diaryDate = todayStr(); render(); break;
+      case 'wristcheck': openWc(true); break;
       case 'export': exportJson(); break;
       case 'snooze-backup': saveMeta({ snoozeUntil: new Date(Date.now() + 3 * 864e5).toISOString() }); render(); break;
       case 'install': {
@@ -1006,11 +1119,13 @@ img { max-width: 100%; }
       else if (e.key === 'ArrowRight') { e.preventDefault(); stepLb(1); }
       return;
     }
+    if (S.wc && e.key === 'Escape') { e.preventDefault(); return closeWc(); }
     if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.card[data-open]')) { e.preventDefault(); go('detail', e.target.dataset.open); }
   });
   document.addEventListener('change', async e => {
     const t = e.target;
     if (t.id === 'import-in') { const f = t.files?.[0]; t.value = ''; if (f) importJson(f); return; }
+    if (t.id === 'wc-cam' || t.id === 'wc-gal') { const f = t.files?.[0]; t.value = ''; return wcPhoto(f); }
     if (t.id === 'wf-photo') {
       const file = t.files?.[0]; const prev = document.getElementById('wf-photo-prev');
       if (prev) { prev.innerHTML = ''; if (file) { const img = new Image(); img.src = URL.createObjectURL(file); img.alt = 'Vorschau'; prev.appendChild(img); } }
@@ -1193,6 +1308,7 @@ img { max-width: 100%; }
       go('messungen');
       if (S.canWrite && S.watches.length) { S.mEditing = { watchId: (S.watches.find(isMech) || S.watches[0]).id }; render(); }
     } else if (act === 'tragen') go('tagebuch');
+    else if (act === 'wristcheck' && S.canWrite) openWc(false);   // ohne Tipp darf der Browser die Kamera nicht öffnen: Knopf im Fenster
   }
 
   // ---------- boot ----------
@@ -1220,8 +1336,8 @@ img { max-width: 100%; }
       if (!S.editing && !S.creating && !S.mEditing) render();
     });
     db.collection('wear').onSnapshot(snap => {
-      const w = {}; snap.docs.forEach(d => { const x = d.data(); if (Array.isArray(x.watches)) w[d.id] = x.watches; });
-      S.wear = w; S.loaded.wear = true;
+      const w = {}, shots = {}; snap.docs.forEach(d => { const x = d.data(); if (Array.isArray(x.watches)) w[d.id] = x.watches; if (x.shots) shots[d.id] = x.shots; });
+      S.wear = w; S.wearShots = shots; S.loaded.wear = true;
       if (!S.editing && !S.creating && !S.mEditing) render();
     });
     if (shortcut) queueMicrotask(() => runShortcut(shortcut));   // nach den ersten Snapshots

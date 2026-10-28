@@ -1,10 +1,10 @@
 // Uhrenbox: hält die App offline bereit. Deine Daten liegen getrennt im Browser-Speicher (IndexedDB) und werden hier nie angefasst.
 // Nach JEDER Änderung an index.html (oder Icons/Manifest) VERSION hochzählen – sonst bekommen installierte Apps die neue Fassung nicht.
-const VERSION = 'uhrenbox-v2';
+const VERSION = 'uhrenbox-v3';
 const FILES = [
   './', './index.html', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png',
-  './shortcut-messung.png', './shortcut-tragen.png',
+  './shortcut-messung.png', './shortcut-tragen.png', './shortcut-foto.png',
 ];
 
 // frisch vom Server holen (nicht aus dem HTTP-Cache), damit die neue Version wirklich vollständig ist
