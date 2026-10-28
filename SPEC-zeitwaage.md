@@ -177,8 +177,14 @@ Erkenntnisse, die in die Umsetzung gehören:
   markieren („Bildschirm war aus oder Aufnahme hatte Aussetzer“).
 - **[Vorschlag]** Mecaquartz und nicht hörbare Quarzwerke: klarer Hinweis im Messfenster „akustisch nicht messbar,
   ‚Abgleich mit Funkuhr‘ nutzen“ statt Messung mit falschem Takt.
-- **[offen]** Werk-Art reicht nicht als Schlüssel (VH31 vs. normaler Quarz vs. Mecaquartz); Takt aus dem Kaliber oder
-  ein Feld „Schritte pro Sekunde“?
+- **[fest, 28.10.2026]** Schlüssel ist das **Kaliber** (Uhrenfeld `movement`, heute Freitext „Kaliber“), nicht die
+  Werk-Art: Daraus folgt, welche Ticks wie oft kommen sollten. Rangfolge dann: A/h an der Uhr → Kaliber → Werk-Art →
+  erkennen.
+- **[Vorschlag]** Kleine eingebaute Kaliber-Tabelle (Anfang der Roadmap-„Kaliber-Datenbank“): je Kaliber Art, Takt
+  (A/h bzw. Schritte/s), Hebungswinkel, Hinweis „akustisch nicht messbar“. Abgleich tolerant (Groß/Klein, Leerzeichen,
+  „Seiko“-Vorsilbe). Erste Einträge aus Markus' Sammlung: NH35 (21.600, L 53°), ETA 2824 / PT5000 / ST2130 (28.800,
+  L 50°), VH31 (Quarz, 4 Schritte/s), VK63 (Mecaquartz, nicht hörbar), Omega Co-Axial (25.200, L offen). Unbekanntes
+  Kaliber → wie bisher über die Werk-Art. Die Tabelle füllt auch `bph` und `liftAngle` im Uhrenformular vor (M3).
 - Aufnahmen: `aufnahmen/2026-10-28-fold6-vh31.wav` (gut), `-vh31-angedrueckt.wav`, `-vh31-display-aus.wav` (gestört),
   `-vk63.wav`, `-ohne-uhr.wav` (Kontrolle).
 
