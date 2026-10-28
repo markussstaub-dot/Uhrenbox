@@ -123,7 +123,7 @@ Erkenntnisse, die in die Umsetzung gehören:
   NH35 53°, ETA 2824 / PT5000 / ST2130 50°. Co-Axial unbekannt.
 - **[Vorschlag]** Längeres Fenster (bis 2 min) auch bei mechanischen Uhren mit hoher Streuung (Co-Axial).
 - **[Vorschlag]** Zusatzfelder an der Messung wie oben unter „Daten“ (`method: 'mikro'`, `dur`, `quality`, `calibPpm`).
-- **[Vorschlag]** Bis die Premium-Frage entschieden ist, kommt die Zeitwaage ohne Kennzeichnung in die Basis.
+- **[fest]** Die Zeitwaage ist Freeware und gehört in die Basis, ohne Kennzeichnung (siehe Offen 2).
 - Nur am Handy prüfbar: Mikrofon über HTTPS (GitHub Pages) ohne USB, installierte PWA, Bildschirm-Sperre während der Messung.
 
 ### Umgesetzt (28.10.2026)
@@ -153,10 +153,154 @@ Erkenntnisse, die in die Umsetzung gehören:
 
 ## M3 „Amplitude“ (Stufe danach)
 
-- **[fest]** Amplitude braucht den **Hebungswinkel** des Kalibers (oft 50–53°, z. B. ETA 2824 52°) und die **drei Teilgeräusche** eines Ticks (Entriegeln, Impuls, Fall). Gemessen wird die Zeit t vom ersten bis zum dritten Teilgeräusch. Amplitude = Hebungswinkel ÷ (2 · sin(π · t ÷ T)), T = Schwingungsdauer der Unruh.
-- **[Vorschlag]** Neues Uhrenfeld `liftAngle` (°) im Uhr-Formular. Leer → Amplitude wird nicht angezeigt statt geraten. Später füllt die **Kaliber-Datenbank** das Feld vor (zusammen mit `bph`).
-- **[Vorschlag]** Amplitude nur anzeigen, wenn die Teilgeräusche sauber getrennt sind (eigene Güte). Das wird mit dem Handymikrofon am ehesten scheitern; ein Kontaktmikrofon hilft hier am meisten.
-- **[Vorschlag]** Mit Amplitude und Abfallfehler im Verlauf bekommt die **Gang-Analyse in Worten** (KI-Premium) ihre Daten („Amplitude fällt seit 4 Monaten …“).
+- **[fest]** Amplitude braucht den **Hebungswinkel** L des Kalibers (oft 50–53°) und die **drei Teilgeräusche** eines
+  Schlags (1 Entriegeln, 2 Impuls, 3 Fall). Gemessen wird die Zeit t vom ersten bis zum dritten Teilgeräusch.
+  Amplitude = L ÷ (2 · sin(π · t ÷ T)), T = Schwingungsdauer der Unruh (2 Schläge). Begründung: Die Unruh läuft durch
+  den Hebungswinkel nahe ihrer Mitte, also fast mit Höchstgeschwindigkeit; je weiter sie schwingt, desto kürzer ist t.
+- **[fest]** Empfindlichkeit: bei 28.800 A/h, L 50°, 270° entspricht 0,1 ms Fehler in t etwa **3,6°**, bei 21.600 A/h,
+  L 53°, 240° etwa 2°. 1° Fehler im Hebungswinkel macht 2 % der Amplitude (≈ 5°). Die Trennung der Teilgeräusche muss
+  also auf etwa 0,2 ms stimmen; welcher Klick als „erster“ zählt, entscheidet über 50–100°.
+
+### Befund Labor (28.10.2026)
+
+Versuch `zeitwaage-labor/m3-teilgeraeusche.mjs` an den beiden mechanischen Aufnahmen und an der Testuhr. Heute nimmt
+`analyse` im gemittelten Schlag (Mittelwert aller geraden Schläge, ausgerichtet auf den lautesten Klick, −25 … +5 ms)
+die **erste und die letzte Spitze über 25 % des Maximums**. Das hat vier Schwächen:
+
+1. **Schwelle zu nah am Boden.** Die Hüllkurve von Rauschen ist immer positiv, sie mittelt sich nicht zu null, sondern
+   zu einem Boden von ≈ 15 % des Maximums. 25 % liegen nur ≈ 4 dB darüber. Die schwachen Teilgeräusche (Entriegeln
+   4–6 dB über dem Boden) liegen genau dort; ob sie mitzählen, ist Zufall.
+2. **Letzte Spitze = Nachklingen.** Hinter dem lautesten Klick kommen 0,5–3 ms lang kleine Spitzen desselben Klicks
+   (Gehäuse, Tisch). Die letzte davon gilt heute als Klick 3, t wird 1–3 ms zu lang. Nach dem lautesten Klick kommt in
+   beiden Aufnahmen bis +40 ms kein weiteres Teilgeräusch: Der lauteste ist der Fall (3).
+3. **Mittelwert statt Median.** Ein einzelner Stoß (in der 28.800-Aufnahme ein Schlag mit 28 dB bei −43 ms) bleibt im
+   Mittelwert stehen und kann als Klick 1 zählen.
+4. **Nur eine Seite.** Es wird nur der „Tick“ (gerade Schläge) ausgewertet. Welche Seite das ist, hängt vom Startpunkt
+   ab: dieselbe NH35-Aufnahme ergibt im Labor 281°, mit vorgegebener Frequenz wie in der Uhrenbox 195°.
+
+| Aufnahme | heute | stabile Spitzen (ms vor Klick 3, dB über Boden) | Lage Klick 2 | Amplitude, wenn die früheste Spitze Klick 1 ist | wenn die mittlere Klick 1 ist |
+|---|---|---|---|---|---|
+| PT5000 28.800, L 50° | 180° ganz; 84° / 82° / 127° in 10-s-Stücken | −14,3 (5) · −9,7 (9) · 0 (20), Tick und Tack | 32 % | **140°** | 206–222° |
+| NH35 21.600, L 53° | 281° bzw. 195° | −11,9 (5, nur eine Seite) · −7,2 (12) · 0 (16) | 39 % | **238°** (Hälften 232 / 241°) | 413° (unmöglich) |
+| Testuhr 220/270/310° | ±1° | Entriegeln nur 6 dB leiser als der Fall | 35 % | ±1° | – |
+
+- **Die 82°** entstehen, wenn eine Spitze bei −22,5 ms über 25 % kommt (nur in Teilen der Aufnahme, im Median-Schlag
+  verschwindet sie) und das Nachklingen bei +1,9 ms als Klick 3 zählt: t ≈ 24 ms. Eine laufende Uhr schwingt nie so
+  wenig; das ist kein Teilgeräusch.
+- **Muster 1-2-3**: In beiden Uhren liegt das mittlere Teilgeräusch bei 32–39 % der Strecke. Das passt zum Modell
+  (Impuls beginnt nach dem Entriegeln, etwa ein Drittel des Hebungswinkels) und spricht dafür, dass die schwache
+  früheste Spitze das Entriegeln ist. Bei der NH35 ergäbe die andere Deutung 413°, das kann ein Automatikwerk nicht.
+  Bei der PT5000 ergäbe diese Deutung aber nur 140°, ungewöhnlich wenig. **Ohne Referenz nicht entscheidbar.**
+- **Sea-Gull ST2130 ≈ 330° (L 50°)** bedeutet t ≈ 6,0 ms. Ohne Aufnahme nicht nachzurechnen. Wahrscheinlich derselbe
+  Mechanismus wie oben: Ist das schwache Entriegeln unter der Schwelle, misst die App Impuls → Fall (+ Nachklingen),
+  t wird zu kurz und die Amplitude zu hoch. Bei 35 % Impuls-Lage läge der wahre Wert dann eher bei 210–290°. Braucht
+  die WAV-Datei (Referenz 1).
+- **Testuhr ist zu freundlich**: Entriegeln nur 6 dB unter dem Fall, kein Nachklingen. Am Fold6 liegt das Entriegeln
+  11–15 dB unter dem Fall und nur 4–6 dB über dem Boden. Deshalb stimmt heute jede Methode an der Testuhr.
+- Tick- und Tack-Seite stimmen bei der PT5000 untereinander je Hälfte auf 0,2–0,4 ms überein: 70 Schläge je Seite
+  (20 s bei 28.800) reichen für die Zeitmessung. Das Problem ist die Zuordnung, nicht die Streuung.
+
+### Erkennung der Teilgeräusche
+
+- **[Vorschlag]** Gemittelter Schlag als **Median je Stelle**, getrennt für gerade und ungerade Schläge; **beide Seiten**
+  auswerten. Begründung: Median wirft einzelne Stöße hinaus, und welche Seite „Tick“ heißt, ist Zufall des Startpunkts.
+- **[Vorschlag]** Spitzen in **dB über dem Boden** (Median des Schlags) statt in % des Maximums. Kandidat ist nur, wer im
+  Umkreis ±0,5 ms die höchste Stelle ist.
+- **[Vorschlag]** **Klick 3 = Hauptspitze** (der lauteste, auf den ohnehin ausgerichtet ist). Was danach kommt, ist
+  Nachklingen und zählt nicht.
+- **[Vorschlag]** **Klick 1 = früheste Spitze ≥ 4 dB** in dem Abstand, den eine Amplitude von 130–380° bei dieser
+  Frequenz und diesem Hebungswinkel erlaubt (28.800/L 50: 5,2–15,4 ms; 21.600/L 53: 7,4–21,8 ms; 18.000/L 53: bis 26 ms).
+  Das Suchfenster richtet sich danach, statt fest 25 ms. Spitzen außerhalb (wie die −22,5 ms) zählen nicht.
+- **[Vorschlag]** **Klick 2 als Bestätigung**: stärkste Spitze zwischen 1 und 3. Liegt sie bei 20–50 % der Strecke,
+  passt das Muster. Fehlt sie, gibt es trotzdem einen Wert, aber schlechtere Güte (siehe unten).
+- **[Vorschlag]** Amplitude = Mittel aus Tick- und Tack-Seite, wenn beide da sind (wie Witschi: beide Halbschwingungen
+  zusammen).
+- **[Vorschlag]** Testuhr (`synth.js`) bekommt Optionen für echtes Verhalten: Entriegeln 12 dB leiser, Nachklingen
+  nach dem Fall, Tick und Tack mit leicht verschiedenem t, Entriegeln auf einer Seite unhörbar. Erst damit prüfen die
+  Tests das, woran es am Handy scheitert. Die heutigen Amplituden-Tests bleiben.
+- **[offen]** Gemessen wird heute von Spitze zu Spitze. Ob Anstieg zu Anstieg besser zu „Watch Accuracy Meter“ passt,
+  zeigen erst die Referenzen; ein fester Versatz ließe sich als Korrektur einrechnen.
+- **[offen]** Die Schwellen (4 dB Kandidat, 6 dB sicher, 0,5 ms Tick/Tack) sind aus zwei Aufnahmen geraten und werden
+  an den Referenzen eingestellt.
+
+### Güte der Amplitude
+
+- **[Vorschlag]** Eigene **Amplituden-Güte**, getrennt von der Gang-Güte (eine Messung kann für Gang und Abfallfehler gut
+  und für die Amplitude unbrauchbar sein). Drei Stufen:
+  - **gut**: Klick 1 auf beiden Seiten ≥ 6 dB über dem Boden, Tick und Tack innerhalb 0,5 ms (≈ 18° bei 28.800),
+    Muster 1-2-3 passt.
+  - **vorläufig**: nur eine Seite hat ein Klick 1, oder Klick 1 nur 4–6 dB, oder kein Klick 2.
+  - **keine**: kein Klick 1 im möglichen Bereich, oder Tick und Tack mehr als 0,5 ms auseinander („Teilgeräusche nicht
+    eindeutig“).
+  Angewendet auf heute: PT5000 → keine (Tick 14,3 ms, Tack 9,0 ms, weil das frühe Entriegeln dort knapp unter 4 dB
+  liegt), NH35 → vorläufig (nur eine Seite), Testuhr → gut.
+- **[Vorschlag]** Zusätzlich live: der ruhige Wert (Median der letzten 5) gilt nur, wenn die letzten 5 Einzelwerte
+  innerhalb ±10° liegen. Springt die Amplitude, ist die Zuordnung unsicher, auch wenn jede Einzelmessung gut aussieht.
+- **[Vorschlag]** Keine neue Güte-Zahl in der Messung speichern: Gespeichert wird die Amplitude nur, wenn sie gut war.
+  Hält die Daten einfach.
+
+### Anzeige- und Übernahme-Regeln
+
+- **[fest]** Heute: Amplitude nur mit Hebungswinkel an der Uhr, nicht bei Quarz, nur Werte von 150–360°, ruhiger Wert =
+  Median der letzten 5 guten Messungen, Hinweis „experimentell“.
+- **[Vorschlag]** 150–360° bleibt als harter Rahmen (darunter läuft eine Uhr kaum sauber, darüber droht Prellen), ist
+  aber nicht mehr der eigentliche Filter. Entscheidend ist die Amplituden-Güte.
+- **[Vorschlag]** Anzeige: **gut** → Wert („265°“); **vorläufig** → grau mit „≈“; **keine** → „–“ mit Grund in einem
+  Satz („Entriegeln nicht hörbar, Uhr direkt aufs Mikrofon legen“).
+- **[Vorschlag]** „Übernehmen“ füllt die Amplitude nur, wenn der ruhige Wert **gut** ist. Bei vorläufig bleibt das Feld
+  leer, der Wert steht als Platzhalter daneben und lässt sich mit einem Tipp eintragen.
+- **[Vorschlag]** Unter „Erweitert“ der gemittelte Schlag als kleines Bild mit den drei markierten Klicks (wie im
+  Labor). So sieht man am Handy selbst, ob die Zuordnung stimmt.
+- **[Vorschlag]** „Experimentell“ bleibt stehen, bis mindestens drei Uhren innerhalb ±15° zu „Watch Accuracy Meter“
+  liegen.
+- **[offen]** Soll M4 (5 Lagen) die Amplitude je Lage zeigen? Der Abfall von flach zu hängend (oft 20–50°) wäre ein
+  guter Plausibilitäts-Test, lohnt aber erst, wenn M3 sicher ist.
+
+### Hebungswinkel
+
+- **[fest]** Uhrenfeld `liftAngle` (°) ist umgesetzt. Ohne Wert keine Amplitude (die Auswertung rechnet intern mit 52°,
+  angezeigt wird das nicht). Werte des Nutzers: NH35 53°, ETA 2824 / PT5000 / ST2130 50°.
+- **[Vorschlag]** Für Vergleiche muss „Watch Accuracy Meter“ mit **demselben Hebungswinkel** rechnen wie die Uhrenbox,
+  sonst unterscheiden sich die Werte schon um 2 % je Grad.
+- **[Vorschlag]** Omega Co-Axial vorerst ohne Amplitude: andere Hemmung, Tick und Tack klingen verschieden, Hebungswinkel
+  unbekannt. Erst wenn eine Referenz zeigt, dass es passt.
+- **[Vorschlag]** Später füllt die **Kaliber-Datenbank** das Feld vor (zusammen mit `bph`).
+
+### Referenz-Aufnahmen (vom Nutzer)
+
+Aufnehmen im Labor am Fold6 (`adb reverse`, Knopf „Letzte 30 s als WAV speichern“), Uhr wie gewohnt aufs untere
+Mikrofon. Direkt davor oder danach in **derselben Lage** „Watch Accuracy Meter“ (Amplitude, Gang, Abfallfehler, dort
+eingestellter Hebungswinkel). Ablage in `zeitwaage-labor/aufnahmen/`, Name z. B.
+`2026-11-02-fold6-st2130-zo-voll-wam285.wav`. Je Aufnahme notieren: Uhr, Lage, wann zuletzt aufgezogen, Unterlage,
+WAM-Werte.
+
+| # | Uhr | Lage | Aufzug | prüft |
+|---|---|---|---|---|
+| 1 | Sea-Gull ST2130 | Zifferblatt oben | voll | woher die 330° kommen; lautestes Signal, beste Chance für alle drei Klicks |
+| 2 | Sea-Gull ST2130 | Krone unten | voll, direkt nach 1 | Amplitude muss fallen (meist 20–50°), t muss also länger werden |
+| 3 | PT5000 | Zifferblatt oben | voll | 140° oder ≈ 210°: welche Spitze das Entriegeln ist |
+| 4 | PT5000 | Zifferblatt oben | 24–30 h nicht aufgezogen | **Aufzug-Versuch**: Die Spitze, deren Abstand zum Fall wächst, ist das Entriegeln. Entscheidet die Zuordnung auch ohne WAM |
+| 5 | Seiko NH35 | Zifferblatt oben | voll | leise Uhr, Entriegeln nur auf einer Seite hörbar |
+| 6 | Sea-Gull ST2130 | Zifferblatt oben | voll, Uhr abheben und neu auflegen, zweimal | Wiederholbarkeit am Handy |
+| 7 (optional) | Omega Co-Axial | Zifferblatt oben | voll | nur, wenn WAM dort eine Amplitude zeigt |
+
+Danach: jede Referenz als Test wie die vorhandenen echten Aufnahmen (Amplitude ±15° zu WAM), Schwellen einstellen,
+erst dann an `pwa/zeitwaage.js`.
+
+### Später
+
+- **[Vorschlag]** Mit Amplitude und Abfallfehler im Verlauf bekommt die **Gang-Analyse in Worten** (KI-Premium) ihre
+  Daten („Amplitude fällt seit 4 Monaten …“).
+
+### Offen (Fragen an Markus zu M3)
+
+1. **[offen]** Zeigt deine „Watch Accuracy Meter“-Version die Amplitude, und welcher Hebungswinkel ist dort eingestellt?
+   Ohne Amplitude dort bleibt nur der Aufzug-Versuch (Referenz 4) als Prüfung.
+2. **[offen]** Die 28.800-Aufnahme von heute: War das die PT5000, in welcher Lage und wie lange nach dem Aufziehen?
+   Wären 140° für sie denkbar (z. B. fast abgelaufen)?
+3. **[offen]** Sea-Gull 330°: Lage und Aufzug? Hattest du dort einen Vergleichswert aus WAM?
+4. **[offen]** Soll die Amplitude bei „vorläufig“ überhaupt sichtbar sein (grau „≈“), oder lieber nur bei „gut“?
+5. **[offen]** Gemittelter Schlag als Bild unter „Erweitert“: hilfreich oder zu viel?
 
 ## M4 „Messreihe in 5 Lagen“ (Vorschlag)
 
@@ -181,6 +325,6 @@ Erkenntnisse, die in die Umsetzung gehören:
 ## Offen (Fragen an Markus)
 
 1. **[offen]** M1-Ablauf: Passt „Tipp, wenn der Sekundenzeiger auf 12 steht, dann Uhrzeit bestätigen“ so, wie du es von „Watch Accuracy Meter“ kennst? Oder misst du dort anders (z. B. Uhrzeit vorher wählen, dann tippen)?
-2. **[offen]** Soll die akustische Zeitwaage (M2–M4) wie in der Roadmap **Premium** werden oder in die Basis? Davon hängt ab, ob sie schon jetzt einen Schalter bzw. eine Kennzeichnung bekommt.
+2. ~~Premium oder Basis~~ **[fest, 28.10.2026]** Freeware: Die Zeitwaage (M2–M4) gehört in die Basis, ohne Schalter oder Kennzeichnung. Monetarisierung war nur eine vage Idee.
 3. ~~Quarzuhr und Kontaktmikrofon~~ **[fest, 28.10.2026]** Quarz-Referenz ist die Moonswatch; das Handymikrofon reicht für
    alle gemessenen mechanischen Uhren, ein Kontaktmikrofon ist vorerst nicht nötig. Kalibrierung läuft gegen die Systemzeit.
