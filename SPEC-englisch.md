@@ -92,9 +92,9 @@ Bezug: `ROADMAP-privat.md` („Englische Version – vergrößert die Zielgruppe
 
 ## 8. Testen
 
-- **[fest]** Im Browser-Fenster (`uhrenbox`, Port 3000, `/pwa/index.html`; der Server liefert kein Verzeichnis-Index): beide Sprachen, Handygröße (Fold6 zu ≈ 375 px) und
+- **[fest]** Im Browser-Fenster (launch.json `uhrenbox` = `uhrenbox/backend/server.js`, Port 3000, `/pwa/index.html`; der Server liefert kein Verzeichnis-Index): beide Sprachen, Handygröße (Fold6 zu ≈ 375 px) und
   Desktop; alle Reiter, Detailseite, Formular, Messung, Wristcheck, Zeitwaagen-Fenster, Einstellungen.
-- **[fest]** Testdaten: eine vorhandene Sicherung in die Browser-Fenster-Instanz laden (eigener Speicher, berührt die
+- **[fest]** Testdaten: eine vorhandene Sicherung aus `uhrenbox/Sicherungen/` (unter `/Sicherungen/…` erreichbar) in die Browser-Fenster-Instanz laden (eigener Speicher, berührt die
   App am Handy nicht). `SPEC-testdaten.md` beschreibt Aufnahmen-Spenden, keine Oberflächen-Testdaten.
 - **[fest]** Prüfung auf vergessene deutsche Texte: im englischen Modus den Seitentext nach typisch deutschen
   Wörtern/Umlauten durchsuchen (Uhrnamen und Nutzertexte ausgenommen).
