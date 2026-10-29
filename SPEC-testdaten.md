@@ -54,7 +54,7 @@ Bezug: `SPEC-zeitwaage.md` (M2 Gang/Abfallfehler umgesetzt, M3 Amplitude in Arbe
 
 | Gruppe | Feld | Quelle |
 |---|---|---|
-| Uhr | Kaliber (Freitext, z. B. „NH35“, „ETA 2824-2“), A/h, Hebungswinkel, Werk-Art | aus der Uhr, änderbar |
+| Uhr | Kaliber (Freitext, z. B. „NH35“, „ETA 2824-2“), A/h, Hebungswinkel, Werk-Art, Gehäusematerial und Boden (Stahl/Titan/Kunststoff, Glas-/Vollboden) | aus der Uhr, änderbar |
 | Uhr | Aufzug: voll / halb / fast abgelaufen, Stunden seit Aufziehen | Abfrage im Dialog |
 | Messung | Lage, Unterlage (Tisch, Stoff, Hand), Uhr direkt aufs Mikrofon ja/nein | Lage aus dem Messfenster, Rest Abfrage |
 | Uhrenbox | ruhiger Wert Gang, Abfallfehler, Amplitude (falls gezeigt), Güte, gehörte Frequenz, Messdauer, `calibPpm` | automatisch |
@@ -148,6 +148,17 @@ Bezug: `SPEC-zeitwaage.md` (M2 Gang/Abfallfehler umgesetzt, M3 Amplitude in Arbe
 - **[Vorschlag]** Spenden in `zeitwaage-labor/aufnahmen/spenden/` ablegen, eine Tabelle (Markdown oder CSV) mit
   Handy, Kaliber, Uhrenbox-Werten, Referenz, Abweichung. Nach 5–10 Referenzen mit echter Zeitwaage die M3-Schwellen
   einstellen und in `SPEC-zeitwaage.md` eintragen.
+
+## 6. Später, low prio: „Watch-Shazam“ (Kaliber am Klang erkennen)
+
+- **[Vorschlag, low prio, 29.10.2026]** Nur falls Spenden zahlreich kommen. Ziel: das **Kaliber** (nicht die einzelne Uhr)
+  am Tick erkennen. Stufe 1 Frequenz (trennt schon viel), Stufe 2 Fingerabdruck aus dem gemittelten Schlag (Abstände und
+  Lautstärken der Teilgeräusche, Klangfarbe), Vergleich mit den nächsten bekannten Nachbarn, kein neuronales Netz nötig.
+  Antwort ehrlich als Kandidaten („klingt am ehesten nach ETA-2824-Familie“), nie als Gewissheit.
+- Anwendungsfall für Sammler: Steckt wirklich ein ETA drin oder ein Klon (PT5000, ST2130)? Nebenbei füllt es das
+  Kaliberfeld aus.
+- Grenze: Das Gehäuse schwingt mit, deshalb je Kaliber Aufnahmen von **mehreren verschiedenen Uhren** (grob 5–10),
+  sonst lernt das Verfahren das Gehäuse statt des Kalibers. Darum Gehäusematerial und Boden schon jetzt in der Spende.
 
 ## Offen (Fragen an Markus)
 
