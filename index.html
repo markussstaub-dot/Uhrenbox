@@ -315,6 +315,9 @@ img { max-width: 100%; }
 .foot-note { text-align: center; color: var(--muted); font-size: 12.5px; padding: 0 16px 32px; }
 .foot-note .linkish { background: none; border: 0; padding: 0; color: var(--accent); text-decoration: underline; cursor: pointer; font-size: inherit; }
 .foot-note .warn-text { color: var(--warn); }
+.coll-hints { margin-bottom: 16px; color: var(--ink); border-left: 3px solid var(--line); display: grid; gap: 4px; }
+.coll-hints a { color: var(--accent); }
+.facts dd.warn { color: var(--warn); }
 .backup-due { display: flex; align-items: center; justify-content: space-between; gap: 10px 16px; flex-wrap: wrap; margin-bottom: 16px; color: var(--ink); border-left: 3px solid var(--warn); }
 .update { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 19; display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); padding: 8px 8px 8px 14px; border-radius: 10px; font-size: 14px; max-width: calc(100% - 32px); }
 </style>
@@ -486,6 +489,8 @@ const EN = {
   'Zurück zur Uhr': 'Back to watch', 'Neue Uhr': 'New watch', 'Foto ersetzen (optional)': 'Replace photo (optional)', 'Foto hochladen (optional)': 'Upload photo (optional)',
   'Aktuelles Foto': 'Current photo', 'JPG, PNG, WebP oder GIF, große Fotos werden automatisch verkleinert.': 'JPG, PNG, WebP or GIF, large photos are shrunk automatically.',
   'Änderungen speichern': 'Save changes', 'Uhr anlegen': 'Add watch',
+  'Revision': 'Service', 'Letzte Revision (Monat/Jahr)': 'Last service (month/year)', 'Revisions-Intervall (Jahre)': 'Service interval (years)', 'z. B. 5': 'e.g. 5',
+  'Revision fällig:': 'Service due:', '€ pro Tragetag': '€ per day worn',
 };
 const pl = (n, one, many) => n === 1 ? one : many;
 const FN = {
@@ -502,6 +507,11 @@ const FN = {
   'tol.range': [(a, b, u) => `${a} bis ${b} ${u}`, (a, b, u) => `${a} to ${b} ${u}`],
   'tol.band': [r => `Grünes Band: Werkstoleranz ${r}.`, r => `Green band: movement tolerance ${r}.`],
   'todo.open': [n => `${n} offen`, n => `${n} open`],
+  'cost.day': [v => `Kosten pro Tragetag: ${v}`, v => `Cost per day worn: ${v}`],
+  'worn.last': [n => n <= 0 ? 'Heute getragen.' : n === 1 ? 'Zuletzt gestern getragen.' : `Zuletzt vor ${n} Tagen getragen.`, n => n <= 0 ? 'Worn today.' : n === 1 ? 'Last worn yesterday.' : `Last worn ${n} days ago.`],
+  'idle.x': [(w, n) => `${w}: seit ${n} Tagen im Kasten`, (w, n) => `${w}: in the box for ${n} days`],
+  'svc.txt': [(a, y, b, due) => `zuletzt ${a}${y ? `, alle ${y} Jahr${y === 1 ? '' : 'e'}` : ''}${b ? (due ? `, fällig seit ${b}` : `, fällig ${b}`) : ''}`,
+    (a, y, b, due) => `last ${a}${y ? `, every ${y} ${pl(y, 'year', 'years')}` : ''}${b ? (due ? `, due since ${b}` : `, due ${b}`) : ''}`],
   'days.worn': [(n, a, b) => `${n} Tag${n > 1 ? 'e' : ''} getragen, zuerst am ${a}, zuletzt am ${b}.`, (n, a, b) => `Worn ${n} ${pl(n, 'day', 'days')}, first on ${a}, last on ${b}.`],
   'photos.n': [n => `${n} Foto${n === 1 ? '' : 's'}`, n => `${n} ${pl(n, 'photo', 'photos')}`],
   'photo.big': [i => `Foto ${i} groß ansehen`, i => `View photo ${i} full size`],
@@ -698,6 +708,19 @@ const FN = {
   }
   const unitOf = (m, w) => unitTxt(m.kind === 'waage' ? 's/Tag' : w?.tolUnit);   // nur für die Anzeige
   const wearDaysOf = id => Object.keys(S.wear).filter(d => S.wear[d].includes(id)).sort();
+  const daysAgo = day => Math.round((parseDay(todayStr()) - parseDay(day)) / 864e5);
+  const eur = v => `${nf(v, v < 10 ? 1 : 0)} €`;
+  const costPerDay = w => { const n = wearDaysOf(w.id).length; return typeof w.price === 'number' && n ? w.price / n : null; };
+  // Revision: „03/2022“ oder „2022“ plus Intervall in Jahren → { last, next: 'MM/JJJJ', due }
+  function serviceInfo(w) {
+    const m = /^\s*(?:(\d{1,2})\s*[/.-]\s*)?(\d{4})\s*$/.exec(w?.lastService || ''); if (!m) return null;
+    const mm = n => `${String(n % 12 + 1).padStart(2, '0')}/${Math.floor(n / 12)}`;
+    const start = +m[2] * 12 + (m[1] ? Math.min(12, Math.max(1, +m[1])) : 1) - 1;
+    const last = m[1] ? mm(start) : m[2];
+    if (!(w.serviceYears > 0)) return { last, next: null, due: false };
+    const now = new Date(), end = start + Math.round(w.serviceYears * 12);
+    return { last, next: m[1] ? mm(end) : String(Math.floor(end / 12)), due: now.getFullYear() * 12 + now.getMonth() >= end };
+  }
   const uniq = a => [...new Set(a.filter(Boolean))];
   const photosOf = w => uniq([w?.photo, ...(w?.photos || [])]);   // cover first, then the rest
   const photoInUse = (id, exceptWatch) => S.watches.some(w => w.id !== exceptWatch && photosOf(w).includes(id)) || S.measurements.some(m => m.photo === id) || Object.values(S.wearShots).some(s => Object.values(s).includes(id));
@@ -748,12 +771,23 @@ const FN = {
         <div class="actions">${S.canWrite ? `${owned.length ? `<button class="btn primary" data-act="wristcheck"><span class="ico" aria-hidden="true">📷</span> ${tr('Was trage ich?')}</button>` : ''}<button class="btn${owned.length ? '' : ' primary'}" data-act="new-watch">${tr('+ Uhr')}</button>` : ''}<button class="btn" data-act="export" title="${tr('Alle Uhren, Messungen, Tragetage und Fotos als Datei sichern')}">${tr('Sichern')}</button><label class="btn" for="import-in" title="${tr('Eine Sicherung wieder einlesen')}">${tr('Laden')}</label><input id="import-in" type="file" accept=".json,application/json" hidden><button class="btn" data-nav="einstellungen" aria-label="${tr('Einstellungen')}" title="${tr('Einstellungen')}"><span class="ico" aria-hidden="true">⚙</span></button></div>
       </div>
       ${backupBanner()}
+      ${collHints()}
       <div class="ctabs">${favs ? `<button class="chip" data-ctab="fav" aria-pressed="${tab === 'fav'}">★ ${tr('Favoriten')} (${favs})</button>` : ''}<button class="chip" data-ctab="alle" aria-pressed="${tab === 'alle'}">${tr('Alle')} (${ws.length})</button></div>
       ${tab === 'alle' ? `<div class="ctools"><input type="search" id="coll-q" placeholder="${tr('Suchen: Name, Marke, Kaliber')}" value="${esc(S.q || '')}" aria-label="${tr('Uhren suchen')}">
         <select id="coll-sort" aria-label="${tr('Sortieren')}">${[['nr', 'Nummer'], ['name', 'Name'], ['worn', 'Zuletzt getragen'], ['measured', 'Zuletzt gemessen']].map(([k, l]) => `<option value="${k}" ${(pref.sort || 'nr') === k ? 'selected' : ''}>${tr(l)}</option>`).join('')}</select></div>
       <div class="chips" style="margin-bottom:12px">${filters.map(([k, l]) => `<button class="chip" data-filter="${k}" aria-pressed="${S.filter === k}">${l}</button>`).join('')}</div>` : ''}
       <div id="coll-grid">${collGrid(tab)}</div>
     `;
+  }
+  // ruhige Hinweise über dem Raster: fällige Revisionen, Uhr, die am längsten liegt
+  function collHints() {
+    const owned = S.watches.filter(w => (w.status || 'Sammlung') === 'Sammlung'), out = [];
+    const link = w => `<a href="#uhr-${esc(w.id)}" data-open="${esc(w.id)}">${esc(w.name)}</a>`;
+    const due = owned.filter(w => serviceInfo(w)?.due);
+    if (due.length) out.push(`<b>${tr('Revision fällig:')}</b> ${due.map(link).join(', ')}`);
+    const worn = owned.map(w => [w, wearDaysOf(w.id).pop()]).filter(([, d]) => d).sort((a, b) => a[1].localeCompare(b[1]));
+    if (worn.length >= 2 && daysAgo(worn[0][1]) >= 21) out.push(tr('idle.x', link(worn[0][0]), daysAgo(worn[0][1])));
+    return out.length ? `<div class="notice coll-hints" role="status">${out.map(x => `<div>${x}</div>`).join('')}</div>` : '';
   }
   // nur das Raster, damit Tippen ins Suchfeld den Fokus behält
   function collGrid(tab = pref.tab === 'alle' || !S.watches.some(w => w.favorite) ? 'alle' : 'fav') {
@@ -791,7 +825,7 @@ const FN = {
   const DETAIL_FELDER = [
     ['Stammdaten', [['homage', 'Vorbild'], ['dial', 'Zifferblatt'], ['hands', 'Zeiger'], ['bezel', 'Lünette'], ['purchased', 'Gekauft'], ['price', 'Kaufpreis'], ['dealer', 'Händler'], ['serial', 'Seriennummer']]],
     ['Gehäuse', [['diameter', 'Durchmesser'], ['lugToLug', 'Lug-to-Lug'], ['height', 'Höhe'], ['lugWidth', 'Bandanstoß'], ['waterM', 'Wasserdicht'], ['crystal', 'Glas'], ['crown', 'Krone'], ['lume', 'Leuchtmasse'], ['weight', 'Gewicht']]],
-    ['Werk', [['movement', 'Kaliber'], ['movementKind', 'Art'], ['bph', 'Frequenz'], ['liftAngle', 'Hebungswinkel'], ['tol', 'Toleranz']]],
+    ['Werk', [['movement', 'Kaliber'], ['movementKind', 'Art'], ['bph', 'Frequenz'], ['liftAngle', 'Hebungswinkel'], ['tol', 'Toleranz'], ['service', 'Revision']]],
     ['Band', [['strap', 'Aktuelles Band'], ['strapExtra', 'Weitere Bänder']]],
   ];
   function renderSettings() {
@@ -823,12 +857,13 @@ const FN = {
     if (S.editing) return renderWatchForm(w);
     const ms = S.measurements.filter(m => m.watchId === w.id).sort((a, b) => String(a.at).localeCompare(String(b.at)));
     const days = wearDaysOf(w.id);
-    const f = (k, l, v) => {
+    const f = (k, l, v, cls = '') => {
       if ((pref.hide || []).includes(k)) return '';   // in den Einstellungen ausgeblendet
       const val = v ?? w[k]; const has = val != null && val !== '';
       if (!has && pref.leer !== false) return '';     // leere Felder standardmäßig weglassen
-      return `<dt>${tr(l)}</dt><dd class="${has ? '' : 'open'}">${has ? esc(val) : tr('offen')}</dd>`;
+      return `<dt>${tr(l)}</dt><dd class="${has ? cls : 'open'}">${has ? esc(val) : tr('offen')}</dd>`;
     };
+    const svc = serviceInfo(w), cost = costPerDay(w);
     const sec = (titel, inhalt) => inhalt.trim() ? `<section class="panel"><h3>${tr(titel)}</h3><dl class="facts">${inhalt}</dl></section>` : '';
     const mm = (k) => w[k] != null && w[k] !== '' ? nf(w[k], 2) + ' mm' : null;
     const todos = w.todos || [];
@@ -866,7 +901,8 @@ const FN = {
             + f('purchased', 'Gekauft') + f('price', 'Kaufpreis', priceTxt) + f('dealer', 'Händler') + f('serial', 'Seriennummer'))}
           ${sec('Gehäuse', f('diameter', 'Durchmesser', mm('diameter')) + f('lugToLug', 'Lug-to-Lug', mm('lugToLug')) + f('height', 'Höhe', mm('height')) + f('lugWidth', 'Bandanstoß', mm('lugWidth'))
             + f('waterM', 'Wasserdicht', w.waterM ? nf(w.waterM, 0) + ' m' : null) + f('crystal', 'Glas') + f('crown', 'Krone') + f('lume', 'Leuchtmasse') + f('weight', 'Gewicht'))}
-          ${sec('Werk', f('movement', 'Kaliber') + f('movementKind', 'Art', tv(w.movementKind)) + f('bph', 'Frequenz', w.bph ? nf(w.bph, 0) + ' ' + tr('A/h') : null) + f('liftAngle', 'Hebungswinkel', w.liftAngle ? nf(w.liftAngle, 0) + '°' : null) + f('tol', 'Toleranz', tol))}
+          ${sec('Werk', f('movement', 'Kaliber') + f('movementKind', 'Art', tv(w.movementKind)) + f('bph', 'Frequenz', w.bph ? nf(w.bph, 0) + ' ' + tr('A/h') : null) + f('liftAngle', 'Hebungswinkel', w.liftAngle ? nf(w.liftAngle, 0) + '°' : null) + f('tol', 'Toleranz', tol)
+            + f('service', 'Revision', svc ? tr('svc.txt', svc.last, w.serviceYears, svc.next, svc.due) : null, svc?.due ? 'warn' : ''))}
           ${sec('Band', f('strap', 'Aktuell') + f('strapExtra', 'Weitere'))}
           <section class="panel">
             <div class="panel-head"><h3>${tr('Offene Punkte')}</h3><span class="label">${tr('todo.open', todos.filter(x => !x.done).length)}</span></div>
@@ -875,7 +911,8 @@ const FN = {
           </section>
           ${w.notes ? `<section class="panel"><h3>${tr('Notizen')}</h3><p style="margin:0;white-space:pre-wrap">${esc(w.notes)}</p></section>` : ''}
           <section class="panel"><h3>${tr('Tragetage')}</h3>
-            <p style="margin:0">${days.length ? tr('days.worn', days.length, fmtDate(parseDay(days[0])), fmtDate(parseDay(days[days.length - 1]))) : tr('Noch keine Tragetage eingetragen.')}</p>
+            <p style="margin:0">${days.length ? tr('days.worn', days.length, fmtDate(parseDay(days[0])), fmtDate(parseDay(days[days.length - 1]))) + ' ' + tr('worn.last', daysAgo(days[days.length - 1])) : tr('Noch keine Tragetage eingetragen.')}</p>
+            ${cost != null ? `<p style="margin:0">${tr('cost.day', eur(cost))}</p>` : ''}
             <div><button class="btn small" data-nav="tagebuch">${tr('Zum Tragetagebuch')}</button></div>
           </section>
           ${S.canWrite ? `<div class="actions">${S.confirm === 'del-watch' ? `<span class="muted">${tr('Uhr mit allen Messungen löschen?')}</span><button class="btn danger" data-act="del-watch-yes">${tr('Ja, löschen')}</button><button class="btn ghost" data-act="cancel-confirm">${tr('Abbrechen')}</button>` : `<button class="btn ghost danger" data-act="del-watch">${tr('Uhr löschen')}</button>`}</div>` : ''}
@@ -1213,6 +1250,8 @@ const FN = {
         <tbody>${numRows.map(numRow).join('')}
           ${txtRows.map(([k, l]) => `<tr><td class="label" style="white-space:nowrap">${tr(l)}</td>${ws.map(w => `<td>${w[k] ? esc(k === 'movementKind' ? tv(w[k]) : w[k]) : `<span class="muted">${tr('offen')}</span>`}</td>`).join('')}</tr>`).join('')}
           <tr><td class="label">${tr('Tragetage')}</td>${ws.map(w => `<td class="mono">${wearN(w.id)}</td>`).join('')}</tr>
+          ${(() => { const cs = ws.map(costPerDay), known = cs.filter(v => v != null), mx = Math.max(...known), mn = Math.min(...known);
+            return known.length ? `<tr><td class="label" style="white-space:nowrap">${tr('€ pro Tragetag')}</td>${cs.map(v => `<td class="mono ${v != null && known.length > 1 && (v === mx || v === mn) ? 'hi' : ''}">${v != null ? eur(v) : '<span class="muted">–</span>'}</td>`).join('')}</tr>` : ''; })()}
           <tr><td class="label">${tr('Letzter Gang')}</td>${ws.map(w => { const m = S.measurements.filter(x => x.watchId === w.id).sort((a, b) => String(b.at).localeCompare(String(a.at)))[0]; const v = m ? mValue(m, w) : null; return `<td class="mono state-${tolState(v, w)}">${v != null ? signed(v) + ' ' + esc(unitOf(m, w)) : '<span class="muted">–</span>'}</td>`; }).join('')}</tr>
         </tbody></table></div>` : `<div class="empty">${tr('Wähle oben mindestens eine Uhr.')}</div>`}
     `;
@@ -1507,6 +1546,7 @@ const FN = {
     ['Werk', [
       ['movement', 'Kaliber'], ['movementKind', 'Art', 'select', { opts: ['Automatik', 'Handaufzug', 'Quarz', 'Mecaquartz'] }], ['bph', 'Frequenz (A/h)', 'number'], ['liftAngle', 'Hebungswinkel (°)', 'number', { ph: 'z. B. 52' }],
       ['tolMin', 'Toleranz von', 'number'], ['tolMax', 'Toleranz bis', 'number'], ['tolUnit', 'Toleranz-Einheit', 'select', { opts: ['s/Tag', 's/Monat'] }],
+      ['lastService', 'Letzte Revision (Monat/Jahr)', 'text', { ph: '03/2022' }], ['serviceYears', 'Revisions-Intervall (Jahre)', 'number', { ph: 'z. B. 5' }],
     ]],
     ['Band und Sonstiges', [
       ['strap', 'Aktuelles Band', 'text', { wide: 1 }], ['strapExtra', 'Weitere Bänder', 'text', { wide: 1 }], ['color', 'Farbe im Tagebuch', 'color'], ['notes', 'Notizen', 'textarea', { wide: 1 }],
