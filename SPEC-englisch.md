@@ -114,4 +114,9 @@ Bezug: `ROADMAP-privat.md` („Englische Version – vergrößert die Zielgruppe
   sofort gefüllt sieht. Nicht Teil dieser Runde; eigene kleine Session, falls gewünscht.
 - **[offen]** Englische Screenshots für das Manifest (`screenshot-handy.png` zeigt die deutsche Oberfläche).
   Erst nach dieser Runde neu aufnehmen.
+- **[offen]** Reihenfolge mit dem Branch `prototyp/uhrenerkennung` (`ki.js`, `?ki=1`, Foto → Steckbrief): erst
+  Englisch auf `main`, dann den KI-Branch auf `main` nachziehen (Konflikte in `index.html` und `sw.js` erwartet). Seine
+  Texte dabei genauso einbinden: deutsch in `tr('…')`, Englisch in `EN`, Texte mit Zahlen in `FN`. Steht `ki.js` als
+  eigenes Modul, bekommt es `tr` übergeben oder liefert deutsche Texte, die `index.html` bei der Anzeige übersetzt (wie
+  die Fehlertexte aus `zeitwaage.js`).
 - **[offen]** Weitere Sprachen: Das Wörterbuch erlaubt sie, geplant ist keine.
