@@ -203,7 +203,16 @@ Erkenntnisse, die in die Umsetzung gehören:
 - Aufnahmen: `aufnahmen/2026-10-28-fold6-vh31.wav` (gut), `-vh31-angedrueckt.wav`, `-vh31-display-aus.wav` (gestört),
   `-vk63.wav`, `-ohne-uhr.wav` (Kontrolle).
 
-## M3 „Amplitude“ (Stufe danach)
+## M3 „Amplitude“ (zurückgestellt, 29.10.2026)
+
+- **[fest, 29.10.2026]** M3 ist **runterpriorisiert**: ambitioniert, weil 1 ms Fehler beim Abstand der Teilgeräusche
+  ≈ 35° Amplitude ausmacht und ohne Referenzgerät nicht zu entscheiden ist, welche Spitze das Entriegeln ist. Bis dahin
+  bleibt die Amplitude experimentell (nur mit Hebungswinkel, nur 150–360°). Gang und Abfallfehler decken die meisten
+  Entscheidungen ab.
+- **[fest]** Weitermachen erst, wenn **Datenspenden mit Referenzwerten** einer echten Zeitwaage kommen
+  (`SPEC-testdaten.md`), eine eigene Zeitwaage da ist oder ein Kontaktmikrofon saubere, getrennte Teilgeräusche liefert.
+  Vorher Reihenfolge: Quarz-Hinweis im Messfenster, dann M1 (Tipp und Foto).
+
 
 - **[fest]** Amplitude braucht den **Hebungswinkel** L des Kalibers (oft 50–53°) und die **drei Teilgeräusche** eines
   Schlags (1 Entriegeln, 2 Impuls, 3 Fall). Gemessen wird die Zeit t vom ersten bis zum dritten Teilgeräusch.
