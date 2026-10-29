@@ -81,6 +81,7 @@ main { padding-block: 24px 64px; }
 .btn.danger { color: var(--bad); }
 .btn[disabled] { opacity: .5; cursor: default; }
 .btn.small { padding: 4px 9px; font-size: 13px; }
+.btn .ico { font-size: 1.6em; line-height: 1; margin: -4px 0; }   /* Symbol im Knopf größer, ohne dass der Knopf höher wird */
 
 /* summary strip */
 .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; margin-bottom: 20px; }
@@ -513,7 +514,7 @@ img { max-width: 100%; }
     return `
       <div class="view-head">
         <div><h2>Sammlung</h2><p>${owned.length} ${owned.length === 1 ? 'Uhr' : 'Uhren'}${ws.length > owned.length ? `, ${ws.length - owned.length} bestellt` : ''}</p></div>
-        <div class="actions">${S.canWrite ? `${owned.length ? '<button class="btn primary" data-act="wristcheck">📷 Was trage ich?</button>' : ''}<button class="btn${owned.length ? '' : ' primary'}" data-act="new-watch">+ Uhr</button>` : ''}<button class="btn" data-act="export" title="Alle Uhren, Messungen, Tragetage und Fotos als Datei sichern">Sichern</button><label class="btn" for="import-in" title="Eine Sicherung wieder einlesen">Laden</label><input id="import-in" type="file" accept=".json,application/json" hidden><button class="btn" data-nav="einstellungen" aria-label="Einstellungen" title="Einstellungen">⚙</button></div>
+        <div class="actions">${S.canWrite ? `${owned.length ? '<button class="btn primary" data-act="wristcheck"><span class="ico" aria-hidden="true">📷</span> Was trage ich?</button>' : ''}<button class="btn${owned.length ? '' : ' primary'}" data-act="new-watch">+ Uhr</button>` : ''}<button class="btn" data-act="export" title="Alle Uhren, Messungen, Tragetage und Fotos als Datei sichern">Sichern</button><label class="btn" for="import-in" title="Eine Sicherung wieder einlesen">Laden</label><input id="import-in" type="file" accept=".json,application/json" hidden><button class="btn" data-nav="einstellungen" aria-label="Einstellungen" title="Einstellungen">⚙</button></div>
       </div>
       ${backupBanner()}
       <div class="ctabs">${favs ? `<button class="chip" data-ctab="fav" aria-pressed="${tab === 'fav'}">★ Favoriten (${favs})</button>` : ''}<button class="chip" data-ctab="alle" aria-pressed="${tab === 'alle'}">Alle (${ws.length})</button></div>
@@ -859,7 +860,7 @@ img { max-width: 100%; }
         <div class="stack">
           <section class="panel">
             <div class="panel-head"><h3>${sel === todayStr() ? 'Heute' : selDate.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}</h3>
-              <div class="actions"><input type="date" id="diary-date" value="${sel}" max="${todayStr()}" aria-label="Tag wählen" style="width:auto">${sel !== todayStr() ? '<button class="btn small" data-act="diary-today">Heute</button>' : S.canWrite && ws.length ? '<button class="btn small" data-act="wristcheck">📷 Was trage ich?</button>' : ''}</div></div>
+              <div class="actions"><input type="date" id="diary-date" value="${sel}" max="${todayStr()}" aria-label="Tag wählen" style="width:auto">${sel !== todayStr() ? '<button class="btn small" data-act="diary-today">Heute</button>' : S.canWrite && ws.length ? '<button class="btn small" data-act="wristcheck"><span class="ico" aria-hidden="true">📷</span> Was trage ich?</button>' : ''}</div></div>
             ${ws.length ? `<div class="pick">${ws.map(w => `<button data-wear="${esc(w.id)}" aria-pressed="${selW.includes(w.id)}" ${S.canWrite ? '' : 'disabled'}><span class="dot" style="background:${esc(w.color || 'var(--muted)')};width:14px;height:14px"></span>${esc(w.name)}</button>`).join('')}</div>` : '<p class="muted">Noch keine Uhren in der Sammlung.</p>'}
             <p class="muted" style="margin:0;font-size:13px">${selW.length ? `Getragen: ${selW.map(id => esc(W(id)?.name || '?')).join(' und ')}. Tippe erneut, um es zu entfernen.` : 'Tippe auf eine Uhr, um sie für diesen Tag einzutragen. Ein Uhrwechsel am Tag geht auch.'}</p>
             ${selShots.length ? `<div class="day-shots">${selShots.map((id, i) => `<button data-shot="${i}" aria-label="Foto mit ${esc(W(id)?.name || '?')} groß ansehen"><img src="${blobUrl(S.wearShots[sel][id])}" alt="${esc(W(id)?.name || '?')} am Handgelenk"></button>`).join('')}</div>` : ''}
