@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#FBFBF8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1B1E21" media="(prefers-color-scheme: dark)">
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="manifest" href="manifest.webmanifest" id="manifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -323,32 +323,214 @@ img { max-width: 100%; }
       <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M16 16 L16 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M16 16 L22 19" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="16" r="1.8" fill="currentColor"/></svg>
       <h1>Uhrenbox</h1>
     </div>
-    <nav class="tabs" aria-label="Ansichten">
-      <button class="tab" data-nav="sammlung">Sammlung</button>
-      <button class="tab" data-nav="galerie">Galerie</button>
-      <button class="tab" data-nav="messungen">Messungen</button>
-      <button class="tab" data-nav="tagebuch">Tragetagebuch</button>
-      <button class="tab" data-nav="vergleich">Vergleich</button>
+    <nav class="tabs" data-t-aria="Ansichten" aria-label="Ansichten">
+      <button class="tab" data-nav="sammlung" data-t>Sammlung</button>
+      <button class="tab" data-nav="galerie" data-t>Galerie</button>
+      <button class="tab" data-nav="messungen" data-t>Messungen</button>
+      <button class="tab" data-nav="tagebuch" data-t>Tragetagebuch</button>
+      <button class="tab" data-nav="vergleich" data-t>Vergleich</button>
     </nav>
   </div>
 </header>
 
 <main class="wrap" id="app">
   <div class="empty" id="boot">
-    <h3>Sammlung wird geladen</h3>
-    <p>Hier erscheinen gleich deine Uhren mit Fotos, Messungen und Tragetagen.</p>
+    <h3 data-t>Sammlung wird geladen</h3>
+    <p data-t>Hier erscheinen gleich deine Uhren mit Fotos, Messungen und Tragetagen.</p>
   </div>
 </main>
 <div id="toast" class="toast" hidden></div>
-<div id="lb" class="lb" hidden role="dialog" aria-modal="true" aria-label="Foto ansehen"></div>
+<div id="lb" class="lb" hidden role="dialog" aria-modal="true" data-t-aria="Foto ansehen" aria-label="Foto ansehen"></div>
 <div id="wc" class="wc" hidden></div>
-<div id="zw" class="zw" hidden role="dialog" aria-modal="true" aria-label="Zeitwaage"></div>
+<div id="zw" class="zw" hidden role="dialog" aria-modal="true" data-t-aria="Zeitwaage" aria-label="Zeitwaage"></div>
 <!-- Wristcheck: capture öffnet am Handy direkt die Rückkamera, die zweite Auswahl erlaubt ein schon gemachtes Foto -->
 <input id="wc-cam" type="file" accept="image/*" capture="environment" hidden>
 <input id="wc-gal" type="file" accept="image/*" hidden>
-<div id="update" class="update" hidden role="status"><span>Neue Version der Uhrenbox ist da.</span><button class="btn small primary">Neu laden</button></div>
+<div id="update" class="update" hidden role="status"><span data-t>Neue Version der Uhrenbox ist da.</span><button class="btn small primary" data-t>Neu laden</button></div>
 <p class="foot-note" id="foot">Alle Daten bleiben auf diesem Gerät, in diesem Browser. Denk ab und zu an „Sichern“.</p>
 
+<script>
+// ---------- Wörterbuch (SPEC-englisch.md) ----------
+// EN: deutscher Text → englischer Text. Auch gespeicherte Auswahlwerte (Werk-Art, Lage, Status …) stehen hier;
+// die Daten selbst bleiben deutsch. FN: Texte mit Zahlen/Namen, je [deutsch, englisch].
+const EN = {
+  // Reiter, Rahmen
+  'Ansichten': 'Views', 'Sammlung': 'Collection', 'Galerie': 'Gallery', 'Messungen': 'Measurements', 'Tragetagebuch': 'Wear diary', 'Vergleich': 'Compare',
+  'Einstellungen': 'Settings', 'Sammlung wird geladen': 'Loading collection',
+  'Hier erscheinen gleich deine Uhren mit Fotos, Messungen und Tragetagen.': 'Your watches with photos, measurements and wear days will appear here in a moment.',
+  'Foto ansehen': 'View photo', 'Zeitwaage': 'Timegrapher', 'Neue Version der Uhrenbox ist da.': 'A new version of Uhrenbox is available.', 'Neu laden': 'Reload',
+  'Unbekannte Uhr': 'Unknown watch', 'Schließen': 'Close', 'Abbrechen': 'Cancel', 'Nein': 'No', 'offen': 'not set', 'Alle': 'All', 'Uhr': 'Watch',
+  // Fehler und Meldungen
+  'Speichern': 'Saving', 'Eintragen': 'Logging', 'Löschen': 'Delete', 'Entfernen': 'Remove', 'Hinzufügen': 'Add',
+  'Dieses Bildformat geht nicht. Nimm JPG, PNG oder WebP.': 'This image format is not supported. Use JPG, PNG or WebP.',
+  'Das Foto ist zu groß.': 'The photo is too large.', 'Hochladen fehlgeschlagen. Bitte noch einmal versuchen.': 'Upload failed. Please try again.',
+  'Das Foto ist größer als 20 MB. Bitte ein kleineres wählen.': 'The photo is larger than 20 MB. Please choose a smaller one.',
+  'Foto wird hochgeladen …': 'Uploading photo …', 'Foto gespeichert': 'Photo saved', 'Foto entfernt': 'Photo removed', 'Titelbild geändert': 'Cover photo changed',
+  'Messung gelöscht': 'Measurement deleted', 'Messung gespeichert': 'Measurement saved', 'Uhr gelöscht': 'Watch deleted',
+  'Gespeichert': 'Saved', 'Uhr angelegt': 'Watch added', 'Bitte einen Kurznamen eingeben.': 'Please enter a short name.', 'Vorschau': 'Preview',
+  'Uhrenbox ist jetzt als App installiert': 'Uhrenbox is now installed as an app',
+  'Speicher nicht verfügbar': 'Storage not available',
+  'Dieser Browser erlaubt der Uhrenbox keinen lokalen Speicher (z. B. im privaten Modus). Öffne sie in einem normalen Browserfenster.': 'This browser does not allow Uhrenbox to store data locally (e.g. in private mode). Open it in a normal browser window.',
+  // Sichern
+  'Auf diesem Gerät gibt es noch keine Sicherung.': 'There is no backup on this device yet.', 'Zeit zum Sichern.': 'Time for a backup.',
+  'Jetzt sichern': 'Back up now', 'Später': 'Later', 'Speicher dauerhaft ✓': 'Storage persistent ✓', 'Speicher nicht dauerhaft': 'Storage not persistent',
+  'Noch nie gesichert': 'Never backed up', 'Als App installieren': 'Install as app',
+  'Tipp: In Safari über <b>Teilen → Zum Home-Bildschirm</b> als App installieren.': 'Tip: In Safari, install it as an app via <b>Share → Add to Home Screen</b>.',
+  'Als App installiert behält der Browser deine Daten zuverlässiger.': 'Installed as an app, the browser keeps your data more reliably.',
+  'Alle Daten bleiben auf diesem Gerät, in diesem Browser.': 'All data stays on this device, in this browser.',
+  'Sichern': 'Back up', 'Laden': 'Restore', 'Alle Uhren, Messungen, Tragetage und Fotos als Datei sichern': 'Save all watches, measurements, wear days and photos to a file',
+  'Eine Sicherung wieder einlesen': 'Restore a backup file', 'Sicherung wird erstellt …': 'Creating backup …', 'sicherung': 'backup', 'Uhrenbox-Sicherung': 'Uhrenbox backup',
+  'Sichern abgebrochen': 'Backup cancelled', 'Sicherung gespeichert': 'Backup saved', 'Diese Datei ist keine Uhrenbox-Sicherung.': 'This file is not an Uhrenbox backup.',
+  'Laden fehlgeschlagen.': 'Restore failed.',
+  // Sammlung
+  'Mechanisch': 'Mechanical', 'Was trage ich?': 'What am I wearing?', '+ Uhr': '+ Watch', 'Favoriten': 'Favourites',
+  'Suchen: Name, Marke, Kaliber': 'Search: name, brand, calibre', 'Uhren suchen': 'Search watches', 'Sortieren': 'Sort',
+  'Nummer': 'Number', 'Name': 'Name', 'Zuletzt getragen': 'Last worn', 'Zuletzt gemessen': 'Last measured',
+  'Noch keine Uhren gespeichert. Füge oben deine erste Uhr hinzu.': 'No watches yet. Add your first watch above.',
+  'Keine Uhr passt zu diesem Filter.': 'No watch matches this filter.',
+  // Einstellungen
+  'Automatisch (Gerät)': 'Automatic (device)', 'Gilt nur für dieses Gerät. Ausgeblendete Felder behalten ihre Werte, sie werden nur nicht angezeigt.': 'Applies to this device only. Hidden fields keep their values, they are just not shown.',
+  'Ansicht': 'Display', 'Leere Felder auf der Detailseite ausblenden': 'Hide empty fields on the detail page', 'Marke unter den Kacheln der Sammlung zeigen': 'Show brand below the collection tiles',
+  'Felder auf der Detailseite': 'Fields on the detail page',
+  // Felder (Detailseite, Formular, Vergleich)
+  'Stammdaten': 'Basics', 'Vorbild': 'Homage to', 'Zifferblatt': 'Dial', 'Zeiger': 'Hands', 'Lünette': 'Bezel', 'Gekauft': 'Purchased', 'Kaufpreis': 'Price',
+  'Händler': 'Dealer', 'Seriennummer': 'Serial number', 'Gehäuse': 'Case', 'Durchmesser': 'Diameter', 'Lug-to-Lug': 'Lug-to-lug', 'Höhe': 'Thickness', 'Bandanstoß': 'Lug width',
+  'Wasserdicht': 'Water resistance', 'Glas': 'Crystal', 'Krone': 'Crown', 'Leuchtmasse': 'Lume', 'Gewicht': 'Weight', 'Werk': 'Movement', 'Kaliber': 'Calibre', 'Art': 'Type',
+  'Frequenz': 'Frequency', 'Hebungswinkel': 'Lift angle', 'Toleranz': 'Tolerance', 'Band': 'Strap', 'Aktuelles Band': 'Current strap', 'Weitere Bänder': 'Other straps',
+  'Aktuell': 'Current', 'Weitere': 'Others', 'Kurzname': 'Short name', 'Marke': 'Brand', 'Modell / Variante': 'Model / variant', 'Kategorie': 'Category', 'Status': 'Status',
+  'Favorit': 'Favourite', 'Gekauft (Monat/Jahr)': 'Purchased (month/year)', 'Kaufpreis (€)': 'Price (€)', 'Preisnotiz': 'Price note', 'Durchmesser (mm)': 'Diameter (mm)',
+  'Lug-to-Lug (mm)': 'Lug-to-lug (mm)', 'Höhe (mm)': 'Thickness (mm)', 'Bandanstoß (mm)': 'Lug width (mm)', 'Wasserdicht (m)': 'Water resistance (m)', 'Frequenz (A/h)': 'Frequency (bph)',
+  'Hebungswinkel (°)': 'Lift angle (°)', 'Toleranz von': 'Tolerance from', 'Toleranz bis': 'Tolerance to', 'Toleranz-Einheit': 'Tolerance unit', 'Band und Sonstiges': 'Strap and other',
+  'Farbe im Tagebuch': 'Colour in diary', 'Notizen': 'Notes', 'z. B. PH-2': 'e.g. PH-2', '10/2025': '10/2025', 'z. B. im Sale': 'e.g. on sale', 'z. B. 52': 'e.g. 52',
+  // gespeicherte Auswahlwerte
+  'Taucher': 'Diver', 'Chronograph': 'Chronograph', 'Alltag': 'Everyday', 'Dress': 'Dress', 'Sonstige': 'Other', 'Bestellt': 'Ordered', 'Verkauft': 'Sold',
+  'Automatik': 'Automatic', 'Handaufzug': 'Hand-wound', 'Quarz': 'Quartz', 'Mecaquartz': 'Meca-quartz', 's/Tag': 's/day', 's/Monat': 's/month', 'A/h': 'bph',
+  'Zifferblatt oben': 'Dial up', 'Zifferblatt unten': 'Dial down', 'Krone unten': 'Crown down', 'Krone oben': 'Crown up', 'Krone links': 'Crown left', 'Krone rechts': 'Crown right', 'Am Handgelenk': 'On the wrist',
+  // Detail
+  'Diese Uhr gibt es nicht (mehr).': 'This watch does not exist (any more).', 'Gang abgleichen (Funkuhr)': 'Check rate (atomic time)', 'Messen': 'Measure',
+  'Bearbeiten': 'Edit', 'Titelbild ersetzen': 'Replace cover photo', 'Foto hinzufügen': 'Add photo', 'Heute getragen': 'Worn today', 'Heute tragen': 'Wear today',
+  'Offene Punkte': 'To-dos', 'Punkt entfernen': 'Remove item', 'Nichts offen.': 'Nothing open.', 'Neuer Punkt, z. B. Lug-to-Lug nachmessen': 'New item, e.g. measure lug-to-lug',
+  'Tragetage': 'Wear days', 'Noch keine Tragetage eingetragen.': 'No wear days logged yet.', 'Zum Tragetagebuch': 'Go to wear diary',
+  'Uhr mit allen Messungen löschen?': 'Delete watch with all measurements?', 'Ja, löschen': 'Yes, delete', 'Uhr löschen': 'Delete watch',
+  'Fotos': 'Photos', 'Foto': 'Photo', 'Titelbild': 'Cover', 'Als Titelbild': 'Set as cover', 'Foto entfernen': 'Remove photo', '+ Fotos hinzufügen': '+ Add photos',
+  'Noch keine Fotos. Füge Bilder vom Zifferblatt, vom Band oder vom Gehäuseboden hinzu.': 'No photos yet. Add pictures of the dial, the strap or the caseback.',
+  // Galerie, Lightbox
+  ' und ': ' and ', 'Noch keine Fotos. Öffne eine Uhr und füge dort Fotos hinzu.': 'No photos yet. Open a watch and add photos there.', 'Ohne Foto:': 'Without photo:',
+  'Vorheriges Foto': 'Previous photo', 'Nächstes Foto': 'Next photo',
+  // Messungen
+  'Letzte Zeitwaagen-Messung': 'Last timegrapher measurement', 'Gang': 'Rate', 'Amplitude': 'Amplitude', 'Abfallfehler': 'Beat error', '+ Messung': '+ Measurement',
+  'Noch keine Zeitwaagen-Messung. Trage Gang, Amplitude und Abfallfehler ein.': 'No timegrapher measurement yet. Enter rate, amplitude and beat error.',
+  'Quarzwerke misst du über einige Wochen gegen eine Funkuhr: Abweichung in Sekunden und Zeitraum in Tagen eintragen.': 'Quartz movements are checked against atomic time over a few weeks: enter the deviation in seconds and the period in days.',
+  'Gangverlauf in': 'Rate history in', 'Gangverlauf': 'Rate history', 'Datum': 'Date', 'Lage / Zeitraum': 'Position / period', 'Notiz': 'Note',
+  'per Mikrofon gemessen': 'measured with the microphone', 'Ändern': 'Edit', 'Messung löschen': 'Delete measurement',
+  'Quarzuhr: Den Gang misst du genauer mit „Abgleich mit Funkuhr“ über einige Wochen als mit der Zeitwaage.': 'Quartz watch: “Check against atomic time” over a few weeks measures the rate more accurately than the timegrapher.',
+  'Zum Abgleich wechseln': 'Switch to time check', 'Per Mikrofon gemessen': 'Measured with the microphone', 'Güte': 'quality', 'Handy-Takt nicht kalibriert': 'phone clock not calibrated',
+  'Abgleich mit Funkuhr': 'Check against atomic time', 'Zeitpunkt': 'Time', 'Lage': 'Position', 'Abweichung (s)': 'Deviation (s)', 'Zeitraum (Tage)': 'Period (days)',
+  'z. B. voll aufgezogen, nach 24 h Ablauf': 'e.g. fully wound, after 24 h running', 'Messung speichern': 'Save measurement', 'Messung eintragen': 'Log measurement',
+  'Zeitwaage für mechanische Werke, Abgleich mit der Funkuhr für Quarz.': 'Timegrapher for mechanical movements, check against atomic time for quartz.',
+  'Alle Uhren': 'All watches', 'Noch keine Messungen eingetragen.': 'No measurements logged yet.', 'Noch nicht mit der Zeitwaage gemessen:': 'Not yet measured with the timegrapher:',
+  // Tragetagebuch
+  'Halte fest, welche Uhr du wann getragen hast.': 'Keep track of which watch you wore when.', 'Heute': 'Today', 'Tag wählen': 'Choose day',
+  'Noch keine Uhren in der Sammlung.': 'No watches in the collection yet.',
+  'Tippe auf eine Uhr, um sie für diesen Tag einzutragen. Ein Uhrwechsel am Tag geht auch.': 'Tap a watch to log it for this day. Switching watches during the day works too.',
+  'Jedes Feld ist ein Tag in der Farbe der getragenen Uhr. Tippe auf einen Tag, um ihn oben zu bearbeiten.': 'Each square is a day in the colour of the watch worn. Tap a day to edit it above.',
+  'Rotation': 'Rotation', '30 Tage': '30 days', '90 Tage': '90 days', 'Gesamt': 'All time', 'Länger nicht am Arm:': 'Not worn for a while:', 'Jede Uhr kam dran.': 'Every watch got its turn.',
+  'Noch keine Tragetage in diesem Zeitraum. Trag links ein, welche Uhr du heute trägst.': 'No wear days in this period yet. Log which watch you are wearing today.',
+  // Wristcheck
+  'heute schon eingetragen': 'already logged today', 'gestern getragen': 'worn yesterday', 'vorgestern getragen': 'worn the day before yesterday', 'vor 3 Tagen getragen': 'worn 3 days ago',
+  'noch nicht getragen': 'not worn yet', 'Vorschlag': 'Suggested', 'Dein Foto von heute': 'Your photo from today',
+  'Mach ein Foto vom Handgelenk und tippe dann die Uhr an. Ohne Foto geht es auch.': 'Take a photo of your wrist, then tap the watch. It works without a photo too.',
+  'Neues Foto': 'New photo', 'Foto machen': 'Take photo', 'Aus Galerie': 'From gallery', 'Ohne Foto': 'Without photo',
+  'Welche Uhr ist das? Antippen zum Eintragen': 'Which watch is it? Tap to log', 'Welche Uhr trägst du heute?': 'Which watch are you wearing today?',
+  'Die Reihenfolge kommt aus deinem Tragemuster (gestern, Wochentag, lange nicht getragen). Das Foto wird nicht ausgewertet, es bleibt nur als Erinnerung beim Tag.': 'The order comes from your wear pattern (yesterday, weekday, not worn for a while). The photo is not analysed, it is only kept as a memory with the day.',
+  // Vergleich
+  'Maße und Werke nebeneinander. Fett: größter und kleinster Wert der Zeile.': 'Dimensions and movements side by side. Bold: largest and smallest value in the row.',
+  'Merkmal': 'Feature', 'Letzter Gang': 'Last rate', 'Wähle oben mindestens eine Uhr.': 'Select at least one watch above.',
+  // Zeitwaage
+  'Quarz (1 Tick/s)': 'Quartz (1 tick/s)', 'Quarz (4 Schritte/s)': 'Quartz (4 steps/s)', 'von Hand gewählt': 'chosen manually', 'Werk-Art': 'movement type',
+  'an der Uhr eingetragen': 'set on the watch', 'mechanisch, wird erkannt': 'mechanical, being detected', 'wird erkannt': 'being detected',
+  'Quarzuhr: Ihr Gang ist kleiner als das, was das Handymikrofon in Minuten auflöst, und viele Quarzwerke sind gar nicht hörbar. Genauer ist der <b>Abgleich mit Funkuhr</b> über einige Wochen.': 'Quartz watch: its rate is smaller than what a phone microphone can resolve in minutes, and many quartz movements cannot be heard at all. A <b>check against atomic time</b> over a few weeks is more accurate.',
+  'Als Quarzwerk speichern': 'Save as quartz movement', 'Zeitwaage konnte nicht geladen werden. Einmal mit Netz öffnen, dann geht sie offline.': 'The timegrapher could not be loaded. Open it once while online, then it works offline.',
+  'Uhr mit dem Boden aufs Mikrofon legen (unten am Handy), weiche Unterlage, stiller Raum. Die ersten 2 s nach dem Auflegen zählen nicht.': 'Place the watch caseback-down on the microphone (bottom of the phone), on a soft surface, in a quiet room. The first 2 s after placing it do not count.',
+  'Zeitwaagen-Streifen: Abstand jedes Ticks zum Soll-Raster, Steigung = Gang': 'Timegrapher trace: offset of each tick from the reference grid, slope = rate',
+  'Erweitert': 'Advanced', 'aus der Uhr': 'from the watch', 'Mikrofon': 'Microphone', 'Aufnahme speichern (WAV, letzte bis zu 2 min)': 'Save recording (WAV, last 2 min max.)',
+  'Übernehmen': 'Apply', 'Stoppen': 'Stop', 'Neu starten': 'Restart', 'Messung starten': 'Start measurement', 'ms Abfallfehler': 'ms beat error', 'gehört:': 'heard:',
+  'Uhr direkt aufs Mikrofon legen, leiser Raum.': 'Place the watch directly on the microphone, quiet room.',
+  'Zu wenige Ticks erkannt': 'Too few ticks detected', 'Ticks nicht eindeutig': 'Ticks not clear', 'Zu kurz für die Faltung': 'Too short for folding',
+  'Der Zeitwaagen-Streifen erscheint nach den ersten Sekunden.': 'The timegrapher trace appears after the first few seconds.',
+  'Kein Mikrofon: Die Seite braucht eine sichere Verbindung (HTTPS, z. B. über GitHub Pages).': 'No microphone: the page needs a secure connection (HTTPS, e.g. via GitHub Pages).',
+  'Mikrofon wird geöffnet …': 'Opening microphone …', 'nimmt auf …': 'recording …',
+  'Mikrofon nicht erlaubt. In den Website-Einstellungen des Browsers freigeben.': 'Microphone not allowed. Allow it in the browser’s site settings.',
+  'Mikrofon nicht verfügbar:': 'Microphone not available:', 'unterbrochen: App war im Hintergrund': 'interrupted: app was in the background', 'Uhr liegt still …': 'watch settling …',
+  'gestoppt: klingt nach Quarzuhr': 'stopped: sounds like a quartz watch', 'gestoppt': 'stopped', 'Erkannt:': 'Detected:',
+  'Als Quarzwerk an der Uhr speichern': 'Save as quartz movement on the watch', 'An der Uhr speichern': 'Save on the watch', 'Quarz: 1 Tick pro Sekunde': 'Quartz: 1 tick per second',
+  'Werte übernommen. Jetzt „Messung eintragen“ tippen.': 'Values applied. Now tap “Log measurement”.',
+  'Schritte/s': 'steps/s', 'akustisch nicht messbar': 'not measurable acoustically',
+  // Formular Uhr
+  'Zurück zur Uhr': 'Back to watch', 'Neue Uhr': 'New watch', 'Foto ersetzen (optional)': 'Replace photo (optional)', 'Foto hochladen (optional)': 'Upload photo (optional)',
+  'Aktuelles Foto': 'Current photo', 'JPG, PNG, WebP oder GIF, große Fotos werden automatisch verkleinert.': 'JPG, PNG, WebP or GIF, large photos are shrunk automatically.',
+  'Änderungen speichern': 'Save changes', 'Uhr anlegen': 'Add watch',
+};
+const pl = (n, one, many) => n === 1 ? one : many;
+const FN = {
+  'fail.ro': [w => `${w} nicht möglich: Du hast hier nur Leserechte.`, w => `${w} not possible: you only have read access here.`],
+  'fail.full': [w => `${w} fehlgeschlagen: Der Speicher ist voll.`, w => `${w} failed: storage is full.`],
+  'fail.other': [w => `${w} fehlgeschlagen. Bitte noch einmal versuchen.`, w => `${w} failed. Please try again.`],
+  'rel.days': [n => n <= 0 ? 'heute' : n === 1 ? 'gestern' : `vor ${n} Tagen`, n => n <= 0 ? 'today' : n === 1 ? 'yesterday' : `${n} days ago`],
+  'backup.why': [(r, n) => `Letzte Sicherung ${r}${n ? `, seitdem ${n} Änderung${n === 1 ? '' : 'en'}` : ''}.`, (r, n) => `Last backup ${r}${n ? `, ${n} ${pl(n, 'change', 'changes')} since` : ''}.`],
+  'backup.last': [r => `Letzte Sicherung ${r}`, r => `Last backup ${r}`],
+  'store.used': [b => `${b} belegt`, b => `${b} used`],
+  'coll.count': [(n, o) => `${n} ${n === 1 ? 'Uhr' : 'Uhren'}${o > 0 ? `, ${o} bestellt` : ''}`, (n, o) => `${n} ${pl(n, 'watch', 'watches')}${o > 0 ? `, ${o} ordered` : ''}`],
+  'coll.noq': [q => `Keine Uhr passt zu „${q}“.`, q => `No watch matches “${q}”.`],
+  'open.x': [x => `${x} öffnen`, x => `Open ${x}`],
+  'tol.range': [(a, b, u) => `${a} bis ${b} ${u}`, (a, b, u) => `${a} to ${b} ${u}`],
+  'tol.band': [r => `Grünes Band: Werkstoleranz ${r}.`, r => `Green band: movement tolerance ${r}.`],
+  'todo.open': [n => `${n} offen`, n => `${n} open`],
+  'days.worn': [(n, a, b) => `${n} Tag${n > 1 ? 'e' : ''} getragen, zuerst am ${a}, zuletzt am ${b}.`, (n, a, b) => `Worn ${n} ${pl(n, 'day', 'days')}, first on ${a}, last on ${b}.`],
+  'photos.n': [n => `${n} Foto${n === 1 ? '' : 's'}`, n => `${n} ${pl(n, 'photo', 'photos')}`],
+  'photo.big': [i => `Foto ${i} groß ansehen`, i => `View photo ${i} full size`],
+  'big.x': [x => `${x} groß ansehen`, x => `View ${x} full size`],
+  'gal.mcap': [(w, d) => `${w}, Messung vom ${d}`, (w, d) => `${w}, measurement of ${d}`],
+  'gal.sub': [(n, u) => `${n} Fotos von ${u} Uhren. Neue Fotos fügst du auf der Seite der jeweiligen Uhr hinzu.`, (n, u) => `${n} ${pl(n, 'photo', 'photos')} of ${u} ${pl(u, 'watch', 'watches')}. Add new photos on the page of each watch.`],
+  'm.last': [(d, b) => `Letzte Messung am ${d}${b ? ` bei ${b} A/h` : ''}.`, (d, b) => `Last measurement on ${d}${b ? ` at ${b} bph` : ''}.`],
+  'ms.fewer': [n => `Nur die letzten ${n} zeigen`, n => `Show only the last ${n}`],
+  'ms.all': [n => `Alle Messungen (${n})`, n => `All measurements (${n})`],
+  'm.span': [(d, v) => `${d} Tage, ${v} s`, (d, v) => `${d} days, ${v} s`],
+  'mic.measure': [w => `${w} mit dem Mikrofon messen`, w => `Measure ${w} with the microphone`],
+  'ms.none.w': [w => `Für die ${w} gibt es noch keine Messung.`, w => `There is no measurement for the ${w} yet.`],
+  'diary.worn': [x => `Getragen: ${x}. Tippe erneut, um es zu entfernen.`, x => `Worn: ${x}. Tap again to remove.`],
+  'shot.big': [w => `Foto mit ${w} groß ansehen`, w => `View photo with ${w} full size`],
+  'shot.alt': [w => `${w} am Handgelenk`, w => `${w} on the wrist`],
+  'shot.cap': [(w, d) => `${w} am ${d}`, (w, d) => `${w} on ${d}`],
+  'cal.weeks': [n => `Die letzten ${n} Wochen`, n => `The last ${n} weeks`],
+  'cal.days': [n => `${n} Tage eingetragen`, n => `${n} ${pl(n, 'day', 'days')} logged`],
+  'rot.days': [n => `${n} Tragetage im Zeitraum.`, n => `${n} wear ${pl(n, 'day', 'days')} in this period.`],
+  'wc.wd': [(n, wd) => n > 1 ? `${n}× an ${wd}en getragen` : `an einem ${wd} getragen`, (n, wd) => n > 1 ? `worn on ${n} ${wd}s` : `worn on a ${wd}`],
+  'wc.gap': [n => `seit ${n} Tagen nicht am Arm`, n => `not worn for ${n} days`],
+  'wc.done': [(w, f) => `${w} für heute eingetragen${f ? ', mit Foto' : ''}`, (w, f) => `${w} logged for today${f ? ', with photo' : ''}`],
+  'zw.calib': [p => `Handy-Takt ${p ? `kalibriert: ${p} ppm` : 'nicht kalibriert: Fehler bis ±1–4 s/Tag möglich (am Fold6 gemessen: ±1 ppm ≈ 0,1 s/Tag)'}.`,
+    p => `Phone clock ${p ? `calibrated: ${p} ppm` : 'not calibrated: errors of up to ±1–4 s/day possible (measured on a Fold6: ±1 ppm ≈ 0.1 s/day)'}.`],
+  'zw.calm': [n => `s/Tag ruhiger Wert${n >= 3 ? ` (Median der letzten ${n} guten Messungen)` : ', nach 3 guten Messungen'}`, n => `s/day steady value${n >= 3 ? ` (median of the last ${n} good readings)` : ', after 3 good readings'}`],
+  'zw.last': [f => `s/Tag Gang, letzte Messung${f === 'bad' ? ' · zählt nicht' : f === 'pre' ? ' · vorläufig, zählt ab 2 min' : ''}`, f => `s/day rate, last reading${f === 'bad' ? ' · does not count' : f === 'pre' ? ' · preliminary, counts from 2 min' : ''}`],
+  'zw.q': [x => `Güte · Streuung ${x} ms`, x => `Quality · spread ${x} ms`],
+  'zw.amp': [l => `Amplitude (L ${l}°), experimentell`, l => `Amplitude (LA ${l}°), experimental`],
+  'zw.dist': [p => `Aufnahme gestört: Der Handy-Takt weicht um ${p} ppm ab (Bildschirm aus oder Aussetzer). Display anlassen und neu starten.`, p => `Recording disturbed: the phone clock is off by ${p} ppm (screen off or dropouts). Keep the display on and restart.`],
+  'zw.unsure': [(q, x) => `Unsicher (Störung? zu leise?): Güte ${q} %, Streuung ${x} ms. Der Wert zählt nicht.`, (q, x) => `Uncertain (noise? too quiet?): quality ${q} %, spread ${x} ms. This value does not count.`],
+  'zw.heard': [(a, b) => `Gehört wird ${a}, eingetragen sind ${b}. Richtige Uhr?`, (a, b) => `Heard ${a}, but ${b} is set. Right watch?`],
+  'zw.use': [a => `Mit ${a} messen`, a => `Measure at ${a}`],
+  'zw.live': [(s, m, p) => `live · ${s} s ausgewertet${m === 'q' ? ' (bis 120 s)' : m === 'l' ? ' (Streuung hoch: bis 120 s)' : ''}${p != null ? ` · Handy-Takt ${p} ppm` : ''}`,
+    (s, m, p) => `live · ${s} s analysed${m === 'q' ? ' (up to 120 s)' : m === 'l' ? ' (high spread: up to 120 s)' : ''}${p != null ? ` · phone clock ${p} ppm` : ''}`],
+  'zw.saved': [b => `${b ?? 'Als Quarzwerk'} an der Uhr gespeichert.`, b => `${b ? b + ' saved' : 'Saved as quartz movement'} on the watch.`],
+  'wav.saved': [n => `${n} gespeichert (Downloads)`, n => `${n} saved (Downloads)`],
+  'edit.x': [w => `${w} bearbeiten`, w => `Edit ${w}`],
+  'imp.ask': [(d, n) => `Sicherung vom ${d} mit ${n} Uhr${n === 1 ? '' : 'en'} laden?\n\nDie aktuelle Sammlung auf diesem Gerät wird dabei ersetzt.`,
+    (d, n) => `Restore backup from ${d} with ${n} ${pl(n, 'watch', 'watches')}?\n\nThe current collection on this device will be replaced.`],
+  'imp.done': [n => `${n} Uhr${n === 1 ? '' : 'en'} geladen`, n => `${n} ${pl(n, 'watch', 'watches')} restored`],
+  'ph.big': [n => `${n} Foto${n > 1 ? 's sind' : ' ist'} größer als 20 MB und ${n > 1 ? 'werden' : 'wird'} übersprungen.`, n => `${n} ${pl(n, 'photo is', 'photos are')} larger than 20 MB and will be skipped.`],
+  'ph.up': [(i, n) => `Foto ${i} von ${n} wird hochgeladen …`, (i, n) => `Uploading photo ${i} of ${n} …`],
+  'ph.added': [n => n > 1 ? `${n} Fotos hinzugefügt` : 'Foto hinzugefügt', n => n > 1 ? `${n} photos added` : 'Photo added'],
+};
+</script>
 <script>
 (() => {
   // ---------- state ----------
@@ -375,26 +557,48 @@ img { max-width: 100%; }
   }
   function parseDay(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
   const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const nf = (v, d = 1) => (v == null || v === '' || isNaN(v)) ? null : Number(v).toLocaleString('de-DE', { maximumFractionDigits: d });
-  const signed = (v, d = 1) => v == null ? '–' : (v > 0 ? '+' : v < 0 ? '−' : '±') + Math.abs(v).toLocaleString('de-DE', { maximumFractionDigits: d });
-  const fmtDate = s => { if (!s) return '–'; const d = new Date(s); return isNaN(d) ? esc(s) : d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }); };
-  const fmtDT = s => { const d = new Date(s); return isNaN(d) ? esc(s) : d.toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); };
+  // ---------- Sprache (SPEC-englisch.md): deutscher Text = Schlüssel, EN/FN im Wörterbuch-Skript oben ----------
+  let LANG = 'de';
+  const LOC = () => LANG === 'en' ? 'en-GB' : 'de-DE';
+  function tr(k, ...a) {
+    const f = FN[k]; if (f) return f[LANG === 'en' ? 1 : 0](...a);
+    return LANG === 'en' ? (EN[k] ?? k) : k;
+  }
+  const tv = v => v == null || v === '' ? v : tr(String(v));   // gespeicherter (deutscher) Wert → Anzeige
+  // Sprache aus ?lang= (nur dieser Aufruf), sonst Einstellung, sonst Gerätesprache
+  function pickLang() {
+    const q = new URLSearchParams(location.search).get('lang');
+    const p = q === 'de' || q === 'en' ? q : pref.lang;
+    return p === 'de' || p === 'en' ? p : /^de\b/i.test(navigator.language || 'de') ? 'de' : 'en';
+  }
+  function applyLang() {
+    document.documentElement.lang = LANG;
+    document.getElementById('manifest').href = LANG === 'en' ? 'manifest-en.webmanifest' : 'manifest.webmanifest';
+    document.querySelectorAll('[data-t]').forEach(el => { el.dataset.t ||= el.textContent; el.textContent = tr(el.dataset.t); });
+    document.querySelectorAll('[data-t-aria]').forEach(el => el.setAttribute('aria-label', tr(el.dataset.tAria)));
+  }
+
+  const nf = (v, d = 1) => (v == null || v === '' || isNaN(v)) ? null : Number(v).toLocaleString(LOC(), { maximumFractionDigits: d });
+  const signed = (v, d = 1) => v == null ? '–' : (v > 0 ? '+' : v < 0 ? '−' : '±') + Math.abs(v).toLocaleString(LOC(), { maximumFractionDigits: d });
+  const fmtDate = s => { if (!s) return '–'; const d = new Date(s); return isNaN(d) ? esc(s) : d.toLocaleDateString(LOC(), { day: '2-digit', month: '2-digit', year: 'numeric' }); };
+  const fmtDT = s => { const d = new Date(s); return isNaN(d) ? esc(s) : d.toLocaleString(LOC(), { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); };
+  const unitTxt = u => tv(u || 's/Tag');
   const blobUrl = id => id ? (PHOTO_URLS.get(id) || '') : null;
   const byNr = (a, b) => (a.nr ?? 999) - (b.nr ?? 999) || String(a.name).localeCompare(b.name);
   const W = id => S.watches.find(w => w.id === id);
   const isMech = w => ['Automatik', 'Handaufzug'].includes(w?.movementKind);
   // Quarz (auch Mecaquartz): keine Zeitwaage, sondern Abgleich über Wochen (Entscheidung 29.10.2026)
   const isQuarzWerk = w => !!w && ((!!w.movementKind && !isMech(w)) || w.bph === 3600);
-  const watchLabel = w => w ? `${w.brand ? w.brand + ' ' : ''}${w.name}` : 'Unbekannte Uhr';
+  const watchLabel = w => w ? `${w.brand ? w.brand + ' ' : ''}${w.name}` : tr('Unbekannte Uhr');
   let toastT;
-  function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2600); }
+  function toast(msg) { const el = document.getElementById('toast'); el.textContent = msg; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 2600); }
   function fail(e, what) {
-    console.error(e);
-    if (e?.code === 'invalid_argument') { S.canWrite = false; render(); toast(`${what} nicht möglich: Du hast hier nur Leserechte.`); }
-    else if (e?.code === 'quota_exceeded') toast(`${what} fehlgeschlagen: Der Speicher ist voll.`);
-    else toast(`${what} fehlgeschlagen. Bitte noch einmal versuchen.`);
+    console.error(e); what = tr(what);
+    if (e?.code === 'invalid_argument') { S.canWrite = false; render(); toast(tr('fail.ro', what)); }
+    else if (e?.code === 'quota_exceeded') toast(tr('fail.full', what));
+    else toast(tr('fail.other', what));
   }
-  const photoErr = er => er?.code === 'unsupported_type' ? 'Dieses Bildformat geht nicht. Nimm JPG, PNG oder WebP.' : er?.code === 'too_large' ? 'Das Foto ist zu groß.' : 'Hochladen fehlgeschlagen. Bitte noch einmal versuchen.';
+  const photoErr = er => tr(er?.code === 'unsupported_type' ? 'Dieses Bildformat geht nicht. Nimm JPG, PNG oder WebP.' : er?.code === 'too_large' ? 'Das Foto ist zu groß.' : 'Hochladen fehlgeschlagen. Bitte noch einmal versuchen.');
 
   // ---------- Ansicht (pro Gerät, nicht in der Sicherung): Reiter, Sortierung, Felder ----------
   const PREF_KEY = 'uhrenbox.ansicht';
@@ -407,7 +611,7 @@ img { max-width: 100%; }
   const meta = (() => { try { return JSON.parse(localStorage.getItem(META_KEY)) || {}; } catch { return {}; } })();
   function saveMeta(patch) { Object.assign(meta, patch); try { localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch (e) {} }
   const daysSince = iso => Math.floor((Date.now() - new Date(iso)) / 864e5);
-  const relDays = iso => { const n = daysSince(iso); return n <= 0 ? 'heute' : n === 1 ? 'gestern' : `vor ${n} Tagen`; };
+  const relDays = iso => tr('rel.days', daysSince(iso));
   const fmtBytes = n => n < 1e6 ? `${Math.max(1, Math.round(n / 1e3))} KB` : `${nf(n / 1e6, 1)} MB`;
   const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
   const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -421,8 +625,8 @@ img { max-width: 100%; }
   function backupBanner() {
     if (!backupDue()) return '';
     const n = meta.changes || 0;
-    const why = meta.lastBackup ? `Letzte Sicherung ${relDays(meta.lastBackup)}${n ? `, seitdem ${n} Änderung${n === 1 ? '' : 'en'}` : ''}.` : 'Auf diesem Gerät gibt es noch keine Sicherung.';
-    return `<div class="notice backup-due" role="status"><span><b>Zeit zum Sichern.</b> ${why}</span><span class="actions"><button class="btn small primary" data-act="export">Jetzt sichern</button><button class="btn small ghost" data-act="snooze-backup">Später</button></span></div>`;
+    const why = meta.lastBackup ? tr('backup.why', relDays(meta.lastBackup), n) : tr('Auf diesem Gerät gibt es noch keine Sicherung.');
+    return `<div class="notice backup-due" role="status"><span><b>${tr('Zeit zum Sichern.')}</b> ${why}</span><span class="actions"><button class="btn small primary" data-act="export">${tr('Jetzt sichern')}</button><button class="btn small ghost" data-act="snooze-backup">${tr('Später')}</button></span></div>`;
   }
   function noteChange() { saveMeta({ changes: (meta.changes || 0) + 1 }); scheduleStore(); }
 
@@ -439,17 +643,17 @@ img { max-width: 100%; }
   function renderFoot() {
     const el = document.getElementById('foot'); if (!el) return;
     const st = S.store, parts = [];
-    if (st?.persisted === true) parts.push('Speicher dauerhaft ✓');
-    else if (st?.persisted === false) parts.push('<span class="warn-text">Speicher nicht dauerhaft</span>');
-    if (st?.usage) parts.push(`${fmtBytes(st.usage)} belegt`);
-    parts.push(meta.lastBackup ? `Letzte Sicherung ${relDays(meta.lastBackup)}` : 'Noch nie gesichert');
+    if (st?.persisted === true) parts.push(tr('Speicher dauerhaft ✓'));
+    else if (st?.persisted === false) parts.push(`<span class="warn-text">${tr('Speicher nicht dauerhaft')}</span>`);
+    if (st?.usage) parts.push(tr('store.used', fmtBytes(st.usage)));
+    parts.push(meta.lastBackup ? tr('backup.last', relDays(meta.lastBackup)) : tr('Noch nie gesichert'));
     let html = parts.join(' · ');
     if (!isStandalone()) {
-      if (INSTALL.prompt) html += ` · <button class="linkish" data-act="install">Als App installieren</button>`;
-      else if (isIOS()) html += `<br>Tipp: In Safari über <b>Teilen → Zum Home-Bildschirm</b> als App installieren.`;
-      if (st?.persisted === false) html += `<br>Als App installiert behält der Browser deine Daten zuverlässiger.`;
+      if (INSTALL.prompt) html += ` · <button class="linkish" data-act="install">${tr('Als App installieren')}</button>`;
+      else if (isIOS()) html += `<br>${tr('Tipp: In Safari über <b>Teilen → Zum Home-Bildschirm</b> als App installieren.')}`;
+      if (st?.persisted === false) html += `<br>${tr('Als App installiert behält der Browser deine Daten zuverlässiger.')}`;
     }
-    el.innerHTML = `${html}<br>Alle Daten bleiben auf diesem Gerät, in diesem Browser.`;
+    el.innerHTML = `${html}<br>${tr('Alle Daten bleiben auf diesem Gerät, in diesem Browser.')}`;
   }
 
   // value of a measurement in the watch's tolerance unit
@@ -465,7 +669,7 @@ img { max-width: 100%; }
     const over = v < w.tolMin ? w.tolMin - v : v - w.tolMax;
     return over <= (w.tolMax - w.tolMin) * 0.25 ? 'warn' : 'bad';
   }
-  const unitOf = (m, w) => m.kind === 'waage' ? 's/Tag' : (w?.tolUnit || 's/Tag');
+  const unitOf = (m, w) => unitTxt(m.kind === 'waage' ? 's/Tag' : w?.tolUnit);   // nur für die Anzeige
   const wearDaysOf = id => Object.keys(S.wear).filter(d => S.wear[d].includes(id)).sort();
   const uniq = a => [...new Set(a.filter(Boolean))];
   const photosOf = w => uniq([w?.photo, ...(w?.photos || [])]);   // cover first, then the rest
@@ -510,16 +714,16 @@ img { max-width: 100%; }
     if (S.creating) return renderWatchForm(null);
     const ws = S.watches, owned = ws.filter(w => w.status !== 'Bestellt' && w.status !== 'Verkauft');
     const favs = ws.filter(w => w.favorite).length, tab = pref.tab === 'alle' || !favs ? 'alle' : 'fav';
-    const filters = [['alle', 'Alle'], ['mech', 'Mechanisch'], ['quarz', 'Quarz'], ['taucher', 'Taucher'], ['chrono', 'Chronograph'], ['bestellt', 'Bestellt']];
+    const filters = [['alle', 'Alle'], ['mech', 'Mechanisch'], ['quarz', 'Quarz'], ['taucher', 'Taucher'], ['chrono', 'Chronograph'], ['bestellt', 'Bestellt']].map(([k, l]) => [k, tr(l)]);
     return `
       <div class="view-head">
-        <div><h2>Sammlung</h2><p>${owned.length} ${owned.length === 1 ? 'Uhr' : 'Uhren'}${ws.length > owned.length ? `, ${ws.length - owned.length} bestellt` : ''}</p></div>
-        <div class="actions">${S.canWrite ? `${owned.length ? '<button class="btn primary" data-act="wristcheck"><span class="ico" aria-hidden="true">📷</span> Was trage ich?</button>' : ''}<button class="btn${owned.length ? '' : ' primary'}" data-act="new-watch">+ Uhr</button>` : ''}<button class="btn" data-act="export" title="Alle Uhren, Messungen, Tragetage und Fotos als Datei sichern">Sichern</button><label class="btn" for="import-in" title="Eine Sicherung wieder einlesen">Laden</label><input id="import-in" type="file" accept=".json,application/json" hidden><button class="btn" data-nav="einstellungen" aria-label="Einstellungen" title="Einstellungen"><span class="ico" aria-hidden="true">⚙</span></button></div>
+        <div><h2>${tr('Sammlung')}</h2><p>${tr('coll.count', owned.length, ws.length - owned.length)}</p></div>
+        <div class="actions">${S.canWrite ? `${owned.length ? `<button class="btn primary" data-act="wristcheck"><span class="ico" aria-hidden="true">📷</span> ${tr('Was trage ich?')}</button>` : ''}<button class="btn${owned.length ? '' : ' primary'}" data-act="new-watch">${tr('+ Uhr')}</button>` : ''}<button class="btn" data-act="export" title="${tr('Alle Uhren, Messungen, Tragetage und Fotos als Datei sichern')}">${tr('Sichern')}</button><label class="btn" for="import-in" title="${tr('Eine Sicherung wieder einlesen')}">${tr('Laden')}</label><input id="import-in" type="file" accept=".json,application/json" hidden><button class="btn" data-nav="einstellungen" aria-label="${tr('Einstellungen')}" title="${tr('Einstellungen')}"><span class="ico" aria-hidden="true">⚙</span></button></div>
       </div>
       ${backupBanner()}
-      <div class="ctabs">${favs ? `<button class="chip" data-ctab="fav" aria-pressed="${tab === 'fav'}">★ Favoriten (${favs})</button>` : ''}<button class="chip" data-ctab="alle" aria-pressed="${tab === 'alle'}">Alle (${ws.length})</button></div>
-      ${tab === 'alle' ? `<div class="ctools"><input type="search" id="coll-q" placeholder="Suchen: Name, Marke, Kaliber" value="${esc(S.q || '')}" aria-label="Uhren suchen">
-        <select id="coll-sort" aria-label="Sortieren">${[['nr', 'Nummer'], ['name', 'Name'], ['worn', 'Zuletzt getragen'], ['measured', 'Zuletzt gemessen']].map(([k, l]) => `<option value="${k}" ${(pref.sort || 'nr') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+      <div class="ctabs">${favs ? `<button class="chip" data-ctab="fav" aria-pressed="${tab === 'fav'}">★ ${tr('Favoriten')} (${favs})</button>` : ''}<button class="chip" data-ctab="alle" aria-pressed="${tab === 'alle'}">${tr('Alle')} (${ws.length})</button></div>
+      ${tab === 'alle' ? `<div class="ctools"><input type="search" id="coll-q" placeholder="${tr('Suchen: Name, Marke, Kaliber')}" value="${esc(S.q || '')}" aria-label="${tr('Uhren suchen')}">
+        <select id="coll-sort" aria-label="${tr('Sortieren')}">${[['nr', 'Nummer'], ['name', 'Name'], ['worn', 'Zuletzt getragen'], ['measured', 'Zuletzt gemessen']].map(([k, l]) => `<option value="${k}" ${(pref.sort || 'nr') === k ? 'selected' : ''}>${tr(l)}</option>`).join('')}</select></div>
       <div class="chips" style="margin-bottom:12px">${filters.map(([k, l]) => `<button class="chip" data-filter="${k}" aria-pressed="${S.filter === k}">${l}</button>`).join('')}</div>` : ''}
       <div id="coll-grid">${collGrid(tab)}</div>
     `;
@@ -543,14 +747,14 @@ img { max-width: 100%; }
     const sort = tab === 'fav' ? 'nr' : pref.sort || 'nr';
     if (sort === 'worn') for (const [d, ids] of Object.entries(S.wear)) for (const id of ids) if (!zuletzt[id] || d > zuletzt[id]) zuletzt[id] = d;
     if (sort === 'measured') for (const m of S.measurements) if (!zuletzt[m.watchId] || m.at > zuletzt[m.watchId]) zuletzt[m.watchId] = m.at;
-    shown = [...shown].sort(sort === 'name' ? (a, b) => String(a.name).localeCompare(b.name, 'de')
+    shown = [...shown].sort(sort === 'name' ? (a, b) => String(a.name).localeCompare(b.name, LANG)
       : sort === 'worn' || sort === 'measured' ? (a, b) => String(zuletzt[b.id] || '').localeCompare(String(zuletzt[a.id] || '')) || byNr(a, b) : byNr);
-    if (!shown.length) return `<div class="empty">${!S.watches.length ? 'Noch keine Uhren gespeichert. Füge oben deine erste Uhr hinzu.' : q ? `Keine Uhr passt zu „${esc(S.q)}“.` : 'Keine Uhr passt zu diesem Filter.'}</div>`;
+    if (!shown.length) return `<div class="empty">${!S.watches.length ? tr('Noch keine Uhren gespeichert. Füge oben deine erste Uhr hinzu.') : q ? tr('coll.noq', esc(S.q)) : tr('Keine Uhr passt zu diesem Filter.')}</div>`;
     return `<div class="cgrid">${shown.map(miniCard).join('')}</div>`;
   }
   function miniCard(w) {
-    return `<article class="mcard" data-open="${esc(w.id)}" tabindex="0" aria-label="${esc(watchLabel(w))} öffnen">
-      <div class="ph">${photoHtml(w)}${w.favorite ? '<span class="star" aria-hidden="true">★</span>' : ''}${w.status === 'Bestellt' ? '<span class="pill ordered">Bestellt</span>' : ''}</div>
+    return `<article class="mcard" data-open="${esc(w.id)}" tabindex="0" aria-label="${tr('open.x', esc(watchLabel(w)))}">
+      <div class="ph">${photoHtml(w)}${w.favorite ? '<span class="star" aria-hidden="true">★</span>' : ''}${w.status === 'Bestellt' ? `<span class="pill ordered">${tr('Bestellt')}</span>` : ''}</div>
       <div class="nm">${esc(w.name)}</div>${pref.brand !== false && w.brand ? `<div class="br">${esc(w.brand)}</div>` : ''}
     </article>`;
   }
@@ -562,23 +766,27 @@ img { max-width: 100%; }
     ['Band', [['strap', 'Aktuelles Band'], ['strapExtra', 'Weitere Bänder']]],
   ];
   function renderSettings() {
-    const hide = pref.hide || [], sw = (id, an, text) => `<label class="pf"><input type="checkbox" data-pf="${id}" ${an ? 'checked' : ''}><span>${text}</span></label>`;
+    const hide = pref.hide || [], sw = (id, an, text) => `<label class="pf"><input type="checkbox" data-pf="${id}" ${an ? 'checked' : ''}><span>${tr(text)}</span></label>`;
+    const lang = pref.lang === 'de' || pref.lang === 'en' ? pref.lang : 'auto';
     return `
-      <button class="btn ghost back" data-nav="sammlung">← Sammlung</button>
-      <div class="view-head"><div><h2>Einstellungen</h2><p>Gilt nur für dieses Gerät. Ausgeblendete Felder behalten ihre Werte, sie werden nur nicht angezeigt.</p></div></div>
-      <section class="panel"><h3>Ansicht</h3>
+      <button class="btn ghost back" data-nav="sammlung">← ${tr('Sammlung')}</button>
+      <div class="view-head"><div><h2>${tr('Einstellungen')}</h2><p>${tr('Gilt nur für dieses Gerät. Ausgeblendete Felder behalten ihre Werte, sie werden nur nicht angezeigt.')}</p></div></div>
+      <section class="panel"><h3 lang="de">Sprache / <span lang="en">Language</span></h3>
+        <div class="chips">${[['auto', tr('Automatisch (Gerät)')], ['de', 'Deutsch'], ['en', 'English']].map(([k, l]) => `<button class="chip" data-lang="${k}" aria-pressed="${lang === k}" ${k === 'auto' ? '' : `lang="${k}"`}>${l}</button>`).join('')}</div>
+      </section>
+      <section class="panel"><h3>${tr('Ansicht')}</h3>
         ${sw('opt:leer', pref.leer !== false, 'Leere Felder auf der Detailseite ausblenden')}
         ${sw('opt:brand', pref.brand !== false, 'Marke unter den Kacheln der Sammlung zeigen')}
       </section>
-      <section class="panel"><h3>Felder auf der Detailseite</h3>
-        <div class="pf-grid">${DETAIL_FELDER.map(([titel, fs]) => `<div><div class="label" style="margin-bottom:4px">${titel}</div>${fs.map(([k, l]) => sw(k, !hide.includes(k), l)).join('')}</div>`).join('')}</div>
+      <section class="panel"><h3>${tr('Felder auf der Detailseite')}</h3>
+        <div class="pf-grid">${DETAIL_FELDER.map(([titel, fs]) => `<div><div class="label" style="margin-bottom:4px">${tr(titel)}</div>${fs.map(([k, l]) => sw(k, !hide.includes(k), l)).join('')}</div>`).join('')}</div>
       </section>`;
   }
 
   // ----- Detail -----
   function renderDetail() {
     const w = W(S.detailId);
-    if (!w) return `<button class="btn ghost back" data-nav="sammlung">← Sammlung</button><div class="empty">Diese Uhr gibt es nicht (mehr).</div>`;
+    if (!w) return `<button class="btn ghost back" data-nav="sammlung">← ${tr('Sammlung')}</button><div class="empty">${tr('Diese Uhr gibt es nicht (mehr).')}</div>`;
     if (S.editing) return renderWatchForm(w);
     const ms = S.measurements.filter(m => m.watchId === w.id).sort((a, b) => String(a.at).localeCompare(String(b.at)));
     const days = wearDaysOf(w.id);
@@ -586,34 +794,34 @@ img { max-width: 100%; }
       if ((pref.hide || []).includes(k)) return '';   // in den Einstellungen ausgeblendet
       const val = v ?? w[k]; const has = val != null && val !== '';
       if (!has && pref.leer !== false) return '';     // leere Felder standardmäßig weglassen
-      return `<dt>${l}</dt><dd class="${has ? '' : 'open'}">${has ? esc(val) : 'offen'}</dd>`;
+      return `<dt>${tr(l)}</dt><dd class="${has ? '' : 'open'}">${has ? esc(val) : tr('offen')}</dd>`;
     };
-    const sec = (titel, inhalt) => inhalt.trim() ? `<section class="panel"><h3>${titel}</h3><dl class="facts">${inhalt}</dl></section>` : '';
+    const sec = (titel, inhalt) => inhalt.trim() ? `<section class="panel"><h3>${tr(titel)}</h3><dl class="facts">${inhalt}</dl></section>` : '';
     const mm = (k) => w[k] != null && w[k] !== '' ? nf(w[k], 2) + ' mm' : null;
     const todos = w.todos || [];
-    const tol = w.tolMin != null && w.tolMax != null ? `${signed(w.tolMin, 0)} bis ${signed(w.tolMax, 0)} ${esc(w.tolUnit || 's/Tag')}` : null;
+    const tol = w.tolMin != null && w.tolMax != null ? tr('tol.range', signed(w.tolMin, 0), signed(w.tolMax, 0), unitTxt(w.tolUnit)) : null;
     const priceTxt = typeof w.price === 'number' ? `${nf(w.price, 0)} €${w.priceNote ? ' · ' + w.priceNote : ''}` : (w.priceNote || null);
     return `
-      <button class="btn ghost back" data-nav="sammlung">← Sammlung</button>
-      ${S.canWrite && w.status !== 'Bestellt' && !(S.mEditing && S.mEditing.watchId === w.id) ? `<button class="btn mic-btn" style="margin-bottom:12px" data-act="measure-watch" data-w="${esc(w.id)}">${isQuarzWerk(w) ? '⏱ Gang abgleichen (Funkuhr)' : '🎙 Messen'}</button>` : ''}
+      <button class="btn ghost back" data-nav="sammlung">← ${tr('Sammlung')}</button>
+      ${S.canWrite && w.status !== 'Bestellt' && !(S.mEditing && S.mEditing.watchId === w.id) ? `<button class="btn mic-btn" style="margin-bottom:12px" data-act="measure-watch" data-w="${esc(w.id)}">${isQuarzWerk(w) ? '⏱ ' + tr('Gang abgleichen (Funkuhr)') : '🎙 ' + tr('Messen')}</button>` : ''}
       <div class="detail">
         <div class="stack">
           <section class="hero">
             <div class="ph">${photoHtml(w)}</div>
             <div class="cap">
-              <div class="label">Uhr ${w.nr ?? ''} · ${esc(w.brand || '')}</div>
+              <div class="label">${tr('Uhr')} ${w.nr ?? ''} · ${esc(w.brand || '')}</div>
               <h2>${esc(w.name)}</h2>
               ${w.model ? `<div class="muted">${esc(w.model)}</div>` : ''}
               <div class="row">
-                ${w.favorite ? '<span class="pill fav">Favorit</span>' : ''}
-                <span class="pill">${esc(w.status || 'Sammlung')}</span>
-                <span class="pill">${esc(w.category || '–')}</span>
-                <span class="pill"><span class="dot" style="background:${esc(w.color || 'var(--muted)')}"></span>${esc(w.movementKind || '–')}</span>
+                ${w.favorite ? `<span class="pill fav">${tr('Favorit')}</span>` : ''}
+                <span class="pill">${esc(tv(w.status || 'Sammlung'))}</span>
+                <span class="pill">${esc(tv(w.category) || '–')}</span>
+                <span class="pill"><span class="dot" style="background:${esc(w.color || 'var(--muted)')}"></span>${esc(tv(w.movementKind) || '–')}</span>
               </div>
               ${S.canWrite ? `<div class="actions" style="margin-top:6px">
-                <button class="btn" data-act="edit">Bearbeiten</button>
-                ${S.assets ? `<label class="btn" for="photo-in">${w.photo ? 'Titelbild ersetzen' : 'Foto hinzufügen'}</label><input id="photo-in" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden data-photo="${esc(w.id)}">` : ''}
-                ${w.status !== 'Bestellt' ? `<button class="wear-btn" data-wear-today="${esc(w.id)}" aria-pressed="${(S.wear[todayStr()] || []).includes(w.id)}">${(S.wear[todayStr()] || []).includes(w.id) ? 'Heute getragen' : 'Heute tragen'}</button>` : ''}
+                <button class="btn" data-act="edit">${tr('Bearbeiten')}</button>
+                ${S.assets ? `<label class="btn" for="photo-in">${tr(w.photo ? 'Titelbild ersetzen' : 'Foto hinzufügen')}</label><input id="photo-in" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden data-photo="${esc(w.id)}">` : ''}
+                ${w.status !== 'Bestellt' ? `<button class="wear-btn" data-wear-today="${esc(w.id)}" aria-pressed="${(S.wear[todayStr()] || []).includes(w.id)}">${tr((S.wear[todayStr()] || []).includes(w.id) ? 'Heute getragen' : 'Heute tragen')}</button>` : ''}
               </div>` : ''}
             </div>
           </section>
@@ -625,19 +833,19 @@ img { max-width: 100%; }
             + f('purchased', 'Gekauft') + f('price', 'Kaufpreis', priceTxt) + f('dealer', 'Händler') + f('serial', 'Seriennummer'))}
           ${sec('Gehäuse', f('diameter', 'Durchmesser', mm('diameter')) + f('lugToLug', 'Lug-to-Lug', mm('lugToLug')) + f('height', 'Höhe', mm('height')) + f('lugWidth', 'Bandanstoß', mm('lugWidth'))
             + f('waterM', 'Wasserdicht', w.waterM ? nf(w.waterM, 0) + ' m' : null) + f('crystal', 'Glas') + f('crown', 'Krone') + f('lume', 'Leuchtmasse') + f('weight', 'Gewicht'))}
-          ${sec('Werk', f('movement', 'Kaliber') + f('movementKind', 'Art') + f('bph', 'Frequenz', w.bph ? nf(w.bph, 0) + ' A/h' : null) + f('liftAngle', 'Hebungswinkel', w.liftAngle ? nf(w.liftAngle, 0) + '°' : null) + f('tol', 'Toleranz', tol))}
+          ${sec('Werk', f('movement', 'Kaliber') + f('movementKind', 'Art', tv(w.movementKind)) + f('bph', 'Frequenz', w.bph ? nf(w.bph, 0) + ' ' + tr('A/h') : null) + f('liftAngle', 'Hebungswinkel', w.liftAngle ? nf(w.liftAngle, 0) + '°' : null) + f('tol', 'Toleranz', tol))}
           ${sec('Band', f('strap', 'Aktuell') + f('strapExtra', 'Weitere'))}
           <section class="panel">
-            <div class="panel-head"><h3>Offene Punkte</h3><span class="label">${todos.filter(t => !t.done).length} offen</span></div>
-            ${todos.length ? todos.map((t, i) => `<label class="todo ${t.done ? 'done' : ''}"><input type="checkbox" data-todo="${i}" ${t.done ? 'checked' : ''} ${S.canWrite ? '' : 'disabled'}><span>${esc(t.t)}</span>${S.canWrite ? `<button class="btn ghost small" data-todo-del="${i}" aria-label="Punkt entfernen" style="margin-left:auto">×</button>` : ''}</label>`).join('') : '<p class="muted" style="margin:0">Nichts offen.</p>'}
-            ${S.canWrite ? `<form class="todo-add" data-form="todo"><input type="text" id="todo-new" name="t" placeholder="Neuer Punkt, z. B. Lug-to-Lug nachmessen" maxlength="200"><button class="btn small">Hinzufügen</button></form>` : ''}
+            <div class="panel-head"><h3>${tr('Offene Punkte')}</h3><span class="label">${tr('todo.open', todos.filter(x => !x.done).length)}</span></div>
+            ${todos.length ? todos.map((t, i) => `<label class="todo ${t.done ? 'done' : ''}"><input type="checkbox" data-todo="${i}" ${t.done ? 'checked' : ''} ${S.canWrite ? '' : 'disabled'}><span>${esc(t.t)}</span>${S.canWrite ? `<button class="btn ghost small" data-todo-del="${i}" aria-label="${tr('Punkt entfernen')}" style="margin-left:auto">×</button>` : ''}</label>`).join('') : `<p class="muted" style="margin:0">${tr('Nichts offen.')}</p>`}
+            ${S.canWrite ? `<form class="todo-add" data-form="todo"><input type="text" id="todo-new" name="t" placeholder="${tr('Neuer Punkt, z. B. Lug-to-Lug nachmessen')}" maxlength="200"><button class="btn small">${tr('Hinzufügen')}</button></form>` : ''}
           </section>
-          ${w.notes ? `<section class="panel"><h3>Notizen</h3><p style="margin:0;white-space:pre-wrap">${esc(w.notes)}</p></section>` : ''}
-          <section class="panel"><h3>Tragetage</h3>
-            <p style="margin:0">${days.length ? `${days.length} Tag${days.length > 1 ? 'e' : ''} getragen, zuerst am ${fmtDate(parseDay(days[0]))}, zuletzt am ${fmtDate(parseDay(days[days.length - 1]))}.` : 'Noch keine Tragetage eingetragen.'}</p>
-            <div><button class="btn small" data-nav="tagebuch">Zum Tragetagebuch</button></div>
+          ${w.notes ? `<section class="panel"><h3>${tr('Notizen')}</h3><p style="margin:0;white-space:pre-wrap">${esc(w.notes)}</p></section>` : ''}
+          <section class="panel"><h3>${tr('Tragetage')}</h3>
+            <p style="margin:0">${days.length ? tr('days.worn', days.length, fmtDate(parseDay(days[0])), fmtDate(parseDay(days[days.length - 1]))) : tr('Noch keine Tragetage eingetragen.')}</p>
+            <div><button class="btn small" data-nav="tagebuch">${tr('Zum Tragetagebuch')}</button></div>
           </section>
-          ${S.canWrite ? `<div class="actions">${S.confirm === 'del-watch' ? `<span class="muted">Uhr mit allen Messungen löschen?</span><button class="btn danger" data-act="del-watch-yes">Ja, löschen</button><button class="btn ghost" data-act="cancel-confirm">Abbrechen</button>` : `<button class="btn ghost danger" data-act="del-watch">Uhr löschen</button>`}</div>` : ''}
+          ${S.canWrite ? `<div class="actions">${S.confirm === 'del-watch' ? `<span class="muted">${tr('Uhr mit allen Messungen löschen?')}</span><button class="btn danger" data-act="del-watch-yes">${tr('Ja, löschen')}</button><button class="btn ghost" data-act="cancel-confirm">${tr('Abbrechen')}</button>` : `<button class="btn ghost danger" data-act="del-watch">${tr('Uhr löschen')}</button>`}</div>` : ''}
         </div>
       </div>`;
   }
@@ -647,19 +855,19 @@ img { max-width: 100%; }
     const canUp = S.canWrite && S.assets;
     if (!ps.length && !canUp) return '';
     return `<section class="panel">
-      <div class="panel-head"><h3>Fotos</h3><span class="label">${ps.length} Foto${ps.length === 1 ? '' : 's'}</span></div>
+      <div class="panel-head"><h3>${tr('Fotos')}</h3><span class="label">${tr('photos.n', ps.length)}</span></div>
       <div class="gallery">
         ${ps.map((id, i) => `<figure class="thumb">
-          <button class="img" data-lb-watch="${esc(w.id)}" data-i="${i}" aria-label="Foto ${i + 1} groß ansehen"><img src="${blobUrl(id)}" alt="${esc(w.name)}, Foto ${i + 1}" loading="lazy"></button>
-          ${id === w.photo ? '<span class="cover-tag">Titelbild</span>' : ''}
+          <button class="img" data-lb-watch="${esc(w.id)}" data-i="${i}" aria-label="${tr('photo.big', i + 1)}"><img src="${blobUrl(id)}" alt="${esc(w.name)}, ${tr('Foto')} ${i + 1}" loading="lazy"></button>
+          ${id === w.photo ? `<span class="cover-tag">${tr('Titelbild')}</span>` : ''}
           ${S.canWrite ? `<div class="tools">${S.confirm === 'ph-' + id
-            ? `<button class="btn small danger" data-ph-del-yes="${esc(id)}">Entfernen</button><button class="btn small ghost" data-act="cancel-confirm">Nein</button>`
-            : `${id !== w.photo ? `<button class="btn small ghost" data-cover="${esc(id)}">Als Titelbild</button>` : ''}<button class="btn small ghost" data-ph-del="${esc(id)}" aria-label="Foto entfernen">×</button>`}</div>` : ''}
+            ? `<button class="btn small danger" data-ph-del-yes="${esc(id)}">${tr('Entfernen')}</button><button class="btn small ghost" data-act="cancel-confirm">${tr('Nein')}</button>`
+            : `${id !== w.photo ? `<button class="btn small ghost" data-cover="${esc(id)}">${tr('Als Titelbild')}</button>` : ''}<button class="btn small ghost" data-ph-del="${esc(id)}" aria-label="${tr('Foto entfernen')}">×</button>`}</div>` : ''}
         </figure>`).join('')}
-        ${canUp ? `<label class="add-tile" for="gal-in">+ Fotos hinzufügen</label>` : ''}
+        ${canUp ? `<label class="add-tile" for="gal-in">${tr('+ Fotos hinzufügen')}</label>` : ''}
       </div>
       ${canUp ? `<input id="gal-in" type="file" multiple accept="image/png,image/jpeg,image/webp,image/gif" hidden data-gallery-add="${esc(w.id)}">` : ''}
-      ${!ps.length ? '<p class="muted" style="margin:0">Noch keine Fotos. Füge Bilder vom Zifferblatt, vom Band oder vom Gehäuseboden hinzu.</p>' : ''}
+      ${!ps.length ? `<p class="muted" style="margin:0">${tr('Noch keine Fotos. Füge Bilder vom Zifferblatt, vom Band oder vom Gehäuseboden hinzu.')}</p>` : ''}
     </section>`;
   }
 
@@ -667,25 +875,25 @@ img { max-width: 100%; }
   function renderGallery() {
     const ws = [...S.watches].sort(byNr);
     const byId = new Map();   // one tile per photo; a shared photo (the WD1965 pair) names both watches
-    const push = (id, watchId, cap) => { const x = byId.get(id); if (x) { if (!x.watchIds.includes(watchId)) { x.watchIds.push(watchId); x.cap += ' und ' + cap; } } else byId.set(id, { id, watchIds: [watchId], cap }); };
+    const push = (id, watchId, cap) => { const x = byId.get(id); if (x) { if (!x.watchIds.includes(watchId)) { x.watchIds.push(watchId); x.cap += tr(' und ') + cap; } } else byId.set(id, { id, watchIds: [watchId], cap }); };
     for (const w of ws) photosOf(w).forEach(id => push(id, w.id, w.name));
-    for (const m of [...S.measurements].sort((a, b) => String(a.at).localeCompare(String(b.at)))) if (m.photo) push(m.photo, m.watchId, `${W(m.watchId)?.name || '?'}, Messung vom ${fmtDate(m.at)}`);
+    for (const m of [...S.measurements].sort((a, b) => String(a.at).localeCompare(String(b.at)))) if (m.photo) push(m.photo, m.watchId, tr('gal.mcap', W(m.watchId)?.name || '?', fmtDate(m.at)));
     const items = [...byId.values()];
     const shown = items.filter(x => S.galleryFilter === 'alle' || x.watchIds.includes(S.galleryFilter));
     const withPh = new Set(items.flatMap(x => x.watchIds));
     const without = ws.filter(w => !withPh.has(w.id));
     S.galleryItems = shown;
     return `
-      <div class="view-head"><div><h2>Galerie</h2><p>${items.length} Fotos von ${withPh.size} Uhren. Neue Fotos fügst du auf der Seite der jeweiligen Uhr hinzu.</p></div></div>
+      <div class="view-head"><div><h2>${tr('Galerie')}</h2><p>${tr('gal.sub', items.length, withPh.size)}</p></div></div>
       <div class="chips" style="margin-bottom:16px">
-        <button class="chip" data-gfilter="alle" aria-pressed="${S.galleryFilter === 'alle'}">Alle</button>
+        <button class="chip" data-gfilter="alle" aria-pressed="${S.galleryFilter === 'alle'}">${tr('Alle')}</button>
         ${ws.filter(w => withPh.has(w.id)).map(w => `<button class="chip" data-gfilter="${esc(w.id)}" aria-pressed="${S.galleryFilter === w.id}"><span class="dot" style="background:${esc(w.color || 'var(--muted)')};margin-right:5px"></span>${esc(w.name)}</button>`).join('')}
       </div>
       ${shown.length ? `<div class="gallery big">${shown.map((x, i) => `<figure class="thumb">
-          <button class="img" data-lb-gal="${i}" aria-label="${esc(x.cap)} groß ansehen"><img src="${blobUrl(x.id)}" alt="${esc(x.cap)}" loading="lazy"></button>
+          <button class="img" data-lb-gal="${i}" aria-label="${tr('big.x', esc(x.cap))}"><img src="${blobUrl(x.id)}" alt="${esc(x.cap)}" loading="lazy"></button>
           <figcaption><a href="#uhr-${esc(x.watchIds[0])}" data-open="${esc(x.watchIds[0])}">${esc(x.cap)}</a></figcaption>
-        </figure>`).join('')}</div>` : '<div class="empty">Noch keine Fotos. Öffne eine Uhr und füge dort Fotos hinzu.</div>'}
-      ${without.length && S.galleryFilter === 'alle' ? `<p class="notice" style="margin-top:16px">Ohne Foto: ${without.map(w => `<a href="#uhr-${esc(w.id)}" data-open="${esc(w.id)}">${esc(w.name)}</a>`).join(', ')}.</p>` : ''}
+        </figure>`).join('')}</div>` : `<div class="empty">${tr('Noch keine Fotos. Öffne eine Uhr und füge dort Fotos hinzu.')}</div>`}
+      ${without.length && S.galleryFilter === 'alle' ? `<p class="notice" style="margin-top:16px">${tr('Ohne Foto:')} ${without.map(w => `<a href="#uhr-${esc(w.id)}" data-open="${esc(w.id)}">${esc(w.name)}</a>`).join(', ')}.</p>` : ''}
     `;
   }
 
@@ -698,39 +906,39 @@ img { max-width: 100%; }
     if (!S.lb) { el.hidden = true; el.innerHTML = ''; document.body.style.overflow = ''; return; }
     const { list, i } = S.lb; const x = list[i]; const many = list.length > 1;
     el.hidden = false; document.body.style.overflow = 'hidden';
-    el.innerHTML = `<div class="bar"><span class="cap">${esc(x.cap)}</span>${many ? `<span class="cnt">${i + 1} / ${list.length}</span>` : ''}<button data-lb-close aria-label="Schließen">×</button></div>
-      <div class="stage">${many ? '<button data-lb-step="-1" aria-label="Vorheriges Foto">‹</button>' : ''}<img src="${blobUrl(x.id)}" alt="${esc(x.cap)}">${many ? '<button data-lb-step="1" aria-label="Nächstes Foto">›</button>' : ''}</div>`;
+    el.innerHTML = `<div class="bar"><span class="cap">${esc(x.cap)}</span>${many ? `<span class="cnt">${i + 1} / ${list.length}</span>` : ''}<button data-lb-close aria-label="${tr('Schließen')}">×</button></div>
+      <div class="stage">${many ? `<button data-lb-step="-1" aria-label="${tr('Vorheriges Foto')}">‹</button>` : ''}<img src="${blobUrl(x.id)}" alt="${esc(x.cap)}">${many ? `<button data-lb-step="1" aria-label="${tr('Nächstes Foto')}">›</button>` : ''}</div>`;
     el.querySelector('[data-lb-close]').focus();
   }
 
   function measurePanel(w, ms) {
     const mech = isMech(w);
     const lastW = [...ms].reverse().find(m => m.kind === 'waage');
-    const unit = mech ? 's/Tag' : (w.tolUnit || 's/Tag');
+    const unit = unitTxt(mech ? 's/Tag' : w.tolUnit);
     let readout = '';
     if (lastW) {
       const st = tolState(lastW.rate, w);
       const be = lastW.beatError, amp = lastW.amplitude;
-      readout = `<div class="tg" role="group" aria-label="Letzte Zeitwaagen-Messung">
-        <div><div class="k">Gang</div><div class="v ${st === 'ok' ? 'ok' : st ? 'warn' : ''}">${signed(lastW.rate)}</div><div class="k">s/Tag</div></div>
-        <div><div class="k">Amplitude</div><div class="v ${amp >= 270 ? 'ok' : amp != null && amp < 220 ? 'warn' : ''}">${amp != null ? nf(amp, 0) + '°' : '–'}</div><div class="k">${esc(lastW.position || '')}</div></div>
-        <div><div class="k">Abfallfehler</div><div class="v ${be != null && be <= 0.6 ? 'ok' : be != null ? 'warn' : ''}">${be != null ? nf(be, 1) : '–'}</div><div class="k">ms</div></div>
-      </div><p class="muted" style="margin:0;font-size:13px">Letzte Messung am ${fmtDT(lastW.at)}${lastW.bph ? ` bei ${nf(lastW.bph, 0)} A/h` : ''}.</p>`;
+      readout = `<div class="tg" role="group" aria-label="${tr('Letzte Zeitwaagen-Messung')}">
+        <div><div class="k">${tr('Gang')}</div><div class="v ${st === 'ok' ? 'ok' : st ? 'warn' : ''}">${signed(lastW.rate)}</div><div class="k">${unitTxt('s/Tag')}</div></div>
+        <div><div class="k">${tr('Amplitude')}</div><div class="v ${amp >= 270 ? 'ok' : amp != null && amp < 220 ? 'warn' : ''}">${amp != null ? nf(amp, 0) + '°' : '–'}</div><div class="k">${esc(tv(lastW.position) || '')}</div></div>
+        <div><div class="k">${tr('Abfallfehler')}</div><div class="v ${be != null && be <= 0.6 ? 'ok' : be != null ? 'warn' : ''}">${be != null ? nf(be, 1) : '–'}</div><div class="k">ms</div></div>
+      </div><p class="muted" style="margin:0;font-size:13px">${tr('m.last', fmtDT(lastW.at), lastW.bph ? nf(lastW.bph, 0) : null)}</p>`;
     }
     return `<section class="panel">
-      <div class="panel-head"><h3>Messungen</h3>${S.canWrite ? `<button class="btn small" data-act="add-m" data-w="${esc(w.id)}">+ Messung</button>` : ''}</div>
+      <div class="panel-head"><h3>${tr('Messungen')}</h3>${S.canWrite ? `<button class="btn small" data-act="add-m" data-w="${esc(w.id)}">${tr('+ Messung')}</button>` : ''}</div>
       ${S.mEditing && S.mEditing.watchId === w.id ? measureForm(S.mEditing) : ''}
       ${readout}
-      ${ms.length >= 1 ? `<div class="chart">${rateChart(ms, w)}</div>` : `<p class="muted" style="margin:0">${mech ? 'Noch keine Zeitwaagen-Messung. Trage Gang, Amplitude und Abfallfehler ein.' : 'Quarzwerke misst du über einige Wochen gegen eine Funkuhr: Abweichung in Sekunden und Zeitraum in Tagen eintragen.'}</p>`}
+      ${ms.length >= 1 ? `<div class="chart">${rateChart(ms, w)}</div>` : `<p class="muted" style="margin:0">${tr(mech ? 'Noch keine Zeitwaagen-Messung. Trage Gang, Amplitude und Abfallfehler ein.' : 'Quarzwerke misst du über einige Wochen gegen eine Funkuhr: Abweichung in Sekunden und Zeitraum in Tagen eintragen.')}</p>`}
       ${ms.length ? measureTable(ms, false, 3) : ''}
-      ${w.tolMin != null ? `<p class="muted" style="margin:0;font-size:12.5px">Grünes Band: Werkstoleranz ${signed(w.tolMin, 0)} bis ${signed(w.tolMax, 0)} ${esc(unit)}.</p>` : ''}
+      ${w.tolMin != null ? `<p class="muted" style="margin:0;font-size:12.5px">${tr('tol.band', tr('tol.range', signed(w.tolMin, 0), signed(w.tolMax, 0), esc(unit)))}</p>` : ''}
     </section>`;
   }
 
   function rateChart(ms, w) {
     const pts = ms.map(m => ({ m, v: mValue(m, w), t: new Date(m.at).getTime() })).filter(p => p.v != null && !isNaN(p.t));
     if (!pts.length) return '';
-    const unit = pts[0].m.kind === 'waage' ? 's/Tag' : (w.tolUnit || 's/Tag');
+    const unit = unitTxt(pts[0].m.kind === 'waage' ? 's/Tag' : w.tolUnit);
     const Wd = 600, H = 210, L = 46, R = 18, T = 18, B = 30;
     let lo = Math.min(...pts.map(p => p.v), 0), hi = Math.max(...pts.map(p => p.v), 0);
     if (w.tolMin != null) { lo = Math.min(lo, w.tolMin); hi = Math.max(hi, w.tolMax); }
@@ -749,7 +957,7 @@ img { max-width: 100%; }
     const lp = pts[pts.length - 1];
     const lab = `<text class="val" x="${Math.min(x(lp.t) + 9, Wd - R - 4)}" y="${y(lp.v) - 9}" text-anchor="${x(lp.t) > Wd - 90 ? 'end' : 'start'}">${signed(lp.v)} ${unit}</text>`;
     const xl = `<text class="axis" x="${pts.length > 1 ? L : x(t0)}" y="${H - 8}" text-anchor="${pts.length > 1 ? 'start' : 'middle'}">${fmtDate(new Date(t0))}</text>${pts.length > 1 ? `<text class="axis" x="${Wd - R}" y="${H - 8}" text-anchor="end">${fmtDate(new Date(t1))}</text>` : ''}`;
-    return `<svg viewBox="0 0 ${Wd} ${H}" role="img" aria-label="Gangverlauf in ${unit}">${g}${band}${zero}${path}${dots}${lab}${xl}</svg>`;
+    return `<svg viewBox="0 0 ${Wd} ${H}" role="img" aria-label="${tr('Gangverlauf in')} ${unit}">${g}${band}${zero}${path}${dots}${lab}${xl}</svg>`;
   }
   function niceStep(raw) { const p = Math.pow(10, Math.floor(Math.log10(raw || 1))); const n = raw / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p; }
 
@@ -757,21 +965,21 @@ img { max-width: 100%; }
   function measureTable(ms, withWatch, max = 0) {
     const alle = [...ms].sort((a, b) => String(b.at).localeCompare(String(a.at)));
     const offen = !max || S.msAlle === ms[0]?.watchId, rows = offen ? alle : alle.slice(0, max);
-    const mehr = max && alle.length > max ? `<button class="btn small ghost" data-act="ms-alle" data-w="${esc(ms[0].watchId)}" style="margin-top:6px">${offen ? 'Nur die letzten ' + max + ' zeigen' : `Alle Messungen (${alle.length})`}</button>` : '';
+    const mehr = max && alle.length > max ? `<button class="btn small ghost" data-act="ms-alle" data-w="${esc(ms[0].watchId)}" style="margin-top:6px">${offen ? tr('ms.fewer', max) : tr('ms.all', alle.length)}</button>` : '';
     return `<div class="tbl-wrap"><table>
-      <thead><tr><th>Datum</th>${withWatch ? '<th>Uhr</th>' : ''}<th>Lage / Zeitraum</th><th class="num">Gang</th><th class="num">Amplitude</th><th class="num">Abfallfehler</th><th>Notiz</th>${S.canWrite ? '<th></th>' : ''}</tr></thead>
+      <thead><tr><th>${tr('Datum')}</th>${withWatch ? `<th>${tr('Uhr')}</th>` : ''}<th>${tr('Lage / Zeitraum')}</th><th class="num">${tr('Gang')}</th><th class="num">${tr('Amplitude')}</th><th class="num">${tr('Abfallfehler')}</th><th>${tr('Notiz')}</th>${S.canWrite ? '<th></th>' : ''}</tr></thead>
       <tbody>${rows.map(m => {
         const w = W(m.watchId); const v = mValue(m, w); const st = tolState(v, w);
         const del = S.confirm === 'm-' + m.id;
         return `<tr>
           <td class="mono" style="white-space:nowrap">${fmtDT(m.at)}</td>
           ${withWatch ? `<td><a href="#uhr-${esc(m.watchId)}" data-open="${esc(m.watchId)}"><span class="dot" style="background:${esc(w?.color || 'var(--muted)')};margin-right:6px"></span>${esc(w?.name || '?')}</a></td>` : ''}
-          <td>${m.kind === 'waage' ? esc(m.position || '–') + (m.method === 'mikro' ? ' <span title="per Mikrofon gemessen">🎙</span>' : '') : `${nf(m.days, 1) ?? '–'} Tage, ${signed(m.deviation)} s`}</td>
+          <td>${m.kind === 'waage' ? esc(tv(m.position) || '–') + (m.method === 'mikro' ? ` <span title="${tr('per Mikrofon gemessen')}">🎙</span>` : '') : tr('m.span', nf(m.days, 1) ?? '–', signed(m.deviation))}</td>
           <td class="num mono state-${st}">${v != null ? signed(v) + ' ' + esc(unitOf(m, w)) : '–'}</td>
           <td class="num mono">${m.amplitude != null ? nf(m.amplitude, 0) + '°' : '–'}</td>
           <td class="num mono">${m.beatError != null ? nf(m.beatError, 1) + ' ms' : '–'}</td>
-          <td>${esc(m.note || '')}${m.photo ? ` <a href="${blobUrl(m.photo)}" target="_blank" rel="noopener">Foto</a>` : ''}</td>
-          ${S.canWrite ? `<td style="white-space:nowrap">${del ? `<button class="btn small danger" data-m-del-yes="${esc(m.id)}">Löschen</button> <button class="btn small ghost" data-act="cancel-confirm">Nein</button>` : `<button class="btn small ghost" data-m-edit="${esc(m.id)}">Ändern</button><button class="btn small ghost" data-m-del="${esc(m.id)}" aria-label="Messung löschen">×</button>`}</td>` : ''}
+          <td>${esc(m.note || '')}${m.photo ? ` <a href="${blobUrl(m.photo)}" target="_blank" rel="noopener">${tr('Foto')}</a>` : ''}</td>
+          ${S.canWrite ? `<td style="white-space:nowrap">${del ? `<button class="btn small danger" data-m-del-yes="${esc(m.id)}">${tr('Löschen')}</button> <button class="btn small ghost" data-act="cancel-confirm">${tr('Nein')}</button>` : `<button class="btn small ghost" data-m-edit="${esc(m.id)}">${tr('Ändern')}</button><button class="btn small ghost" data-m-del="${esc(m.id)}" aria-label="${tr('Messung löschen')}">×</button>`}</td>` : ''}
         </tr>`;
       }).join('')}</tbody></table></div>${mehr}`;
   }
@@ -782,22 +990,22 @@ img { max-width: 100%; }
     const sel = (v, o) => v === o ? 'selected' : '';
     const positions = POSITIONS;
     return `<form class="grid-form" data-form="measure" style="background:var(--sunk);padding:12px;border-radius:8px">
-      ${kind === 'waage' && isQuarzWerk(w) ? `<div class="field wide"><p class="notice" style="margin:0">Quarzuhr: Den Gang misst du genauer mit „Abgleich mit Funkuhr“ über einige Wochen als mit der Zeitwaage. <button type="button" class="btn small" data-act="m-to-vergleich">Zum Abgleich wechseln</button></p></div>`
-      : kind === 'waage' ? `<div class="field wide"><button type="button" class="btn mic-btn" data-act="zw-open">🎙 ${esc(w?.name || 'Uhr')} mit dem Mikrofon messen</button>${m.method === 'mikro' ? `<span class="muted" style="font-size:12.5px">Per Mikrofon gemessen${m.dur ? `, ${m.dur} s` : ''}${m.quality != null ? `, Güte ${nf(m.quality * 100, 0)} %` : ''}${m.calibPpm ? '' : ', Handy-Takt nicht kalibriert'}</span>` : ''}</div>` : ''}
-      <div class="field"><label for="m-watch">Uhr</label><select id="m-watch" name="watchId">${[...S.watches].sort(byNr).map(x => `<option value="${esc(x.id)}" ${sel(x.id, m.watchId)}>${x.nr ?? ''} · ${esc(x.name)}</option>`).join('')}</select></div>
-      <div class="field"><label for="m-kind">Art</label><select id="m-kind" name="kind"><option value="waage" ${sel(kind, 'waage')}>Zeitwaage</option><option value="vergleich" ${sel(kind, 'vergleich')}>Abgleich mit Funkuhr</option></select></div>
-      <div class="field"><label for="m-at">Zeitpunkt</label><input id="m-at" type="datetime-local" name="at" value="${esc((m.at || new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString()).slice(0, 16))}" required></div>
+      ${kind === 'waage' && isQuarzWerk(w) ? `<div class="field wide"><p class="notice" style="margin:0">${tr('Quarzuhr: Den Gang misst du genauer mit „Abgleich mit Funkuhr“ über einige Wochen als mit der Zeitwaage.')} <button type="button" class="btn small" data-act="m-to-vergleich">${tr('Zum Abgleich wechseln')}</button></p></div>`
+      : kind === 'waage' ? `<div class="field wide"><button type="button" class="btn mic-btn" data-act="zw-open">🎙 ${tr('mic.measure', esc(w?.name || tr('Uhr')))}</button>${m.method === 'mikro' ? `<span class="muted" style="font-size:12.5px">${tr('Per Mikrofon gemessen')}${m.dur ? `, ${m.dur} s` : ''}${m.quality != null ? `, ${tr('Güte')} ${nf(m.quality * 100, 0)} %` : ''}${m.calibPpm ? '' : ', ' + tr('Handy-Takt nicht kalibriert')}</span>` : ''}</div>` : ''}
+      <div class="field"><label for="m-watch">${tr('Uhr')}</label><select id="m-watch" name="watchId">${[...S.watches].sort(byNr).map(x => `<option value="${esc(x.id)}" ${sel(x.id, m.watchId)}>${x.nr ?? ''} · ${esc(x.name)}</option>`).join('')}</select></div>
+      <div class="field"><label for="m-kind">${tr('Art')}</label><select id="m-kind" name="kind"><option value="waage" ${sel(kind, 'waage')}>${tr('Zeitwaage')}</option><option value="vergleich" ${sel(kind, 'vergleich')}>${tr('Abgleich mit Funkuhr')}</option></select></div>
+      <div class="field"><label for="m-at">${tr('Zeitpunkt')}</label><input id="m-at" type="datetime-local" name="at" value="${esc((m.at || new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString()).slice(0, 16))}" required></div>
       ${kind === 'waage' ? `
-        <div class="field"><label for="m-pos">Lage</label><select id="m-pos" name="position">${positions.map(p => `<option ${sel(p, m.position || 'Zifferblatt oben')}>${p}</option>`).join('')}</select></div>
-        <div class="field"><label for="m-rate">Gang (s/Tag)</label><input id="m-rate" type="number" step="0.1" name="rate" value="${m.rate ?? ''}" placeholder="+15" required></div>
-        <div class="field"><label for="m-amp">Amplitude (°)</label><input id="m-amp" type="number" step="1" name="amplitude" value="${m.amplitude ?? ''}" placeholder="270"></div>
-        <div class="field"><label for="m-be">Abfallfehler (ms)</label><input id="m-be" type="number" step="0.01" min="0" name="beatError" value="${m.beatError ?? ''}" placeholder="0,4"></div>
-        <div class="field"><label for="m-bph">Frequenz (A/h)</label><input id="m-bph" type="number" step="1" name="bph" value="${m.bph ?? w?.bph ?? ''}"></div>`
+        <div class="field"><label for="m-pos">${tr('Lage')}</label><select id="m-pos" name="position">${positions.map(p => `<option value="${esc(p)}" ${sel(p, m.position || 'Zifferblatt oben')}>${esc(tv(p))}</option>`).join('')}</select></div>
+        <div class="field"><label for="m-rate">${tr('Gang')} (${unitTxt('s/Tag')})</label><input id="m-rate" type="number" step="0.1" name="rate" value="${m.rate ?? ''}" placeholder="+15" required></div>
+        <div class="field"><label for="m-amp">${tr('Amplitude')} (°)</label><input id="m-amp" type="number" step="1" name="amplitude" value="${m.amplitude ?? ''}" placeholder="270"></div>
+        <div class="field"><label for="m-be">${tr('Abfallfehler')} (ms)</label><input id="m-be" type="number" step="0.01" min="0" name="beatError" value="${m.beatError ?? ''}" placeholder="${nf(0.4)}"></div>
+        <div class="field"><label for="m-bph">${tr('Frequenz')} (${tr('A/h')})</label><input id="m-bph" type="number" step="1" name="bph" value="${m.bph ?? w?.bph ?? ''}"></div>`
       : `
-        <div class="field"><label for="m-dev">Abweichung (s)</label><input id="m-dev" type="number" step="0.1" name="deviation" value="${m.deviation ?? ''}" placeholder="+4" required></div>
-        <div class="field"><label for="m-days">Zeitraum (Tage)</label><input id="m-days" type="number" step="0.1" min="0.1" name="days" value="${m.days ?? ''}" placeholder="14" required></div>`}
-      <div class="field wide"><label for="m-note">Notiz</label><input id="m-note" type="text" name="note" value="${esc(m.note || '')}" placeholder="z. B. voll aufgezogen, nach 24 h Ablauf"></div>
-      <div class="actions field wide"><button class="btn primary">${m.id ? 'Messung speichern' : 'Messung eintragen'}</button><button type="button" class="btn ghost" data-act="cancel-m">Abbrechen</button></div>
+        <div class="field"><label for="m-dev">${tr('Abweichung (s)')}</label><input id="m-dev" type="number" step="0.1" name="deviation" value="${m.deviation ?? ''}" placeholder="+4" required></div>
+        <div class="field"><label for="m-days">${tr('Zeitraum (Tage)')}</label><input id="m-days" type="number" step="0.1" min="0.1" name="days" value="${m.days ?? ''}" placeholder="14" required></div>`}
+      <div class="field wide"><label for="m-note">${tr('Notiz')}</label><input id="m-note" type="text" name="note" value="${esc(m.note || '')}" placeholder="${tr('z. B. voll aufgezogen, nach 24 h Ablauf')}"></div>
+      <div class="actions field wide"><button class="btn primary">${tr(m.id ? 'Messung speichern' : 'Messung eintragen')}</button><button type="button" class="btn ghost" data-act="cancel-m">${tr('Abbrechen')}</button></div>
     </form>`;
   }
 
@@ -810,17 +1018,17 @@ img { max-width: 100%; }
     const missing = ws.filter(x => isMech(x) && x.status !== 'Bestellt' && !measured.has(x.id));
     return `
       <div class="view-head">
-        <div><h2>Messungen</h2><p>Zeitwaage für mechanische Werke, Abgleich mit der Funkuhr für Quarz.</p></div>
-        ${S.canWrite ? `<button class="btn primary" data-act="add-m" data-w="${esc(S.mFilter !== 'alle' ? S.mFilter : (ws.find(isMech)?.id || ws[0]?.id || ''))}">+ Messung</button>` : ''}
+        <div><h2>${tr('Messungen')}</h2><p>${tr('Zeitwaage für mechanische Werke, Abgleich mit der Funkuhr für Quarz.')}</p></div>
+        ${S.canWrite ? `<button class="btn primary" data-act="add-m" data-w="${esc(S.mFilter !== 'alle' ? S.mFilter : (ws.find(isMech)?.id || ws[0]?.id || ''))}">${tr('+ Messung')}</button>` : ''}
       </div>
       ${S.mEditing && S.view === 'messungen' ? `<section class="panel" style="margin-bottom:16px">${measureForm(S.mEditing)}</section>` : ''}
       <div class="chips" style="margin-bottom:16px">
-        <button class="chip" data-mfilter="alle" aria-pressed="${S.mFilter === 'alle'}">Alle Uhren</button>
+        <button class="chip" data-mfilter="alle" aria-pressed="${S.mFilter === 'alle'}">${tr('Alle Uhren')}</button>
         ${ws.map(x => `<button class="chip" data-mfilter="${esc(x.id)}" aria-pressed="${S.mFilter === x.id}">${esc(x.name)}${measured.has(x.id) ? '' : ' ·'}</button>`).join('')}
       </div>
-      ${w && ms.length ? `<section class="panel" style="margin-bottom:16px"><div class="panel-head"><h3>Gangverlauf ${esc(w.name)}</h3>${w.tolMin != null ? `<span class="label">Toleranz ${signed(w.tolMin, 0)} bis ${signed(w.tolMax, 0)} ${esc(w.tolUnit || 's/Tag')}</span>` : ''}</div><div class="chart">${rateChart(ms.filter(m => m.watchId === w.id).sort((a, b) => String(a.at).localeCompare(String(b.at))), w)}</div></section>` : ''}
-      ${ms.length ? measureTable(ms, S.mFilter === 'alle') : `<div class="empty">${w ? `Für die ${esc(w.name)} gibt es noch keine Messung.` : 'Noch keine Messungen eingetragen.'}</div>`}
-      ${missing.length && S.mFilter === 'alle' ? `<p class="notice" style="margin-top:16px">Noch nicht mit der Zeitwaage gemessen: ${missing.map(x => esc(x.name)).join(', ')}.</p>` : ''}
+      ${w && ms.length ? `<section class="panel" style="margin-bottom:16px"><div class="panel-head"><h3>${tr('Gangverlauf')} ${esc(w.name)}</h3>${w.tolMin != null ? `<span class="label">${tr('Toleranz')} ${tr('tol.range', signed(w.tolMin, 0), signed(w.tolMax, 0), unitTxt(w.tolUnit))}</span>` : ''}</div><div class="chart">${rateChart(ms.filter(m => m.watchId === w.id).sort((a, b) => String(a.at).localeCompare(String(b.at))), w)}</div></section>` : ''}
+      ${ms.length ? measureTable(ms, S.mFilter === 'alle') : `<div class="empty">${w ? tr('ms.none.w', esc(w.name)) : tr('Noch keine Messungen eingetragen.')}</div>`}
+      ${missing.length && S.mFilter === 'alle' ? `<p class="notice" style="margin-top:16px">${tr('Noch nicht mit der Zeitwaage gemessen:')} ${missing.map(x => esc(x.name)).join(', ')}.</p>` : ''}
     `;
   }
 
@@ -836,14 +1044,14 @@ img { max-width: 100%; }
     for (let wk = 0; wk < weeks; wk++) {
       const first = new Date(start); first.setDate(first.getDate() + wk * 7);
       const mon = first.getMonth();
-      cells += `<div class="m">${mon !== lastMonth ? first.toLocaleDateString('de-DE', { month: 'short' }) : ''}</div>`; lastMonth = mon;
+      cells += `<div class="m">${mon !== lastMonth ? first.toLocaleDateString(LOC(), { month: 'short' }) : ''}</div>`; lastMonth = mon;
       for (let d = 0; d < 7; d++) {
         const day = new Date(first); day.setDate(day.getDate() + d);
         const ds = todayStr(day); const ids = S.wear[ds] || [];
         const cols = ids.map(id => W(id)?.color || 'var(--muted)');
         const bg = cols.length === 0 ? '' : cols.length === 1 ? `background:${esc(cols[0])}` : `background:linear-gradient(135deg, ${esc(cols[0])} 50%, ${esc(cols[1])} 50%)`;
         const fut = day > today;
-        cells += `<button class="d ${ds === todayStr() ? 'today' : ''} ${ds === sel ? 'sel' : ''} ${fut ? 'future' : ''} ${ids.some(id => S.wearShots[ds]?.[id]) ? 'shot' : ''}" style="${bg}" ${fut ? 'disabled' : `data-day="${ds}"`} title="${day.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })}${ids.length ? ': ' + esc(ids.map(id => W(id)?.name || '?').join(', ')) : ''}" aria-label="${ds}${ids.length ? ', ' + esc(ids.map(id => W(id)?.name || '?').join(', ')) : ''}"></button>`;
+        cells += `<button class="d ${ds === todayStr() ? 'today' : ''} ${ds === sel ? 'sel' : ''} ${fut ? 'future' : ''} ${ids.some(id => S.wearShots[ds]?.[id]) ? 'shot' : ''}" style="${bg}" ${fut ? 'disabled' : `data-day="${ds}"`} title="${day.toLocaleDateString(LOC(), { weekday: 'short', day: '2-digit', month: '2-digit' })}${ids.length ? ': ' + esc(ids.map(id => W(id)?.name || '?').join(', ')) : ''}" aria-label="${ds}${ids.length ? ', ' + esc(ids.map(id => W(id)?.name || '?').join(', ')) : ''}"></button>`;
       }
     }
     const range = S.statRange; const cutoff = range === 'alle' ? null : new Date(today.getTime() - Number(range) * 864e5);
@@ -855,29 +1063,29 @@ img { max-width: 100%; }
     const selDate = parseDay(sel);
     const selShots = selW.filter(id => S.wearShots[sel]?.[id]);
     return `
-      <div class="view-head"><div><h2>Tragetagebuch</h2><p>Halte fest, welche Uhr du wann getragen hast.</p></div></div>
+      <div class="view-head"><div><h2>${tr('Tragetagebuch')}</h2><p>${tr('Halte fest, welche Uhr du wann getragen hast.')}</p></div></div>
       <div class="diary">
         <div class="stack">
           <section class="panel">
-            <div class="panel-head"><h3>${sel === todayStr() ? 'Heute' : selDate.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}</h3>
-              <div class="actions"><input type="date" id="diary-date" value="${sel}" max="${todayStr()}" aria-label="Tag wählen" style="width:auto">${sel !== todayStr() ? '<button class="btn small" data-act="diary-today">Heute</button>' : S.canWrite && ws.length ? '<button class="btn small" data-act="wristcheck"><span class="ico" aria-hidden="true">📷</span> Was trage ich?</button>' : ''}</div></div>
-            ${ws.length ? `<div class="pick">${ws.map(w => `<button data-wear="${esc(w.id)}" aria-pressed="${selW.includes(w.id)}" ${S.canWrite ? '' : 'disabled'}><span class="dot" style="background:${esc(w.color || 'var(--muted)')};width:14px;height:14px"></span>${esc(w.name)}</button>`).join('')}</div>` : '<p class="muted">Noch keine Uhren in der Sammlung.</p>'}
-            <p class="muted" style="margin:0;font-size:13px">${selW.length ? `Getragen: ${selW.map(id => esc(W(id)?.name || '?')).join(' und ')}. Tippe erneut, um es zu entfernen.` : 'Tippe auf eine Uhr, um sie für diesen Tag einzutragen. Ein Uhrwechsel am Tag geht auch.'}</p>
-            ${selShots.length ? `<div class="day-shots">${selShots.map((id, i) => `<button data-shot="${i}" aria-label="Foto mit ${esc(W(id)?.name || '?')} groß ansehen"><img src="${blobUrl(S.wearShots[sel][id])}" alt="${esc(W(id)?.name || '?')} am Handgelenk"></button>`).join('')}</div>` : ''}
+            <div class="panel-head"><h3>${sel === todayStr() ? tr('Heute') : selDate.toLocaleDateString(LOC(), { weekday: 'long', day: 'numeric', month: 'long' })}</h3>
+              <div class="actions"><input type="date" id="diary-date" value="${sel}" max="${todayStr()}" aria-label="${tr('Tag wählen')}" style="width:auto">${sel !== todayStr() ? `<button class="btn small" data-act="diary-today">${tr('Heute')}</button>` : S.canWrite && ws.length ? `<button class="btn small" data-act="wristcheck"><span class="ico" aria-hidden="true">📷</span> ${tr('Was trage ich?')}</button>` : ''}</div></div>
+            ${ws.length ? `<div class="pick">${ws.map(w => `<button data-wear="${esc(w.id)}" aria-pressed="${selW.includes(w.id)}" ${S.canWrite ? '' : 'disabled'}><span class="dot" style="background:${esc(w.color || 'var(--muted)')};width:14px;height:14px"></span>${esc(w.name)}</button>`).join('')}</div>` : `<p class="muted">${tr('Noch keine Uhren in der Sammlung.')}</p>`}
+            <p class="muted" style="margin:0;font-size:13px">${selW.length ? tr('diary.worn', selW.map(id => esc(W(id)?.name || '?')).join(tr(' und '))) : tr('Tippe auf eine Uhr, um sie für diesen Tag einzutragen. Ein Uhrwechsel am Tag geht auch.')}</p>
+            ${selShots.length ? `<div class="day-shots">${selShots.map((id, i) => `<button data-shot="${i}" aria-label="${tr('shot.big', esc(W(id)?.name || '?'))}"><img src="${blobUrl(S.wearShots[sel][id])}" alt="${tr('shot.alt', esc(W(id)?.name || '?'))}"></button>`).join('')}</div>` : ''}
           </section>
           <section class="panel">
-            <div class="panel-head"><h3>Die letzten ${weeks} Wochen</h3><span class="label">${Object.values(S.wear).filter(a => a.length).length} Tage eingetragen</span></div>
-            <div class="cal-row"><div class="wd-labels"><span></span><span>Mo</span><span></span><span>Mi</span><span></span><span>Fr</span><span></span><span>So</span></div>
+            <div class="panel-head"><h3>${tr('cal.weeks', weeks)}</h3><span class="label">${tr('cal.days', Object.values(S.wear).filter(a => a.length).length)}</span></div>
+            <div class="cal-row"><div class="wd-labels"><span></span>${[0, 1, 2, 3, 4, 5, 6].map(i => `<span>${i % 2 ? '' : new Date(2024, 0, 1 + i).toLocaleDateString(LOC(), { weekday: 'short' }).slice(0, 2)}</span>`).join('')}</div>
             <div class="cal-wrap"><div class="cal">${cells}</div></div></div>
-            <p class="muted" style="margin:0;font-size:12.5px">Jedes Feld ist ein Tag in der Farbe der getragenen Uhr. Tippe auf einen Tag, um ihn oben zu bearbeiten.</p>
+            <p class="muted" style="margin:0;font-size:12.5px">${tr('Jedes Feld ist ein Tag in der Farbe der getragenen Uhr. Tippe auf einen Tag, um ihn oben zu bearbeiten.')}</p>
           </section>
         </div>
         <section class="panel">
-          <div class="panel-head"><h3>Rotation</h3>
-            <div class="chips">${[['30', '30 Tage'], ['90', '90 Tage'], ['alle', 'Gesamt']].map(([k, l]) => `<button class="chip" data-range="${k}" aria-pressed="${range === k}">${l}</button>`).join('')}</div></div>
+          <div class="panel-head"><h3>${tr('Rotation')}</h3>
+            <div class="chips">${[['30', '30 Tage'], ['90', '90 Tage'], ['alle', 'Gesamt']].map(([k, l]) => `<button class="chip" data-range="${k}" aria-pressed="${range === k}">${tr(l)}</button>`).join('')}</div></div>
           ${totalDays ? `<div class="bars">${ranked.map(r => `<div class="bar-row"><span class="nm" title="${esc(watchLabel(r.w))}">${esc(r.w.name)}</span><div class="track"><div class="fill" style="width:${r.n / max * 100}%;background:${esc(r.w.color || 'var(--muted)')}"></div></div><span class="n">${r.n}</span></div>`).join('')}</div>
-            <p class="muted" style="margin:0;font-size:13px">${totalDays} Tragetage im Zeitraum.${neglected.length ? ` Länger nicht am Arm: ${neglected.map(w => esc(w.name)).join(', ')}.` : ' Jede Uhr kam dran.'}</p>`
-            : `<div class="empty" style="padding:18px">Noch keine Tragetage in diesem Zeitraum. Trag links ein, welche Uhr du heute trägst.</div>`}
+            <p class="muted" style="margin:0;font-size:13px">${tr('rot.days', totalDays)}${neglected.length ? ` ${tr('Länger nicht am Arm:')} ${neglected.map(w => esc(w.name)).join(', ')}.` : ' ' + tr('Jede Uhr kam dran.')}</p>`
+            : `<div class="empty" style="padding:18px">${tr('Noch keine Tragetage in diesem Zeitraum. Trag links ein, welche Uhr du heute trägst.')}</div>`}
         </section>
       </div>`;
   }
@@ -885,20 +1093,20 @@ img { max-width: 100%; }
   // ----- Wristcheck Light: Foto → Uhr antippen → Tragetag (ohne KI) -----
   // Regeln liefern eine sortierte Liste { w, score, why }. Eine spätere lokale Erkennung (Premium) sortiert sie in wcReorder nur um.
   function wristSuggestions(day = todayStr()) {
-    const d0 = parseDay(day); const wdName = d0.toLocaleDateString('de-DE', { weekday: 'long' });
+    const d0 = parseDay(day); const wdName = d0.toLocaleDateString(LOC(), { weekday: 'long' });
     const ago = s => Math.round((d0 - parseDay(s)) / 864e5);
     return S.watches.filter(w => w.status !== 'Bestellt' && w.status !== 'Verkauft').map(w => {
       const past = wearDaysOf(w.id).filter(s => s < day);
       const last = past.length ? ago(past[past.length - 1]) : null;
       const sameWd = past.filter(s => ago(s) <= 56 && ago(s) % 7 === 0).length;   // gleicher Wochentag, letzte 8 Wochen
       let score = 0; const why = [];
-      if ((S.wear[day] || []).includes(w.id)) { score += 100; why.push('heute schon eingetragen'); }
-      if (last === 1) { score += 5; why.push('gestern getragen'); }
-      else if (last != null && last <= 3) { score += 2; why.push(last === 2 ? 'vorgestern getragen' : 'vor 3 Tagen getragen'); }
-      if (sameWd) { score += 1.5 * sameWd; why.push(sameWd > 1 ? `${sameWd}× an ${wdName}en getragen` : `an einem ${wdName} getragen`); }
+      if ((S.wear[day] || []).includes(w.id)) { score += 100; why.push(tr('heute schon eingetragen')); }
+      if (last === 1) { score += 5; why.push(tr('gestern getragen')); }
+      else if (last != null && last <= 3) { score += 2; why.push(tr(last === 2 ? 'vorgestern getragen' : 'vor 3 Tagen getragen')); }
+      if (sameWd) { score += 1.5 * sameWd; why.push(tr('wc.wd', sameWd, wdName)); }
       // „mal wieder“: kleiner Bonus, der mit der Pause wächst, damit vergessene Uhren auftauchen, wenn sonst nichts passt
       const gap = last ?? 60;
-      if (gap >= 7) { score += Math.min(gap, 60) / 60; if (!why.length) why.push(last == null ? 'noch nicht getragen' : `seit ${last} Tagen nicht am Arm`); }
+      if (gap >= 7) { score += Math.min(gap, 60) / 60; if (!why.length) why.push(last == null ? tr('noch nicht getragen') : tr('wc.gap', last)); }
       return { w, score, why: why.join(' · ') };
     }).sort((a, b) => b.score - a.score || byNr(a.w, b.w));
   }
@@ -927,7 +1135,7 @@ img { max-width: 100%; }
       await S.db.collection('wear').doc(day).set({ date: day, watches: uniq([...(S.wear[day] || []), id]), ...(Object.keys(shots).length ? { shots } : {}) });
       if (blob && old && !photoInUse(old)) { try { await S.assets.delete(old); } catch (er) { console.error(er); } }
       closeWc(); S.diaryDate = day; render();
-      toast(`${w.name} für heute eingetragen${blob ? ', mit Foto' : ''}`);
+      toast(tr('wc.done', w.name, !!blob));
     } catch (er) {
       if (S.wc) { S.wc.busy = false; renderWc(); }
       if (er?.code === 'unsupported_type') toast(photoErr(er)); else fail(er, 'Eintragen');
@@ -939,15 +1147,15 @@ img { max-width: 100%; }
     const { blob, url, list, busy } = S.wc;
     // Vorschlag = die ersten drei mit einem echten Grund aus dem Tragemuster (nicht nur „lange nicht getragen“)
     const top = new Set(list.slice(0, 3).filter(r => r.score >= 1.5).map(r => r.w.id));
-    const item = r => `<button data-wc-pick="${esc(r.w.id)}" class="${top.has(r.w.id) ? 'top' : ''}" ${busy ? 'disabled' : ''}>${top.has(r.w.id) ? '<span class="tag">Vorschlag</span>' : ''}<span class="ph">${photoHtml(r.w)}</span><span class="nm">${esc(r.w.name)}</span>${r.why ? `<span class="why">${esc(r.why)}</span>` : ''}</button>`;
+    const item = r => `<button data-wc-pick="${esc(r.w.id)}" class="${top.has(r.w.id) ? 'top' : ''}" ${busy ? 'disabled' : ''}>${top.has(r.w.id) ? `<span class="tag">${tr('Vorschlag')}</span>` : ''}<span class="ph">${photoHtml(r.w)}</span><span class="nm">${esc(r.w.name)}</span>${r.why ? `<span class="why">${esc(r.why)}</span>` : ''}</button>`;
     el.hidden = false; document.body.style.overflow = 'hidden';
     el.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="wc-h">
-      <div class="panel-head"><h3 id="wc-h">Was trage ich?</h3><button class="btn ghost small" data-act="wc-close" aria-label="Schließen">×</button></div>
-      ${blob ? `<div class="shot"><img src="${url}" alt="Dein Foto von heute"></div>` : '<p class="notice" style="margin:0">Mach ein Foto vom Handgelenk und tippe dann die Uhr an. Ohne Foto geht es auch.</p>'}
-      <div class="actions"><button class="btn${blob ? '' : ' primary'}" data-act="wc-cam">📷 ${blob ? 'Neues Foto' : 'Foto machen'}</button><button class="btn ghost" data-act="wc-gal">Aus Galerie</button>${blob ? '<button class="btn ghost" data-act="wc-nophoto">Ohne Foto</button>' : ''}</div>
-      <div class="label">${blob ? 'Welche Uhr ist das? Antippen zum Eintragen' : 'Welche Uhr trägst du heute?'}</div>
-      ${list.length ? `<div class="sugg">${list.map(item).join('')}</div>` : '<p class="muted" style="margin:0">Noch keine Uhren in der Sammlung.</p>'}
-      <p class="muted" style="margin:0;font-size:12px">Die Reihenfolge kommt aus deinem Tragemuster (gestern, Wochentag, lange nicht getragen). Das Foto wird nicht ausgewertet, es bleibt nur als Erinnerung beim Tag.</p>
+      <div class="panel-head"><h3 id="wc-h">${tr('Was trage ich?')}</h3><button class="btn ghost small" data-act="wc-close" aria-label="${tr('Schließen')}">×</button></div>
+      ${blob ? `<div class="shot"><img src="${url}" alt="${tr('Dein Foto von heute')}"></div>` : `<p class="notice" style="margin:0">${tr('Mach ein Foto vom Handgelenk und tippe dann die Uhr an. Ohne Foto geht es auch.')}</p>`}
+      <div class="actions"><button class="btn${blob ? '' : ' primary'}" data-act="wc-cam">📷 ${tr(blob ? 'Neues Foto' : 'Foto machen')}</button><button class="btn ghost" data-act="wc-gal">${tr('Aus Galerie')}</button>${blob ? `<button class="btn ghost" data-act="wc-nophoto">${tr('Ohne Foto')}</button>` : ''}</div>
+      <div class="label">${tr(blob ? 'Welche Uhr ist das? Antippen zum Eintragen' : 'Welche Uhr trägst du heute?')}</div>
+      ${list.length ? `<div class="sugg">${list.map(item).join('')}</div>` : `<p class="muted" style="margin:0">${tr('Noch keine Uhren in der Sammlung.')}</p>`}
+      <p class="muted" style="margin:0;font-size:12px">${tr('Die Reihenfolge kommt aus deinem Tragemuster (gestern, Wochentag, lange nicht getragen). Das Foto wird nicht ausgewertet, es bleibt nur als Erinnerung beim Tag.')}</p>
     </div>`;
   }
 
@@ -962,18 +1170,18 @@ img { max-width: 100%; }
     const numRow = ([k, l, u]) => {
       const vals = ws.map(w => typeof w[k] === 'number' ? w[k] : null); const known = vals.filter(v => v != null);
       const mx = Math.max(...known, 0), mn = Math.min(...known);
-      return `<tr><td class="label" style="white-space:nowrap">${l}</td>${ws.map((w, i) => { const v = vals[i]; return `<td class="mono ${v != null && known.length > 1 && (v === mx || v === mn) ? 'hi' : ''}">${v != null ? nf(v, 2) + ' ' + u : '<span class="muted">offen</span>'}${v != null && mx ? `<div class="mini"><span style="width:${v / mx * 100}%"></span></div>` : ''}</td>`; }).join('')}</tr>`;
+      return `<tr><td class="label" style="white-space:nowrap">${tr(l)}</td>${ws.map((w, i) => { const v = vals[i]; return `<td class="mono ${v != null && known.length > 1 && (v === mx || v === mn) ? 'hi' : ''}">${v != null ? nf(v, 2) + ' ' + u : `<span class="muted">${tr('offen')}</span>`}${v != null && mx ? `<div class="mini"><span style="width:${v / mx * 100}%"></span></div>` : ''}</td>`; }).join('')}</tr>`;
     };
     return `
-      <div class="view-head"><div><h2>Vergleich</h2><p>Maße und Werke nebeneinander. Fett: größter und kleinster Wert der Zeile.</p></div></div>
+      <div class="view-head"><div><h2>${tr('Vergleich')}</h2><p>${tr('Maße und Werke nebeneinander. Fett: größter und kleinster Wert der Zeile.')}</p></div></div>
       <div class="chips" style="margin-bottom:16px">${all.map(w => `<button class="chip" data-cmp="${esc(w.id)}" aria-pressed="${S.cmpSel.includes(w.id)}"><span class="dot" style="background:${esc(w.color || 'var(--muted)')};margin-right:5px"></span>${esc(w.name)}</button>`).join('')}</div>
       ${ws.length ? `<div class="tbl-wrap"><table class="cmp">
-        <thead><tr><th>Merkmal</th>${ws.map(w => `<th><span class="label">Uhr ${w.nr ?? ''}</span><a class="t" href="#uhr-${esc(w.id)}" data-open="${esc(w.id)}">${esc(w.name)}</a></th>`).join('')}</tr></thead>
+        <thead><tr><th>${tr('Merkmal')}</th>${ws.map(w => `<th><span class="label">${tr('Uhr')} ${w.nr ?? ''}</span><a class="t" href="#uhr-${esc(w.id)}" data-open="${esc(w.id)}">${esc(w.name)}</a></th>`).join('')}</tr></thead>
         <tbody>${numRows.map(numRow).join('')}
-          ${txtRows.map(([k, l]) => `<tr><td class="label" style="white-space:nowrap">${l}</td>${ws.map(w => `<td>${w[k] ? esc(w[k]) : '<span class="muted">offen</span>'}</td>`).join('')}</tr>`).join('')}
-          <tr><td class="label">Tragetage</td>${ws.map(w => `<td class="mono">${wearN(w.id)}</td>`).join('')}</tr>
-          <tr><td class="label">Letzter Gang</td>${ws.map(w => { const m = S.measurements.filter(x => x.watchId === w.id).sort((a, b) => String(b.at).localeCompare(String(a.at)))[0]; const v = m ? mValue(m, w) : null; return `<td class="mono state-${tolState(v, w)}">${v != null ? signed(v) + ' ' + esc(unitOf(m, w)) : '<span class="muted">–</span>'}</td>`; }).join('')}</tr>
-        </tbody></table></div>` : '<div class="empty">Wähle oben mindestens eine Uhr.</div>'}
+          ${txtRows.map(([k, l]) => `<tr><td class="label" style="white-space:nowrap">${tr(l)}</td>${ws.map(w => `<td>${w[k] ? esc(k === 'movementKind' ? tv(w[k]) : w[k]) : `<span class="muted">${tr('offen')}</span>`}</td>`).join('')}</tr>`).join('')}
+          <tr><td class="label">${tr('Tragetage')}</td>${ws.map(w => `<td class="mono">${wearN(w.id)}</td>`).join('')}</tr>
+          <tr><td class="label">${tr('Letzter Gang')}</td>${ws.map(w => { const m = S.measurements.filter(x => x.watchId === w.id).sort((a, b) => String(b.at).localeCompare(String(a.at)))[0]; const v = m ? mValue(m, w) : null; return `<td class="mono state-${tolState(v, w)}">${v != null ? signed(v) + ' ' + esc(unitOf(m, w)) : '<span class="muted">–</span>'}</td>`; }).join('')}</tr>
+        </tbody></table></div>` : `<div class="empty">${tr('Wähle oben mindestens eine Uhr.')}</div>`}
     `;
   }
 
@@ -984,25 +1192,25 @@ img { max-width: 100%; }
   const POSITIONS = ['Zifferblatt oben', 'Zifferblatt unten', 'Krone unten', 'Krone oben', 'Krone links', 'Krone rechts', 'Am Handgelenk'];
   const ZW_KEY = 'uhrenbox.zeitwaage';   // Geräte-Einstellungen (nicht in der Sicherung): { calibPpm }
   const medianOf = a => { const s = a.filter(v => v != null && isFinite(v)).sort((x, y) => x - y); return s.length ? s[s.length >> 1] : null; };
-  const deN = (v, d = 1) => v == null ? '–' : Number(v).toLocaleString('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d });
+  const deN = (v, d = 1) => v == null ? '–' : Number(v).toLocaleString(LOC(), { minimumFractionDigits: d, maximumFractionDigits: d });
   const sgn = (v, d = 1) => v == null ? '–' : (v >= 0 ? '+' : '−') + deN(Math.abs(v), d);
-  const bphTxt = b => b === 3600 ? 'Quarz (1 Tick/s)' : b === 14400 ? 'Quarz (4 Schritte/s)' : `${nf(b, 0)} A/h`;
+  const bphTxt = b => b === 3600 ? tr('Quarz (1 Tick/s)') : b === 14400 ? tr('Quarz (4 Schritte/s)') : `${nf(b, 0)} ${tr('A/h')}`;
 
   // Frequenz aus der Uhr, Rangfolge laut Spec: von Hand (Erweitert) → A/h an der Uhr → Kaliber → Werk-Art → erkennen
   function zwFreq(z) {
     const w = z.w;
-    if (z.manual) return { bph: z.manual, how: 'von Hand gewählt' };
+    if (z.manual) return { bph: z.manual, how: tr('von Hand gewählt') };
     // Das Kaliber sagt, welche Ticks wie oft kommen sollten. Quarz wird nicht akustisch gemessen: Der Gang ist kleiner
     // als das, was das Handymikrofon in Minuten auflöst, und viele Werke sind nicht hörbar (VK63, VH31 kaum).
     const k = z.lib.kaliber(w?.movement);
-    if (isQuarzWerk(w) || (k && !['Automatik', 'Handaufzug'].includes(k.art))) return { quarz: true, how: k ? `Kaliber ${k.name}` : `Werk-Art ${w.movementKind || 'Quarz'}` };
-    if (w?.bph) return { bph: w.bph, how: 'an der Uhr eingetragen', check: true };
-    if (k?.bph) return { bph: k.bph, how: `Kaliber ${k.name}`, check: true };
-    if (isMech(w)) return { bph: null, nurMech: true, how: 'mechanisch, wird erkannt' };
-    return { bph: null, how: 'wird erkannt' };
+    if (isQuarzWerk(w) || (k && !['Automatik', 'Handaufzug'].includes(k.art))) return { quarz: true, how: k ? `${tr('Kaliber')} ${k.name}` : `${tr('Werk-Art')} ${tv(w.movementKind || 'Quarz')}` };
+    if (w?.bph) return { bph: w.bph, how: tr('an der Uhr eingetragen'), check: true };
+    if (k?.bph) return { bph: k.bph, how: `${tr('Kaliber')} ${k.name}`, check: true };
+    if (isMech(w)) return { bph: null, nurMech: true, how: tr('mechanisch, wird erkannt') };
+    return { bph: null, how: tr('wird erkannt') };
   }
 
-  const quarzHinweis = speichern => `<p class="notice warn" style="margin:0">Quarzuhr: Ihr Gang ist kleiner als das, was das Handymikrofon in Minuten auflöst, und viele Quarzwerke sind gar nicht hörbar. Genauer ist der <b>Abgleich mit Funkuhr</b> über einige Wochen. <button class="btn small" data-act="zw-to-vergleich">Zum Abgleich wechseln</button>${speichern ? ' <button class="btn small" data-act="zw-save-bph" data-bph="3600">Als Quarzwerk speichern</button>' : ''}</p>`;
+  const quarzHinweis = speichern => `<p class="notice warn" style="margin:0">${tr('Quarzuhr: Ihr Gang ist kleiner als das, was das Handymikrofon in Minuten auflöst, und viele Quarzwerke sind gar nicht hörbar. Genauer ist der <b>Abgleich mit Funkuhr</b> über einige Wochen.')} <button class="btn small" data-act="zw-to-vergleich">${tr('Zum Abgleich wechseln')}</button>${speichern ? ` <button class="btn small" data-act="zw-save-bph" data-bph="3600">${tr('Als Quarzwerk speichern')}</button>` : ''}</p>`;
   // Messungs-Formular auf „Abgleich mit Funkuhr“ umstellen, Uhr und Zeitpunkt bleiben
   function mToVergleich() {
     const el = document.querySelector('form[data-form="measure"]')?.elements; if (!el) return;
@@ -1013,7 +1221,7 @@ img { max-width: 100%; }
     const w = W(form.elements.watchId.value);
     let lib;
     try { lib = S.zwLib ||= await import('./zeitwaage.js'); }
-    catch (er) { console.error(er); return toast('Zeitwaage konnte nicht geladen werden. Einmal mit Netz öffnen, dann geht sie offline.'); }
+    catch (er) { console.error(er); return toast(tr('Zeitwaage konnte nicht geladen werden. Einmal mit Netz öffnen, dann geht sie offline.')); }
     let calib = 0; try { calib = Number(JSON.parse(localStorage.getItem(ZW_KEY))?.calibPpm) || 0; } catch (e) {}
     S.zw = { w, lib, pos: form.elements.position?.value || POSITIONS[0], calib, manual: null, devId: null, devs: [], run: null,
       gute: [], hoer: [], unruhig: 0, lang: false, last: null, msg: '', saved: false };
@@ -1028,21 +1236,21 @@ img { max-width: 100%; }
     el.hidden = !z; if (!z) { el.innerHTML = ''; return; }
     const f = zwFreq(z), opt = (v, l, s) => `<option value="${v}" ${s ? 'selected' : ''}>${l}</option>`;
     el.innerHTML = `<div class="in">
-      <div class="head"><h2>Zeitwaage</h2><button class="btn ghost" data-act="zw-close" aria-label="Schließen">✕</button></div>
-      <p class="muted" style="margin:0">${esc(watchLabel(z.w))} · Frequenz <span id="zw-fq">${f.bph ? bphTxt(f.bph) + ', ' : ''}${esc(f.how)}</span></p>
-      <div class="field"><label for="zw-pos">Lage</label><select id="zw-pos">${POSITIONS.map(p => opt(esc(p), esc(p), p === z.pos)).join('')}</select></div>
-      <p class="notice" style="margin:0">Uhr mit dem Boden aufs Mikrofon legen (unten am Handy), weiche Unterlage, stiller Raum. Die ersten 2 s nach dem Auflegen zählen nicht.</p>
+      <div class="head"><h2>${tr('Zeitwaage')}</h2><button class="btn ghost" data-act="zw-close" aria-label="${tr('Schließen')}">✕</button></div>
+      <p class="muted" style="margin:0">${esc(watchLabel(z.w))} · ${tr('Frequenz')} <span id="zw-fq">${f.bph ? bphTxt(f.bph) + ', ' : ''}${esc(f.how)}</span></p>
+      <div class="field"><label for="zw-pos">${tr('Lage')}</label><select id="zw-pos">${POSITIONS.map(p => opt(esc(p), esc(tv(p)), p === z.pos)).join('')}</select></div>
+      <p class="notice" style="margin:0">${tr('Uhr mit dem Boden aufs Mikrofon legen (unten am Handy), weiche Unterlage, stiller Raum. Die ersten 2 s nach dem Auflegen zählen nicht.')}</p>
       <div class="actions"><button class="btn primary" data-act="zw-go" id="zw-go"></button><span id="zw-status" class="muted" role="status" style="font-size:13.5px"></span></div>
       <div id="zw-msg"></div>
       <div class="vals" id="zw-vals"></div>
-      <canvas id="zw-strip" aria-label="Zeitwaagen-Streifen: Abstand jedes Ticks zum Soll-Raster, Steigung = Gang"></canvas>
-      <details><summary>Erweitert</summary><div class="grid-form" style="margin-top:8px">
-        <div class="field"><label for="zw-bph">Frequenz</label><select id="zw-bph">${opt('', 'aus der Uhr', !z.manual)}${z.lib.FREQUENZEN.map(b => opt(b, bphTxt(b), z.manual === b)).join('')}</select></div>
-        ${z.devs.length > 1 ? `<div class="field"><label for="zw-dev">Mikrofon</label><select id="zw-dev">${z.devs.map(d => opt(esc(d.deviceId), esc(d.label || 'Mikrofon'), d.deviceId === z.devId)).join('')}</select></div>` : ''}
-        <p class="muted field wide" style="margin:0;font-size:12.5px">Handy-Takt ${z.calib ? `kalibriert: ${sgn(z.calib, 0)} ppm` : 'nicht kalibriert: Fehler bis ±1–4 s/Tag möglich (am Fold6 gemessen: ±1 ppm ≈ 0,1 s/Tag)'}.</p>
-        <div class="field wide"><button type="button" class="btn small" data-act="zw-wav" id="zw-wav">Aufnahme speichern (WAV, letzte bis zu 2 min)</button></div>
+      <canvas id="zw-strip" aria-label="${tr('Zeitwaagen-Streifen: Abstand jedes Ticks zum Soll-Raster, Steigung = Gang')}"></canvas>
+      <details><summary>${tr('Erweitert')}</summary><div class="grid-form" style="margin-top:8px">
+        <div class="field"><label for="zw-bph">${tr('Frequenz')}</label><select id="zw-bph">${opt('', tr('aus der Uhr'), !z.manual)}${z.lib.FREQUENZEN.map(b => opt(b, bphTxt(b), z.manual === b)).join('')}</select></div>
+        ${z.devs.length > 1 ? `<div class="field"><label for="zw-dev">${tr('Mikrofon')}</label><select id="zw-dev">${z.devs.map(d => opt(esc(d.deviceId), esc(d.label || tr('Mikrofon')), d.deviceId === z.devId)).join('')}</select></div>` : ''}
+        <p class="muted field wide" style="margin:0;font-size:12.5px">${tr('zw.calib', z.calib ? sgn(z.calib, 0) : null)}</p>
+        <div class="field wide"><button type="button" class="btn small" data-act="zw-wav" id="zw-wav">${tr('Aufnahme speichern (WAV, letzte bis zu 2 min)')}</button></div>
       </div></details>
-      <div class="foot"><button class="btn primary" data-act="zw-take" id="zw-take">Übernehmen</button><button class="btn" data-act="zw-close">Abbrechen</button></div>
+      <div class="foot"><button class="btn primary" data-act="zw-take" id="zw-take">${tr('Übernehmen')}</button><button class="btn" data-act="zw-close">${tr('Abbrechen')}</button></div>
     </div>`;
     zwShow();
   }
@@ -1052,23 +1260,23 @@ img { max-width: 100%; }
     const z = S.zw; if (!z) return;
     const $ = id => document.getElementById(id), r = z.last, g = z.gute;
     if (status != null) $('zw-status').textContent = status;
-    $('zw-go').textContent = z.run ? 'Stoppen' : z.last ? 'Neu starten' : 'Messung starten';
+    $('zw-go').textContent = tr(z.run ? 'Stoppen' : z.last ? 'Neu starten' : 'Messung starten');
     $('zw-take').disabled = !g.length;
     $('zw-wav').disabled = !(z.run || z.rest)?.gesamt;
     $('zw-msg').innerHTML = z.msg;
     const box = (wert, text, cls = '') => `<div class="val ${cls}"><b>${wert}</b><span>${text}</span></div>`;
     const ruhig = g.length >= 3 ? medianOf(g.map(x => x.gang)) : null, quarz = r?.bph === 3600;
-    let html = box(ruhig != null ? sgn(ruhig) : '–', `s/Tag ruhiger Wert${g.length >= 3 ? ` (Median der letzten ${g.length} guten Messungen)` : ', nach 3 guten Messungen'}`, 'big');
+    let html = box(ruhig != null ? sgn(ruhig) : '–', tr('zw.calm', g.length), 'big');
     if (r && !r.fehler) {
       const bad = z.lib.unsicher(r);
-      html += box(sgn(r.gang), `s/Tag Gang, letzte Messung${bad ? ' · zählt nicht' : r.vorlaeufig ? ' · vorläufig, zählt ab 2 min' : ''}`, bad || r.vorlaeufig ? 'off' : '')
-        + box(quarz ? '–' : deN(r.abfall, 2), 'ms Abfallfehler')
-        + box(`${deN(r.guete * 100, 0)} %`, `Güte · Streuung ${deN(r.streuung, 2)} ms`, bad ? 'off' : '')
-        + box(bphTxt(r.bph), `gehört: ${r.frequenz.quarz ? 'Quarz' : nf(r.frequenz.bph, 0) + ' A/h'}`);
-      if (z.w?.liftAngle && !quarz) html += box(r.amplitude ? `${deN(medianOf(g.map(x => x.amplitude)) ?? r.amplitude, 0)}°` : '–', `Amplitude (L ${nf(z.w.liftAngle, 0)}°), experimentell`);
-      if (r.gestoert) html += `<p class="notice warn" style="margin:0;grid-column:1/-1">Aufnahme gestört: Der Handy-Takt weicht um ${sgn(r.ppm, 0)} ppm ab (Bildschirm aus oder Aussetzer). Display anlassen und neu starten.</p>`;
-      else if (bad) html += `<p class="notice warn" style="margin:0;grid-column:1/-1">Unsicher (Störung? zu leise?): Güte ${deN(r.guete * 100, 0)} %, Streuung ${deN(r.streuung, 2)} ms. Der Wert zählt nicht.</p>`;
-    } else if (r?.fehler) html += `<p class="notice warn" style="margin:0;grid-column:1/-1">${esc(r.fehler)} (${r.gefunden}/${r.erwartet}). Uhr direkt aufs Mikrofon legen, leiser Raum.</p>`;
+      html += box(sgn(r.gang), tr('zw.last', bad ? 'bad' : r.vorlaeufig ? 'pre' : ''), bad || r.vorlaeufig ? 'off' : '')
+        + box(quarz ? '–' : deN(r.abfall, 2), tr('ms Abfallfehler'))
+        + box(`${deN(r.guete * 100, 0)} %`, tr('zw.q', deN(r.streuung, 2)), bad ? 'off' : '')
+        + box(bphTxt(r.bph), `${tr('gehört:')} ${r.frequenz.quarz ? tr('Quarz') : nf(r.frequenz.bph, 0) + ' ' + tr('A/h')}`);
+      if (z.w?.liftAngle && !quarz) html += box(r.amplitude ? `${deN(medianOf(g.map(x => x.amplitude)) ?? r.amplitude, 0)}°` : '–', tr('zw.amp', nf(z.w.liftAngle, 0)));
+      if (r.gestoert) html += `<p class="notice warn" style="margin:0;grid-column:1/-1">${tr('zw.dist', sgn(r.ppm, 0))}</p>`;
+      else if (bad) html += `<p class="notice warn" style="margin:0;grid-column:1/-1">${tr('zw.unsure', deN(r.guete * 100, 0), deN(r.streuung, 2))}</p>`;
+    } else if (r?.fehler) html += `<p class="notice warn" style="margin:0;grid-column:1/-1">${esc(tr(r.fehler))} (${r.gefunden}/${r.erwartet}). ${tr('Uhr direkt aufs Mikrofon legen, leiser Raum.')}</p>`;
     $('zw-vals').innerHTML = html;
     zwStrip(r);
   }
@@ -1078,7 +1286,7 @@ img { max-width: 100%; }
     const dpr = devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight, css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
     c.width = w * dpr; c.height = h * dpr;
     const g = c.getContext('2d'); g.scale(dpr, dpr); g.clearRect(0, 0, w, h); g.font = '11px system-ui';
-    if (!r?.streifen?.length) { g.fillStyle = css('--muted'); g.fillText('Der Zeitwaagen-Streifen erscheint nach den ersten Sekunden.', 10, h / 2); return; }
+    if (!r?.streifen?.length) { g.fillStyle = css('--muted'); g.fillText(tr('Der Zeitwaagen-Streifen erscheint nach den ersten Sekunden.'), 10, h / 2); return; }
     // Vorzeichen wie an einer Zeitwaage: Tick früher als das Soll-Raster = oben, eine vorgehende Uhr steigt also an
     const ts = r.streifen.map(p => p.t), ms = r.streifen.filter(p => p.genutzt).map(p => -p.ms);
     const tMin = Math.min(...ts), tMax = Math.max(...ts);
@@ -1097,10 +1305,10 @@ img { max-width: 100%; }
   async function zwStart() {
     if (zwFreq(S.zw).quarz) { S.zw.msg = quarzHinweis(false); return zwShow(''); }
     const z = S.zw, lib = z.lib, test = new URLSearchParams(location.search).get('zwtest');
-    if (!test && (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia)) return zwShow('Kein Mikrofon: Die Seite braucht eine sichere Verbindung (HTTPS, z. B. über GitHub Pages).');
+    if (!test && (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia)) return zwShow(tr('Kein Mikrofon: Die Seite braucht eine sichere Verbindung (HTTPS, z. B. über GitHub Pages).'));
     zwStop();
     Object.assign(z, { gute: [], hoer: [], unruhig: 0, lang: false, last: null, msg: '', rest: null });
-    zwShow('Mikrofon wird geöffnet …');
+    zwShow(tr('Mikrofon wird geöffnet …'));
     let stream = null, ctx = null;
     try {
       let quelle;
@@ -1132,12 +1340,12 @@ img { max-width: 100%; }
         z.devId ||= stream.getAudioTracks()[0].getSettings?.().deviceId || null;
         if (z.devs.length > 1) renderZw();
       }
-      zwShow('nimmt auf …');
+      zwShow(tr('nimmt auf …'));
     } catch (er) {
       if (!z.run) { stream?.getTracks().forEach(t => t.stop()); ctx?.close().catch(() => {}); } else zwStop();
       if (S.zw !== z) return;
       console.error(er);
-      zwShow(er?.name === 'NotAllowedError' ? 'Mikrofon nicht erlaubt. In den Website-Einstellungen des Browsers freigeben.' : `Mikrofon nicht verfügbar: ${er?.message || er}`);
+      zwShow(er?.name === 'NotAllowedError' ? tr('Mikrofon nicht erlaubt. In den Website-Einstellungen des Browsers freigeben.') : `${tr('Mikrofon nicht verfügbar:')} ${er?.message || er}`);
     }
   }
   function zwStop() {
@@ -1151,12 +1359,12 @@ img { max-width: 100%; }
     S.zw.run = null;
   }
   // Android stoppt das Mikrofon im Hintergrund: dann lieber sauber beenden als mit Lücken weiterrechnen
-  document.addEventListener('visibilitychange', () => { if (document.hidden && S.zw?.run) { zwStop(); zwShow('unterbrochen: App war im Hintergrund'); } });
+  document.addEventListener('visibilitychange', () => { if (document.hidden && S.zw?.run) { zwStop(); zwShow(tr('unterbrochen: App war im Hintergrund')); } });
 
   function zwTick() {
     const z = S.zw, run = z?.run; if (!run) return;
     const lib = z.lib, f = zwFreq(z), sr = run.sr, da = (run.gesamt - run.seit) / sr;
-    if (da < 4) return zwShow(da < 0 ? 'Uhr liegt still …' : `nimmt auf … ${deN(da, 0)} s`);
+    if (da < 4) return zwShow(da < 0 ? tr('Uhr liegt still …') : `${tr('nimmt auf …')} ${deN(da, 0)} s`);
     // Quarz: 1 Tick pro Sekunde, deshalb bis zu 2 min auswerten (Genauigkeit wächst mit Dauer^1,5); ebenso mechanisch,
     // wenn die Ticks über 20 s mäßig stark streuen (Co-Axial: 0,9–1,5 ms, Tick und Tack klingen verschieden)
     const quarz = (f.bph ?? z.last?.bph) === 3600, fenster = quarz || z.lang ? 120 : 20;
@@ -1167,7 +1375,7 @@ img { max-width: 100%; }
     // Unbekannte Uhr klingt nach Quarz: nicht weiter messen, sondern auf den Abgleich verweisen
     if (!f.bph && !r.fehler && r.frequenz.quarz && r.guete >= lib.GUETE_MIN) {
       zwStop(); Object.assign(z, { last: null, gute: [], msg: quarzHinweis(!!z.w && !z.saved) });
-      return zwShow('gestoppt: klingt nach Quarzuhr');
+      return zwShow(tr('gestoppt: klingt nach Quarzuhr'));
     }
     z.last = r;
     // Quarz: unter 2 min schwankt der Gang noch um mehrere s/Tag (Prototyp: 60 s → +2,5…+8,5), deshalb erst dann zählen
@@ -1185,11 +1393,11 @@ img { max-width: 100%; }
     z.hoer = [...z.hoer, r.frequenz.quarz ? 3600 : r.frequenz.bph].slice(-3);
     const gehoert = z.hoer.length === 3 && z.hoer.every(b => b === z.hoer[0]) ? z.hoer[0] : null;
     if (f.check && gehoert && gehoert !== f.bph)
-      z.msg = `<p class="notice warn" style="margin:0">Gehört wird ${bphTxt(gehoert)}, eingetragen sind ${bphTxt(f.bph)}. Richtige Uhr? <button class="btn small" data-act="zw-use" data-bph="${gehoert}">Mit ${bphTxt(gehoert)} messen</button></p>`;
+      z.msg = `<p class="notice warn" style="margin:0">${tr('zw.heard', bphTxt(gehoert), bphTxt(f.bph))} <button class="btn small" data-act="zw-use" data-bph="${gehoert}">${tr('zw.use', bphTxt(gehoert))}</button></p>`;
     else if (!f.bph && z.gute.length && !z.saved && z.w)
-      z.msg = `<p class="notice" style="margin:0">Erkannt: ${bphTxt(r.bph)}. <button class="btn small" data-act="zw-save-bph" data-bph="${r.bph}">${r.bph === 3600 ? 'Als Quarzwerk an der Uhr speichern' : 'An der Uhr speichern'}</button></p>`;
+      z.msg = `<p class="notice" style="margin:0">${tr('Erkannt:')} ${bphTxt(r.bph)}. <button class="btn small" data-act="zw-save-bph" data-bph="${r.bph}">${tr(r.bph === 3600 ? 'Als Quarzwerk an der Uhr speichern' : 'An der Uhr speichern')}</button></p>`;
     else if (!z.saved) z.msg = '';
-    zwShow(`live · ${deN(n / sr, 0)} s ausgewertet${quarz ? ' (bis 120 s)' : z.lang ? ' (Streuung hoch: bis 120 s)' : ''}${ppm != null ? ` · Handy-Takt ${sgn(ppm, 0)} ppm` : ''}`);
+    zwShow(tr('zw.live', deN(n / sr, 0), quarz ? 'q' : z.lang ? 'l' : '', ppm != null ? sgn(ppm, 0) : null));
   }
 
   async function zwSaveBph(bph) {
@@ -1198,8 +1406,8 @@ img { max-width: 100%; }
     try {
       await S.db.collection('watches').doc(w.id).update(patch);
       z.w = { ...w, ...patch }; z.saved = true;
-      z.msg = `<p class="notice" style="margin:0">${bph === 3600 ? 'Als Quarzwerk' : bphTxt(bph)} an der Uhr gespeichert.</p>`;
-      document.getElementById('zw-fq').textContent = bph === 3600 ? 'Quarz: 1 Tick pro Sekunde' : `${bphTxt(bph)}, an der Uhr eingetragen`;
+      z.msg = `<p class="notice" style="margin:0">${tr('zw.saved', bph === 3600 ? null : bphTxt(bph))}</p>`;
+      document.getElementById('zw-fq').textContent = bph === 3600 ? tr('Quarz: 1 Tick pro Sekunde') : `${bphTxt(bph)}, ${tr('an der Uhr eingetragen')}`;
       zwShow();
     } catch (er) { fail(er, 'Speichern'); }
   }
@@ -1216,7 +1424,7 @@ img { max-width: 100%; }
     const name = `${todayStr()}-${slugName(z.w?.name)}-${z.pos}-${Math.round(n / a.sr)}s.wav`.replace(/[^\wäöüÄÖÜß.-]+/g, '-');
     const link = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([b], { type: 'audio/wav' })), download: name });
     link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 10000);
-    toast(`${name} gespeichert (Downloads)`);
+    toast(tr('wav.saved', name));
   }
   const slugName = s => String(s || 'uhr').toLowerCase().replace(/\s+/g, '-');
 
@@ -1235,7 +1443,7 @@ img { max-width: 100%; }
       method: 'mikro', dur: z.dauer || null, quality: rnd(medianOf(g.map(x => x.guete)), 2), calibPpm: z.calib,
     });
     closeZw(); render();
-    toast('Werte übernommen. Jetzt „Messung eintragen“ tippen.');
+    toast(tr('Werte übernommen. Jetzt „Messung eintragen“ tippen.'));
   }
 
   // ----- watch form (create / edit) -----
@@ -1264,24 +1472,24 @@ img { max-width: 100%; }
     const fld = ([k, l, t = 'text', o = {}]) => {
       const id = 'wf-' + k; const val = v[k] ?? '';
       let input;
-      if (t === 'select') input = `<select id="${id}" name="${k}">${o.opts.map(x => `<option ${x === val ? 'selected' : ''}>${x}</option>`).join('')}</select>`;
+      if (t === 'select') input = `<select id="${id}" name="${k}">${o.opts.map(x => `<option value="${esc(x)}" ${x === val ? 'selected' : ''}>${esc(tv(x))}</option>`).join('')}</select>`;
       else if (t === 'textarea') input = `<textarea id="${id}" name="${k}">${esc(val)}</textarea>`;
-      else if (t === 'check') return `<div class="field"><label for="${id}">${l}</label><input id="${id}" type="checkbox" name="${k}" ${val ? 'checked' : ''} style="width:20px;height:20px;accent-color:var(--accent)"></div>`;
+      else if (t === 'check') return `<div class="field"><label for="${id}">${tr(l)}</label><input id="${id}" type="checkbox" name="${k}" ${val ? 'checked' : ''} style="width:20px;height:20px;accent-color:var(--accent)"></div>`;
       else if (t === 'color') input = `<input id="${id}" type="color" name="${k}" value="${esc(val || '#888888')}">`;
-      else input = `<input id="${id}" type="${t}" name="${k}" value="${esc(val)}" ${t === 'number' ? 'step="any"' : ''} ${o.req ? 'required' : ''} ${o.ph ? `placeholder="${esc(o.ph)}"` : ''}>`;
-      return `<div class="field ${o.wide ? 'wide' : ''}"><label for="${id}">${l}</label>${input}</div>`;
+      else input = `<input id="${id}" type="${t}" name="${k}" value="${esc(val)}" ${t === 'number' ? 'step="any"' : ''} ${o.req ? 'required' : ''} ${o.ph ? `placeholder="${esc(tr(o.ph))}"` : ''}>`;
+      return `<div class="field ${o.wide ? 'wide' : ''}"><label for="${id}">${tr(l)}</label>${input}</div>`;
     };
     return `
-      <button class="btn ghost back" data-act="cancel-edit">← ${w ? 'Zurück zur Uhr' : 'Sammlung'}</button>
+      <button class="btn ghost back" data-act="cancel-edit">← ${tr(w ? 'Zurück zur Uhr' : 'Sammlung')}</button>
       <section class="panel">
-        <h2>${w ? esc(w.name) + ' bearbeiten' : 'Neue Uhr'}</h2>
+        <h2>${w ? tr('edit.x', esc(w.name)) : tr('Neue Uhr')}</h2>
         <form class="grid-form" data-form="watch">
-          ${FORM.map(([title, fs]) => `<div class="form-group-title">${title}</div>${fs.map(fld).join('')}`).join('')}
-          ${S.assets ? `<div class="form-group-title">Foto</div>
-          <div class="field wide"><label for="wf-photo">${w?.photo ? 'Foto ersetzen (optional)' : 'Foto hochladen (optional)'}</label>
-            <div class="actions"><div id="wf-photo-prev" class="photo-prev">${w?.photo ? `<img src="${blobUrl(w.photo)}" alt="Aktuelles Foto">` : ''}</div><input id="wf-photo" type="file" name="photoFile" accept="image/png,image/jpeg,image/webp,image/gif"></div>
-            <span class="muted" style="font-size:12.5px">JPG, PNG, WebP oder GIF, große Fotos werden automatisch verkleinert.</span></div>` : ''}
-          <div class="actions field wide" style="margin-top:8px"><button class="btn primary">${w ? 'Änderungen speichern' : 'Uhr anlegen'}</button><button type="button" class="btn ghost" data-act="cancel-edit">Abbrechen</button></div>
+          ${FORM.map(([title, fs]) => `<div class="form-group-title">${tr(title)}</div>${fs.map(fld).join('')}`).join('')}
+          ${S.assets ? `<div class="form-group-title">${tr('Foto')}</div>
+          <div class="field wide"><label for="wf-photo">${tr(w?.photo ? 'Foto ersetzen (optional)' : 'Foto hochladen (optional)')}</label>
+            <div class="actions"><div id="wf-photo-prev" class="photo-prev">${w?.photo ? `<img src="${blobUrl(w.photo)}" alt="${tr('Aktuelles Foto')}">` : ''}</div><input id="wf-photo" type="file" name="photoFile" accept="image/png,image/jpeg,image/webp,image/gif"></div>
+            <span class="muted" style="font-size:12.5px">${tr('JPG, PNG, WebP oder GIF, große Fotos werden automatisch verkleinert.')}</span></div>` : ''}
+          <div class="actions field wide" style="margin-top:8px"><button class="btn primary">${tr(w ? 'Änderungen speichern' : 'Uhr anlegen')}</button><button type="button" class="btn ghost" data-act="cancel-edit">${tr('Abbrechen')}</button></div>
         </form>
       </section>`;
   }
@@ -1301,7 +1509,7 @@ img { max-width: 100%; }
   // ---------- sichern / laden ----------
   function blobToDataUrl(blob) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(blob); }); }
   async function exportJson() {
-    toast('Sicherung wird erstellt …');
+    toast(tr('Sicherung wird erstellt …'));
     const photos = {};
     for (const [id, blob] of await LOCAL.allPhotos()) photos[id] = await blobToDataUrl(blob);
     const data = {
@@ -1311,11 +1519,11 @@ img { max-width: 100%; }
       wear: Object.keys(S.wear).sort().map(d => ({ date: d, watches: S.wear[d], ...(S.wearShots[d] ? { shots: S.wearShots[d] } : {}) })),
       photos,
     };
-    const file = new File([JSON.stringify(data)], `uhrenbox-sicherung-${todayStr()}.json`, { type: 'application/json' });
+    const file = new File([JSON.stringify(data)], `uhrenbox-${tr('sicherung')}-${todayStr()}.json`, { type: 'application/json' });
     // am Handy übers Teilen-Menü (OneDrive, Drive, Mail …), sonst als normaler Download
     if (matchMedia('(pointer: coarse)').matches && navigator.canShare?.({ files: [file] })) {
-      try { await navigator.share({ files: [file], title: 'Uhrenbox-Sicherung' }); return backupDone(); }
-      catch (er) { if (er?.name === 'AbortError') return toast('Sichern abgebrochen'); console.error(er); }
+      try { await navigator.share({ files: [file], title: tr('Uhrenbox-Sicherung') }); return backupDone(); }
+      catch (er) { if (er?.name === 'AbortError') return toast(tr('Sichern abgebrochen')); console.error(er); }
     }
     const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(file), download: file.name });
     document.body.appendChild(a); a.click(); a.remove();
@@ -1324,14 +1532,14 @@ img { max-width: 100%; }
   }
   function backupDone() {
     saveMeta({ lastBackup: new Date().toISOString(), changes: 0, snoozeUntil: null });
-    toast('Sicherung gespeichert'); render();
+    toast(tr('Sicherung gespeichert')); render();
   }
   async function importJson(file) {
     let data;
-    try { data = JSON.parse(await file.text()); } catch { return toast('Diese Datei ist keine Uhrenbox-Sicherung.'); }
-    if (!data || data.app !== 'Uhrenbox' || !Array.isArray(data.watches)) return toast('Diese Datei ist keine Uhrenbox-Sicherung.');
+    try { data = JSON.parse(await file.text()); } catch { return toast(tr('Diese Datei ist keine Uhrenbox-Sicherung.')); }
+    if (!data || data.app !== 'Uhrenbox' || !Array.isArray(data.watches)) return toast(tr('Diese Datei ist keine Uhrenbox-Sicherung.'));
     const n = data.watches.length;
-    if (!confirm(`Sicherung vom ${fmtDate(data.exportedAt)} mit ${n} Uhr${n === 1 ? '' : 'en'} laden?\n\nDie aktuelle Sammlung auf diesem Gerät wird dabei ersetzt.`)) return;
+    if (!confirm(tr('imp.ask', fmtDate(data.exportedAt), n))) return;
     try {
       const photos = new Map();
       for (const [id, url] of Object.entries(data.photos || {})) { try { photos.set(id, await (await fetch(url)).blob()); } catch {} }
@@ -1343,8 +1551,8 @@ img { max-width: 100%; }
       saveMeta({ lastBackup: data.exportedAt || new Date().toISOString(), changes: 0 });   // Stand entspricht genau dieser Sicherung
       scheduleStore();
       S.cmpSel = null; go('sammlung');
-      toast(`${n} Uhr${n === 1 ? '' : 'en'} geladen`);
-    } catch (er) { console.error(er); toast('Laden fehlgeschlagen.'); }
+      toast(tr('imp.done', n));
+    } catch (er) { console.error(er); toast(tr('Laden fehlgeschlagen.')); }
   }
 
   // ---------- writes ----------
@@ -1364,7 +1572,7 @@ img { max-width: 100%; }
 
   // ---------- events ----------
   document.addEventListener('click', async e => {
-    const t = e.target.closest('[data-ctab],[data-nav],[data-open],[data-act],[data-filter],[data-mfilter],[data-wear-today],[data-wear],[data-day],[data-range],[data-cmp],[data-todo-del],[data-m-del],[data-m-del-yes],[data-m-edit],[data-lb-watch],[data-lb-gal],[data-gfilter],[data-cover],[data-ph-del],[data-ph-del-yes],[data-shot]');
+    const t = e.target.closest('[data-lang],[data-ctab],[data-nav],[data-open],[data-act],[data-filter],[data-mfilter],[data-wear-today],[data-wear],[data-day],[data-range],[data-cmp],[data-todo-del],[data-m-del],[data-m-del-yes],[data-m-edit],[data-lb-watch],[data-lb-gal],[data-gfilter],[data-cover],[data-ph-del],[data-ph-del-yes],[data-shot]');
     if (S.lb) {
       if (e.target.closest('[data-lb-close]') || e.target.id === 'lb' || e.target.classList?.contains('stage')) return closeLb();
       const st = e.target.closest('[data-lb-step]'); if (st) return stepLb(Number(st.dataset.lbStep));
@@ -1374,7 +1582,7 @@ img { max-width: 100%; }
       const a = e.target.closest('[data-act]');
       switch (a?.dataset.act) {
         case 'zw-close': return closeZw();
-        case 'zw-go': if (S.zw.run) { zwStop(); return zwShow('gestoppt'); } return zwStart();
+        case 'zw-go': if (S.zw.run) { zwStop(); return zwShow(tr('gestoppt')); } return zwStart();
         case 'zw-take': return zwTake();
         case 'zw-wav': return zwWav();
         case 'zw-use': S.zw.manual = Number(a.dataset.bph); S.zw.msg = ''; renderZw(); return S.zw.run && zwStart();
@@ -1396,12 +1604,13 @@ img { max-width: 100%; }
     }
     if (!t) return;
     const d = t.dataset;
+    if (d.lang) { savePref({ lang: d.lang === 'auto' ? null : d.lang }); LANG = pickLang(); applyLang(); return render(); }
     if (d.ctab) { savePref({ tab: d.ctab }); return render(); }
-    if (d.shot != null) { const day = S.diaryDate; openLb((S.wear[day] || []).filter(id => S.wearShots[day]?.[id]).map(id => ({ id: S.wearShots[day][id], cap: `${W(id)?.name || '?'} am ${fmtDate(parseDay(day))}` })), Number(d.shot)); S.lb.from = t; return; }
-    if (d.lbWatch) { const w = W(d.lbWatch); openLb(photosOf(w).map((id, i) => ({ id, cap: `${w.name}, Foto ${i + 1}` })), Number(d.i)); S.lb.from = t; return; }
+    if (d.shot != null) { const day = S.diaryDate; openLb((S.wear[day] || []).filter(id => S.wearShots[day]?.[id]).map(id => ({ id: S.wearShots[day][id], cap: tr('shot.cap', W(id)?.name || '?', fmtDate(parseDay(day))) })), Number(d.shot)); S.lb.from = t; return; }
+    if (d.lbWatch) { const w = W(d.lbWatch); openLb(photosOf(w).map((id, i) => ({ id, cap: `${w.name}, ${tr('Foto')} ${i + 1}` })), Number(d.i)); S.lb.from = t; return; }
     if (d.lbGal != null) { openLb(S.galleryItems, Number(d.lbGal)); S.lb.from = t; return; }
     if (d.gfilter) { S.galleryFilter = d.gfilter; return render(); }
-    if (d.cover) { try { await S.db.collection('watches').doc(S.detailId).update({ photo: d.cover }); toast('Titelbild geändert'); } catch (er) { fail(er, 'Speichern'); } return; }
+    if (d.cover) { try { await S.db.collection('watches').doc(S.detailId).update({ photo: d.cover }); toast(tr('Titelbild geändert')); } catch (er) { fail(er, 'Speichern'); } return; }
     if (d.phDel) { S.confirm = 'ph-' + d.phDel; return render(); }
     if (d.phDelYes) {
       const w = W(S.detailId); const id = d.phDelYes; S.confirm = null;
@@ -1409,7 +1618,7 @@ img { max-width: 100%; }
       try {
         await S.db.collection('watches').doc(w.id).update({ photos: rest, photo: w.photo === id ? (rest[0] || null) : w.photo });
         if (S.assets && !photoInUse(id, w.id)) { try { await S.assets.delete(id); } catch (er) { console.error(er); } }
-        toast('Foto entfernt');
+        toast(tr('Foto entfernt'));
       } catch (er) { fail(er, 'Entfernen'); }
       return;
     }
@@ -1425,7 +1634,7 @@ img { max-width: 100%; }
     if (d.cmp) { S.cmpSel = S.cmpSel.includes(d.cmp) ? S.cmpSel.filter(x => x !== d.cmp) : [...S.cmpSel, d.cmp]; return render(); }
     if (d.todoDel != null) { const w = W(S.detailId); const todos = (w.todos || []).filter((_, i) => i !== Number(d.todoDel)); try { await S.db.collection('watches').doc(w.id).update({ todos }); } catch (er) { fail(er, 'Entfernen'); } return; }
     if (d.mDel) { S.confirm = 'm-' + d.mDel; return render(); }
-    if (d.mDelYes) { S.confirm = null; try { await S.db.collection('measurements').doc(d.mDelYes).delete(); toast('Messung gelöscht'); } catch (er) { fail(er, 'Löschen'); } return; }
+    if (d.mDelYes) { S.confirm = null; try { await S.db.collection('measurements').doc(d.mDelYes).delete(); toast(tr('Messung gelöscht')); } catch (er) { fail(er, 'Löschen'); } return; }
     if (d.mEdit) { const m = S.measurements.find(x => x.id === d.mEdit); S.mEditing = { ...m }; if (S.view !== 'messungen' && S.view !== 'detail') S.view = 'messungen'; render(); document.getElementById('m-rate')?.focus() || document.getElementById('m-dev')?.focus(); return; }
     switch (d.act) {
       case 'new-watch': S.creating = true; render(); document.getElementById('wf-name')?.focus(); break;
@@ -1438,7 +1647,7 @@ img { max-width: 100%; }
         try {
           for (const m of S.measurements.filter(x => x.watchId === id)) await S.db.collection('measurements').doc(m.id).delete();
           await S.db.collection('watches').doc(id).delete();
-          toast('Uhr gelöscht'); go('sammlung');
+          toast(tr('Uhr gelöscht')); go('sammlung');
         } catch (er) { fail(er, 'Löschen'); }
         break;
       }
@@ -1497,7 +1706,7 @@ img { max-width: 100%; }
       if (k.art) el.movementKind.value = k.art;
       if (k.bph && !el.bph.value) el.bph.value = k.bph;
       if (k.hebung && !el.liftAngle.value) el.liftAngle.value = k.hebung;
-      return toast(`${k.name}: ${[k.art, k.bph && nf(k.bph, 0) + ' A/h', k.periode && `${1 / k.periode} Schritte/s`, k.hebung && `Hebungswinkel ${k.hebung}°`, k.nichtHoerbar && 'akustisch nicht messbar'].filter(Boolean).join(', ')}`);
+      return toast(`${k.name}: ${[tv(k.art), k.bph && nf(k.bph, 0) + ' ' + tr('A/h'), k.periode && `${1 / k.periode} ${tr('Schritte/s')}`, k.hebung && `${tr('Hebungswinkel')} ${k.hebung}°`, k.nichtHoerbar && tr('akustisch nicht messbar')].filter(Boolean).join(', ')}`);
     }
     if (t.dataset.pf) {   // Einstellungen: Schalter speichern, sofort wirksam
       const k = t.dataset.pf;
@@ -1511,16 +1720,16 @@ img { max-width: 100%; }
     if (t.id === 'wc-cam' || t.id === 'wc-gal') { const f = t.files?.[0]; t.value = ''; return wcPhoto(f); }
     if (t.id === 'wf-photo') {
       const file = t.files?.[0]; const prev = document.getElementById('wf-photo-prev');
-      if (prev) { prev.innerHTML = ''; if (file) { const img = new Image(); img.src = URL.createObjectURL(file); img.alt = 'Vorschau'; prev.appendChild(img); } }
+      if (prev) { prev.innerHTML = ''; if (file) { const img = new Image(); img.src = URL.createObjectURL(file); img.alt = tr('Vorschau'); prev.appendChild(img); } }
       return;
     }
     if (t.dataset.galleryAdd) {
       const files = [...(t.files || [])]; if (!files.length || !S.assets) return;
       const big = files.filter(f => f.size > 20 * 1024 * 1024);
-      if (big.length) toast(`${big.length} Foto${big.length > 1 ? 's sind' : ' ist'} größer als 20 MB und ${big.length > 1 ? 'werden' : 'wird'} übersprungen.`);
+      if (big.length) toast(tr('ph.big', big.length));
       const ok = files.filter(f => f.size <= 20 * 1024 * 1024); const ids = [];
       for (const [i, file] of ok.entries()) {
-        toast(ok.length > 1 ? `Foto ${i + 1} von ${ok.length} wird hochgeladen …` : 'Foto wird hochgeladen …');
+        toast(ok.length > 1 ? tr('ph.up', i + 1, ok.length) : tr('Foto wird hochgeladen …'));
         try { ids.push((await S.assets.upload(file, file.type ? undefined : { type: 'image/jpeg' })).id); }
         catch (er) { console.error(er); toast(`${file.name}: ${photoErr(er)}`); }
       }
@@ -1528,7 +1737,7 @@ img { max-width: 100%; }
       const w = W(t.dataset.galleryAdd);
       try {
         await S.db.collection('watches').doc(w.id).update({ photos: uniq([...photosOf(w), ...ids]), photo: w.photo || ids[0] });
-        toast(ids.length > 1 ? `${ids.length} Fotos hinzugefügt` : 'Foto hinzugefügt');
+        toast(tr('ph.added', ids.length));
       } catch (er) { fail(er, 'Speichern'); }
       return;
     }
@@ -1545,12 +1754,12 @@ img { max-width: 100%; }
     }
     if (t.dataset.photo) {
       const file = t.files?.[0]; if (!file || !S.assets) return;
-      if (file.size > 20 * 1024 * 1024) return toast('Das Foto ist größer als 20 MB. Bitte ein kleineres wählen.');
-      toast('Foto wird hochgeladen …');
+      if (file.size > 20 * 1024 * 1024) return toast(tr('Das Foto ist größer als 20 MB. Bitte ein kleineres wählen.'));
+      toast(tr('Foto wird hochgeladen …'));
       try {
         const res = await S.assets.upload(file, file.type ? undefined : { type: 'image/jpeg' });
         await S.db.collection('watches').doc(t.dataset.photo).update({ photo: res.id, photos: uniq([res.id, ...photosOf(W(t.dataset.photo))]) });
-        toast('Foto gespeichert');
+        toast(tr('Foto gespeichert'));
       } catch (er) {
         console.error(er);
         toast(photoErr(er));
@@ -1562,17 +1771,17 @@ img { max-width: 100%; }
     if (f.dataset.form === 'watch') {
       const base = S.editing ? W(S.detailId) : null;
       const data = readWatchForm(f, base);
-      if (!data.name) return toast('Bitte einen Kurznamen eingeben.');
+      if (!data.name) return toast(tr('Bitte einen Kurznamen eingeben.'));
       const id = base ? base.id : slug(data.name);
       const file = f.elements.photoFile?.files?.[0];
       if (file && S.assets) {
-        if (file.size > 20 * 1024 * 1024) return toast('Das Foto ist größer als 20 MB. Bitte ein kleineres wählen.');
+        if (file.size > 20 * 1024 * 1024) return toast(tr('Das Foto ist größer als 20 MB. Bitte ein kleineres wählen.'));
         const btn = f.querySelector('button.primary'); const label = btn?.textContent;
-        if (btn) { btn.disabled = true; btn.textContent = 'Foto wird hochgeladen …'; }
+        if (btn) { btn.disabled = true; btn.textContent = tr('Foto wird hochgeladen …'); }
         try { const res = await S.assets.upload(file, file.type ? undefined : { type: 'image/jpeg' }); data.photos = uniq([res.id, ...photosOf(data)]); data.photo = res.id; }
         catch (er) { console.error(er); if (btn) { btn.disabled = false; btn.textContent = label; } return toast(photoErr(er)); }
       }
-      try { await saveWatch(id, data); toast(base ? 'Gespeichert' : 'Uhr angelegt'); S.editing = false; S.creating = false; go('detail', id); }
+      try { await saveWatch(id, data); toast(tr(base ? 'Gespeichert' : 'Uhr angelegt')); S.editing = false; S.creating = false; go('detail', id); }
       catch (er) { fail(er, 'Speichern'); }
     }
     if (f.dataset.form === 'todo') {
@@ -1593,7 +1802,7 @@ img { max-width: 100%; }
       try {
         if (S.mEditing?.id) await S.db.collection('measurements').doc(S.mEditing.id).set(data);
         else await S.db.collection('measurements').add(data);
-        S.mEditing = null; toast('Messung gespeichert'); render();
+        S.mEditing = null; toast(tr('Messung gespeichert')); render();
       } catch (er) { fail(er, 'Speichern'); }
     }
   });
@@ -1669,7 +1878,7 @@ img { max-width: 100%; }
 
   // ---------- PWA: Installieren, Offline-Speicher, Updates ----------
   addEventListener('beforeinstallprompt', e => { INSTALL.prompt = e; renderFoot(); });
-  addEventListener('appinstalled', () => { INSTALL.prompt = null; renderFoot(); toast('Uhrenbox ist jetzt als App installiert'); });
+  addEventListener('appinstalled', () => { INSTALL.prompt = null; renderFoot(); toast(tr('Uhrenbox ist jetzt als App installiert')); });
   function setupSW() {
     if (!('serviceWorker' in navigator) || !(location.protocol === 'https:' || location.hostname === 'localhost')) return;
     let reloading = false;
@@ -1699,10 +1908,11 @@ img { max-width: 100%; }
   setupSW();
   const shortcut = new URLSearchParams(location.search).get('aktion');
   if (shortcut) { try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {} }
+  LANG = pickLang(); applyLang();
   fromHash(); render();
   (async () => {
     try { await LOCAL.init(); }
-    catch (e) { console.error(e); app.innerHTML = `<div class="empty"><h3>Speicher nicht verfügbar</h3><p>Dieser Browser erlaubt der Uhrenbox keinen lokalen Speicher (z. B. im privaten Modus). Öffne sie in einem normalen Browserfenster.</p></div>`; return; }
+    catch (e) { console.error(e); app.innerHTML = `<div class="empty"><h3>${tr('Speicher nicht verfügbar')}</h3><p>${tr('Dieser Browser erlaubt der Uhrenbox keinen lokalen Speicher (z. B. im privaten Modus). Öffne sie in einem normalen Browserfenster.')}</p></div>`; return; }
     try { await navigator.storage?.persist?.(); } catch (e) {}
     refreshStore();
     S.db = LOCAL.db; S.assets = LOCAL.assets;

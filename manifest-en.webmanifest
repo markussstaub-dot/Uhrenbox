@@ -1,0 +1,92 @@
+{
+  "id": "/Uhrenbox/",
+  "name": "Uhrenbox",
+  "short_name": "Uhrenbox",
+  "description": "Watch collection with photos, timegrapher measurements and a wear diary. All data stays on your device.",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#EFEFEA",
+  "theme_color": "#FBFBF8",
+  "categories": [
+    "lifestyle",
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Log measurement",
+      "short_name": "Measure",
+      "description": "Log a new rate measurement",
+      "url": "./?aktion=messung",
+      "icons": [
+        {
+          "src": "shortcut-messung.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Worn today",
+      "short_name": "Wear",
+      "description": "Log today's watch in the wear diary",
+      "url": "./?aktion=tragen",
+      "icons": [
+        {
+          "src": "shortcut-tragen.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "What am I wearing?",
+      "short_name": "Photo",
+      "description": "Take a wrist photo and log today's watch",
+      "url": "./?aktion=wristcheck",
+      "icons": [
+        {
+          "src": "shortcut-foto.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot-handy.png",
+      "sizes": "824x1830",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Collection on a phone"
+    },
+    {
+      "src": "screenshot-desktop.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Collection on a computer"
+    }
+  ]
+}

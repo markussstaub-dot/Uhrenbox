@@ -9,7 +9,17 @@ Eine kleine Web-App für die eigene Uhrensammlung: Uhren mit Fotos, Zeitwaagen-M
 - Lange aufs App-Icon drücken: Kurzbefehle **Messung erfassen**, **Heute getragen** und **Was trage ich?**.
 - **📷 Was trage ich?** (Sammlung und Tragetagebuch): Foto vom Handgelenk machen, die App schlägt drei Uhren vor (gestern getragen, oft an diesem Wochentag, länger nicht am Arm), ein Tipp trägt den Tag mit Foto ein. Ohne Foto geht es auch. Alles bleibt auf dem Gerät, keine KI.
 
+- **Deutsch und Englisch**: Die App folgt der Gerätesprache (Deutsch bei deutschem Gerät, sonst Englisch). Umschalten unter ⚙ Einstellungen → „Sprache / Language“. Sicherungen sind sprachunabhängig. Details: `SPEC-englisch.md`.
+
 Tipp: Ab und zu sichern. Wer die Browserdaten löscht, löscht auch die Sammlung.
+
+## In English
+
+A small web app for your own watch collection: watches with photos, timegrapher measurements (also via the phone microphone) with rate history, a wear diary and a side-by-side comparison. All data stays on your device, no account, no server. Back up / restore the whole collection including photos as one file. Install it from Chrome's menu (“Install app”) or in Safari via Share → Add to Home Screen; it then works offline. The app follows your device language; switch between Deutsch and English under ⚙ Settings → “Sprache / Language”.
+
+## Neue Texte
+
+Neue sichtbare Texte deutsch in `tr('…')` schreiben und die englische Fassung in `EN` (bzw. Texte mit Zahlen in `FN`) oben in `index.html` eintragen. Fehlt die Übersetzung, erscheint auf Englisch der deutsche Text.
 
 ## Neue Version veröffentlichen
 

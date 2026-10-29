@@ -1,8 +1,8 @@
 // Uhrenbox: hält die App offline bereit. Deine Daten liegen getrennt im Browser-Speicher (IndexedDB) und werden hier nie angefasst.
 // Nach JEDER Änderung an index.html (oder Icons/Manifest) VERSION hochzählen – sonst bekommen installierte Apps die neue Fassung nicht.
-const VERSION = 'uhrenbox-v10';
+const VERSION = 'uhrenbox-v11';
 const FILES = [
-  './', './index.html', './manifest.webmanifest', './zeitwaage.js',   // zeitwaage.js: per import() beim Öffnen der Zeitwaage
+  './', './index.html', './manifest.webmanifest', './manifest-en.webmanifest', './zeitwaage.js',   // zeitwaage.js: per import() beim Öffnen der Zeitwaage
   './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png',
   './shortcut-messung.png', './shortcut-tragen.png', './shortcut-foto.png',
 ];
