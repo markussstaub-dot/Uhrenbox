@@ -365,6 +365,8 @@ img { max-width: 100%; }
   const byNr = (a, b) => (a.nr ?? 999) - (b.nr ?? 999) || String(a.name).localeCompare(b.name);
   const W = id => S.watches.find(w => w.id === id);
   const isMech = w => ['Automatik', 'Handaufzug'].includes(w?.movementKind);
+  // Quarz (auch Mecaquartz): keine Zeitwaage, sondern Abgleich über Wochen (Entscheidung 29.10.2026)
+  const isQuarzWerk = w => !!w && ((!!w.movementKind && !isMech(w)) || w.bph === 3600);
   const watchLabel = w => w ? `${w.brand ? w.brand + ' ' : ''}${w.name}` : 'Unbekannte Uhr';
   let toastT;
   function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2600); }
@@ -739,7 +741,8 @@ img { max-width: 100%; }
     const sel = (v, o) => v === o ? 'selected' : '';
     const positions = POSITIONS;
     return `<form class="grid-form" data-form="measure" style="background:var(--sunk);padding:12px;border-radius:8px">
-      ${kind === 'waage' ? `<div class="field wide"><button type="button" class="btn mic-btn" data-act="zw-open">🎙 ${esc(w?.name || 'Uhr')} mit dem Mikrofon messen</button>${m.method === 'mikro' ? `<span class="muted" style="font-size:12.5px">Per Mikrofon gemessen${m.dur ? `, ${m.dur} s` : ''}${m.quality != null ? `, Güte ${nf(m.quality * 100, 0)} %` : ''}${m.calibPpm ? '' : ', Handy-Takt nicht kalibriert'}</span>` : ''}</div>` : ''}
+      ${kind === 'waage' && isQuarzWerk(w) ? `<div class="field wide"><p class="notice" style="margin:0">Quarzuhr: Den Gang misst du genauer mit „Abgleich mit Funkuhr“ über einige Wochen als mit der Zeitwaage. <button type="button" class="btn small" data-act="m-to-vergleich">Zum Abgleich wechseln</button></p></div>`
+      : kind === 'waage' ? `<div class="field wide"><button type="button" class="btn mic-btn" data-act="zw-open">🎙 ${esc(w?.name || 'Uhr')} mit dem Mikrofon messen</button>${m.method === 'mikro' ? `<span class="muted" style="font-size:12.5px">Per Mikrofon gemessen${m.dur ? `, ${m.dur} s` : ''}${m.quality != null ? `, Güte ${nf(m.quality * 100, 0)} %` : ''}${m.calibPpm ? '' : ', Handy-Takt nicht kalibriert'}</span>` : ''}</div>` : ''}
       <div class="field"><label for="m-watch">Uhr</label><select id="m-watch" name="watchId">${[...S.watches].sort(byNr).map(x => `<option value="${esc(x.id)}" ${sel(x.id, m.watchId)}>${x.nr ?? ''} · ${esc(x.name)}</option>`).join('')}</select></div>
       <div class="field"><label for="m-kind">Art</label><select id="m-kind" name="kind"><option value="waage" ${sel(kind, 'waage')}>Zeitwaage</option><option value="vergleich" ${sel(kind, 'vergleich')}>Abgleich mit Funkuhr</option></select></div>
       <div class="field"><label for="m-at">Zeitpunkt</label><input id="m-at" type="datetime-local" name="at" value="${esc((m.at || new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString()).slice(0, 16))}" required></div>
@@ -948,15 +951,21 @@ img { max-width: 100%; }
   function zwFreq(z) {
     const w = z.w;
     if (z.manual) return { bph: z.manual, how: 'von Hand gewählt' };
-    if (w?.bph) return { bph: w.bph, how: 'an der Uhr eingetragen', check: true };
-    // Das Kaliber sagt, welche Ticks wie oft kommen sollten (VH31: 4 leise Schritte/s → Faltung statt Tick-Suche)
+    // Das Kaliber sagt, welche Ticks wie oft kommen sollten. Quarz wird nicht akustisch gemessen: Der Gang ist kleiner
+    // als das, was das Handymikrofon in Minuten auflöst, und viele Werke sind nicht hörbar (VK63, VH31 kaum).
     const k = z.lib.kaliber(w?.movement);
-    if (k?.nichtHoerbar) return { bph: null, stumm: true, how: `Kaliber ${k.name}` };
-    if (k?.periode) return { bph: Math.round(3600 / k.periode), periode: k.periode, how: `Kaliber ${k.name}` };
+    if (isQuarzWerk(w) || (k && !['Automatik', 'Handaufzug'].includes(k.art))) return { quarz: true, how: k ? `Kaliber ${k.name}` : `Werk-Art ${w.movementKind || 'Quarz'}` };
+    if (w?.bph) return { bph: w.bph, how: 'an der Uhr eingetragen', check: true };
     if (k?.bph) return { bph: k.bph, how: `Kaliber ${k.name}`, check: true };
-    if (w?.movementKind && !isMech(w)) return { bph: 3600, how: `Werk-Art ${w.movementKind}` };
     if (isMech(w)) return { bph: null, nurMech: true, how: 'mechanisch, wird erkannt' };
     return { bph: null, how: 'wird erkannt' };
+  }
+
+  const quarzHinweis = speichern => `<p class="notice warn" style="margin:0">Quarzuhr: Ihr Gang ist kleiner als das, was das Handymikrofon in Minuten auflöst, und viele Quarzwerke sind gar nicht hörbar. Genauer ist der <b>Abgleich mit Funkuhr</b> über einige Wochen. <button class="btn small" data-act="zw-to-vergleich">Zum Abgleich wechseln</button>${speichern ? ' <button class="btn small" data-act="zw-save-bph" data-bph="3600">Als Quarzwerk speichern</button>' : ''}</p>`;
+  // Messungs-Formular auf „Abgleich mit Funkuhr“ umstellen, Uhr und Zeitpunkt bleiben
+  function mToVergleich() {
+    const el = document.querySelector('form[data-form="measure"]')?.elements; if (!el) return;
+    S.mEditing = { ...S.mEditing, watchId: el.watchId.value, kind: 'vergleich', at: el.at.value }; render();
   }
 
   async function openZw(form) {
@@ -967,6 +976,7 @@ img { max-width: 100%; }
     let calib = 0; try { calib = Number(JSON.parse(localStorage.getItem(ZW_KEY))?.calibPpm) || 0; } catch (e) {}
     S.zw = { w, lib, pos: form.elements.position?.value || POSITIONS[0], calib, manual: null, devId: null, devs: [], run: null,
       gute: [], hoer: [], unruhig: 0, lang: false, last: null, msg: '', saved: false };
+    if (zwFreq(S.zw).quarz) S.zw.msg = quarzHinweis(false);
     document.body.style.overflow = 'hidden';
     renderZw();
   }
@@ -986,7 +996,7 @@ img { max-width: 100%; }
       <div class="vals" id="zw-vals"></div>
       <canvas id="zw-strip" aria-label="Zeitwaagen-Streifen: Abstand jedes Ticks zum Soll-Raster, Steigung = Gang"></canvas>
       <details><summary>Erweitert</summary><div class="grid-form" style="margin-top:8px">
-        <div class="field"><label for="zw-bph">Frequenz</label><select id="zw-bph">${opt('', 'aus der Uhr', !z.manual)}${[...z.lib.FREQUENZEN, 3600].map(b => opt(b, bphTxt(b), z.manual === b)).join('')}</select></div>
+        <div class="field"><label for="zw-bph">Frequenz</label><select id="zw-bph">${opt('', 'aus der Uhr', !z.manual)}${z.lib.FREQUENZEN.map(b => opt(b, bphTxt(b), z.manual === b)).join('')}</select></div>
         ${z.devs.length > 1 ? `<div class="field"><label for="zw-dev">Mikrofon</label><select id="zw-dev">${z.devs.map(d => opt(esc(d.deviceId), esc(d.label || 'Mikrofon'), d.deviceId === z.devId)).join('')}</select></div>` : ''}
         <p class="muted field wide" style="margin:0;font-size:12.5px">Handy-Takt ${z.calib ? `kalibriert: ${sgn(z.calib, 0)} ppm` : 'nicht kalibriert: Fehler bis ±1–4 s/Tag möglich (am Fold6 gemessen: ±1 ppm ≈ 0,1 s/Tag)'}.</p>
         <div class="field wide"><button type="button" class="btn small" data-act="zw-wav" id="zw-wav">Aufnahme speichern (WAV, letzte bis zu 2 min)</button></div>
@@ -1004,9 +1014,9 @@ img { max-width: 100%; }
     $('zw-go').textContent = z.run ? 'Stoppen' : z.last ? 'Neu starten' : 'Messung starten';
     $('zw-take').disabled = !g.length;
     $('zw-wav').disabled = !(z.run || z.rest)?.gesamt;
-    $('zw-msg').innerHTML = (zwFreq(z).stumm ? `<p class="notice warn" style="margin:0">${esc(zwFreq(z).how)} ist mit dem Handymikrofon nicht hörbar (am Fold6 gemessen). Zuverlässiger: „Abgleich mit Funkuhr“.</p>` : '') + z.msg;
+    $('zw-msg').innerHTML = z.msg;
     const box = (wert, text, cls = '') => `<div class="val ${cls}"><b>${wert}</b><span>${text}</span></div>`;
-    const ruhig = g.length >= 3 ? medianOf(g.map(x => x.gang)) : null, quarz = r?.bph === 3600 || !!r?.faltung;
+    const ruhig = g.length >= 3 ? medianOf(g.map(x => x.gang)) : null, quarz = r?.bph === 3600;
     let html = box(ruhig != null ? sgn(ruhig) : '–', `s/Tag ruhiger Wert${g.length >= 3 ? ` (Median der letzten ${g.length} guten Messungen)` : ', nach 3 guten Messungen'}`, 'big');
     if (r && !r.fehler) {
       const bad = z.lib.unsicher(r);
@@ -1044,6 +1054,7 @@ img { max-width: 100%; }
   }
 
   async function zwStart() {
+    if (zwFreq(S.zw).quarz) { S.zw.msg = quarzHinweis(false); return zwShow(''); }
     const z = S.zw, lib = z.lib, test = new URLSearchParams(location.search).get('zwtest');
     if (!test && (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia)) return zwShow('Kein Mikrofon: Die Seite braucht eine sichere Verbindung (HTTPS, z. B. über GitHub Pages).');
     zwStop();
@@ -1107,15 +1118,19 @@ img { max-width: 100%; }
     if (da < 4) return zwShow(da < 0 ? 'Uhr liegt still …' : `nimmt auf … ${deN(da, 0)} s`);
     // Quarz: 1 Tick pro Sekunde, deshalb bis zu 2 min auswerten (Genauigkeit wächst mit Dauer^1,5); ebenso mechanisch,
     // wenn die Ticks über 20 s mäßig stark streuen (Co-Axial: 0,9–1,5 ms, Tick und Tack klingen verschieden)
-    const quarz = !!f.periode || (f.bph ?? z.last?.bph) === 3600, fenster = quarz || z.lang ? 120 : 20;
+    const quarz = (f.bph ?? z.last?.bph) === 3600, fenster = quarz || z.lang ? 120 : 20;
     const n = Math.round(Math.min(fenster, da) * sr), samples = new Float32Array(n);
     for (let i = 0; i < n; i++) samples[i] = run.ring[(run.pos - n + i + run.ring.length) % run.ring.length];
-    const r = f.periode ? lib.analyseQuarz(samples, sr, { periode: f.periode, kalibPpm: z.calib })
-      : lib.analyse(samples, sr, { bph: f.bph, nurMech: f.nurMech, hebung: z.w?.liftAngle || 52, kalibPpm: z.calib, verwerfen: 0 });
+    const r = lib.analyse(samples, sr, { bph: f.bph, nurMech: f.nurMech, hebung: z.w?.liftAngle || 52, kalibPpm: z.calib, verwerfen: 0 });
     delete r.hp; delete r.env; delete r.ds;   // große Puffer nicht festhalten
+    // Unbekannte Uhr klingt nach Quarz: nicht weiter messen, sondern auf den Abgleich verweisen
+    if (!f.bph && !r.fehler && r.frequenz.quarz && r.guete >= lib.GUETE_MIN) {
+      zwStop(); Object.assign(z, { last: null, gute: [], msg: quarzHinweis(!!z.w && !z.saved) });
+      return zwShow('gestoppt: klingt nach Quarzuhr');
+    }
     z.last = r;
     // Quarz: unter 2 min schwankt der Gang noch um mehrere s/Tag (Prototyp: 60 s → +2,5…+8,5), deshalb erst dann zählen
-    r.vorlaeufig = (r.bph === 3600 || !!r.faltung) && n / sr < 110;
+    r.vorlaeufig = r.bph === 3600 && n / sr < 110;
     // Takt-Wächter: Bei Bildschirm aus liefert Android das Audio lückenhaft, die Aufnahme sieht aber normal aus (Befund
     // 28.10.2026: −382 ppm und ein Schein-Takt). Weicht der Takt gegen die Systemuhr um mehr als 20 ppm ab, zählt nichts.
     const ppm = lib.taktPpm(run.takt, sr);
@@ -1323,6 +1338,7 @@ img { max-width: 100%; }
         case 'zw-wav': return zwWav();
         case 'zw-use': S.zw.manual = Number(a.dataset.bph); S.zw.msg = ''; renderZw(); return S.zw.run && zwStart();
         case 'zw-save-bph': return zwSaveBph(Number(a.dataset.bph));
+        case 'zw-to-vergleich': closeZw(); return mToVergleich();
       }
       return;
     }
@@ -1387,6 +1403,7 @@ img { max-width: 100%; }
       case 'add-m': S.mEditing = { watchId: d.w || S.watches[0]?.id }; render(); break;
       case 'cancel-m': S.mEditing = null; render(); break;
       case 'zw-open': openZw(t.closest('form')); break;
+      case 'm-to-vergleich': mToVergleich(); break;
       case 'diary-today': S.diaryDate = todayStr(); render(); break;
       case 'wristcheck': openWc(true); break;
       case 'export': exportJson(); break;

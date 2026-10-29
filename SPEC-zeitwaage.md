@@ -203,6 +203,17 @@ Erkenntnisse, die in die Umsetzung gehören:
 - Aufnahmen: `aufnahmen/2026-10-28-fold6-vh31.wav` (gut), `-vh31-angedrueckt.wav`, `-vh31-display-aus.wav` (gestört),
   `-vk63.wav`, `-ohne-uhr.wav` (Kontrolle).
 
+### Quarz: nur Hinweis (29.10.2026)
+
+- **[fest]** Quarz und Mecaquartz werden **nicht akustisch gemessen**, keine Signalverarbeitung in der App. Ihr Gang
+  (oft < 0,5 s/Tag) ist kleiner als das, was das Handymikrofon in Minuten auflöst, und viele Werke sind nicht hörbar.
+  Für Automatik bleibt die Zeitwaage, wie sie ist.
+- Umsetzung: Im Messungs-Formular steht bei Quarzuhren (Werk-Art Quarz/Mecaquartz, A/h 3.600 oder Kaliber laut Tabelle)
+  statt des Mikro-Knopfs ein Hinweis mit „Zum Abgleich wechseln“ (Art „Abgleich mit Funkuhr“). Klingt eine unbekannte
+  Uhr nach Quarz, stoppt die Messung mit demselben Hinweis und dem Angebot „Als Quarzwerk speichern“. Quarz ist aus der
+  Frequenzauswahl unter „Erweitert“ entfernt. `analyseQuarz` (Faltung) bleibt in `zeitwaage.js` und im Labor.
+- Der richtige Weg für Quarz ist M1 („Gang per Tipp“ / „Gang per Foto“).
+
 ## M3 „Amplitude“ (zurückgestellt, 29.10.2026)
 
 - **[fest, 29.10.2026]** M3 ist **runterpriorisiert**: ambitioniert, weil 1 ms Fehler beim Abstand der Teilgeräusche
