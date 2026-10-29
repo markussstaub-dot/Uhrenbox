@@ -110,10 +110,7 @@ Bezug: `ROADMAP-privat.md` („Englische Version – vergrößert die Zielgruppe
 
 ## Offen
 
-- **[offen]** Eine **Beispiel-Sammlung** zum Ausprobieren („Demo laden“), damit jemand ohne eigene Uhren die App
-  sofort gefüllt sieht. Nicht Teil dieser Runde; eigene kleine Session, falls gewünscht.
-- **[offen]** Englische Screenshots für das Manifest (`screenshot-handy.png` zeigt die deutsche Oberfläche).
-  Erst nach dieser Runde neu aufnehmen.
+- **[erledigt, 29.10.2026]** Beispiel-Sammlung („Demo laden“) und englische Manifest-Screenshots, siehe `SPEC-demo.md`.
 - **[offen]** Reihenfolge mit dem Branch `prototyp/uhrenerkennung` (`ki.js`, `?ki=1`, Foto → Steckbrief): erst
   Englisch auf `main`, dann den KI-Branch auf `main` nachziehen (Konflikte in `index.html` und `sw.js` erwartet). Seine
   Texte dabei genauso einbinden: deutsch in `tr('…')`, Englisch in `EN`, Texte mit Zahlen in `FN`. Steht `ki.js` als

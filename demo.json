@@ -1,0 +1,1290 @@
+{
+ "app": "Uhrenbox",
+ "version": 2,
+ "demo": true,
+ "_hinweis": "Beispiel-Sammlung. tag = Tage relativ zu heute (-1 = gestern), zeit = Uhrzeit; die App rechnet beim Laden auf echte Daten um.",
+ "watches": [
+  {
+   "bezel": "Einseitig drehbar, 120 Klicks, Keramikeinlage mit Leuchtmasse",
+   "bph": 21600,
+   "brand": "Phorcydes",
+   "category": "Taucher",
+   "color": "#C4521E",
+   "crown": "Verschraubt, bei 3 Uhr",
+   "crystal": "Gewölbtes Saphirglas mit Entspiegelung",
+   "dealer": null,
+   "dial": "Schwarz, 12-3-6-9-Ziffern, Strichindizes, ohne Datumsfenster",
+   "diameter": 39,
+   "favorite": false,
+   "hands": "Pfeil-Stundenzeiger, schlanker Minutenzeiger, orangefarbener Sekundenzeiger",
+   "height": 13,
+   "homage": "klassische LIP-Taucheruhr",
+   "lugToLug": 48,
+   "lugWidth": 20,
+   "lume": "Hyperglow-3D-Leuchtblöcke, über 8 h sichtbar",
+   "model": "PH-2 (A oder B noch offen), erste Version mit NH35",
+   "movement": "Seiko/TMI NH35",
+   "movementKind": "Automatik",
+   "name": "PH-2",
+   "notes": "Lünettendurchmesser 40 mm. NH35: 24 Steine, ca. 41 h Gangreserve, Sekundenstopp, Handaufzug. Datum im Werk, bei diesem Zifferblatt ohne Fenster (vermutlich Phantom-Datumsstellung der Krone).",
+   "nr": 1,
+   "photo": "demo-ph-2",
+   "price": null,
+   "priceNote": null,
+   "purchased": null,
+   "serial": null,
+   "status": "Sammlung",
+   "strap": "Schwarzes Kautschukband im Tropic-/Leiterstil, 20 mm",
+   "strapExtra": null,
+   "todos": [
+    {
+     "done": false,
+     "t": "Modellvariante klären: PH-2A oder PH-2B"
+    },
+    {
+     "done": true,
+     "t": "Gangabweichung messen (s/Tag)"
+    },
+    {
+     "done": false,
+     "t": "Leuchtfarbe prüfen"
+    },
+    {
+     "done": false,
+     "t": "Messungen in weiteren Lagen und nach 24 h Ablauf"
+    }
+   ],
+   "tolMax": 40,
+   "tolMin": -20,
+   "tolUnit": "s/Tag",
+   "waterM": 200,
+   "weight": "129,1 g am Stahlband",
+   "id": "ph-2"
+  },
+  {
+   "bezel": "Schwarz, 60-Minuten-Skala, einseitig drehbar, 120 Klicks, Keramikeinlage",
+   "bph": 21600,
+   "brand": "Phorcydes",
+   "category": "Taucher",
+   "color": "#E59A2F",
+   "crown": "Verschraubt, bei 3 Uhr",
+   "crystal": "Gewölbtes Saphirglas mit Entspiegelung",
+   "dealer": null,
+   "dial": "Schwarz, große Ziffern 12-2-4-6-8-10, Strichindizes, ohne Datumsfenster",
+   "diameter": 39,
+   "favorite": false,
+   "hands": "Pfeilzeiger mit Leuchtmasse",
+   "height": 12.5,
+   "homage": "Glashütte Original SeaQ 1969 / Spezimatic RP TS 200",
+   "lugToLug": 48,
+   "lugWidth": 20,
+   "lume": "Hyperglow-3D-Leuchtblöcke",
+   "model": "PH-4A",
+   "movement": "NH35 (ab Werk PT5000/PT5004)",
+   "movementKind": "Automatik",
+   "name": "PH-4A",
+   "notes": "Neupreis ab 219 USD am Stahlband, ab 169 USD mit FKM-Band. Ab Werk PT5000 (Datum) oder PT5004 (ohne Datum), beide 4 Hz.",
+   "nr": 2,
+   "photo": "demo-ph-4a",
+   "price": null,
+   "priceNote": null,
+   "purchased": null,
+   "serial": null,
+   "status": "Sammlung",
+   "strap": "Orangefarbenes Kautschukband im Tropic-Stil, 20 mm",
+   "strapExtra": null,
+   "todos": [
+    {
+     "done": false,
+     "t": "Werk klären (PT5004 oder NH35)"
+    },
+    {
+     "done": true,
+     "t": "Gangabweichung messen"
+    }
+   ],
+   "tolMax": 40,
+   "tolMin": -20,
+   "tolUnit": "s/Tag",
+   "waterM": 200,
+   "weight": "129,1 g am Stahlband",
+   "id": "ph-4a"
+  },
+  {
+   "bezel": "Fest, schwarze Keramik mit Tachymeterskala",
+   "bph": null,
+   "brand": "Watchdives",
+   "category": "Chronograph",
+   "color": "#8A94A3",
+   "crown": "Verschraubt",
+   "crystal": "Flaches Saphirglas mit Entspiegelung",
+   "dealer": null,
+   "dial": "Weiß, schwarz umrandete Hilfszifferblätter bei 3, 6 und 9 Uhr, rotes „Racing“",
+   "diameter": 38,
+   "favorite": false,
+   "hands": null,
+   "height": 11.55,
+   "homage": "Rolex Cosmograph Daytona „Panda“",
+   "lugToLug": 46.6,
+   "lugWidth": 20,
+   "lume": "Super-LumiNova BGW9",
+   "model": "WD16500 V2, White Dial / Black Bezel",
+   "movement": "Seiko/TMI VK63",
+   "movementKind": "Mecaquartz",
+   "name": "WD16500",
+   "notes": "VK63: 3 Uhr 24-h-Anzeige, 6 Uhr 60-Min-Zähler, 9 Uhr kleine Sekunde. Batterie ca. SR927SW, etwa 3 Jahre. Garantie 2 Jahre. Original 126500LN: 16.900 USD Liste.",
+   "nr": 3,
+   "photo": "demo-wd16500",
+   "price": null,
+   "priceNote": null,
+   "purchased": null,
+   "serial": null,
+   "status": "Sammlung",
+   "strap": "Edelstahl, Oyster-Stil, 20 mm, verschraubte Glieder, Faltschließe mit Feinverstellung",
+   "strapExtra": null,
+   "todos": [
+    {
+     "done": false,
+     "t": "Batteriewechsel-Datum notieren"
+    },
+    {
+     "done": false,
+     "t": "Ganggenauigkeit über einige Wochen prüfen"
+    }
+   ],
+   "tolMax": 20,
+   "tolMin": -20,
+   "tolUnit": "s/Monat",
+   "waterM": 100,
+   "weight": null,
+   "id": "wd16500"
+  },
+  {
+   "bezel": "Glatt, poliert",
+   "bph": null,
+   "brand": "Watchdives",
+   "category": "Alltag",
+   "color": "#6FBF9A",
+   "crown": "Verschraubt",
+   "crystal": "Box-Saphirglas mit Entspiegelung",
+   "dealer": null,
+   "dial": "Pistazienmint, Emaille-Optik, Strichindizes mit Leuchtmasse",
+   "diameter": 37,
+   "favorite": false,
+   "hands": null,
+   "height": 10.9,
+   "homage": "Rolex Oyster Perpetual 36 (126000)",
+   "lugToLug": 45.5,
+   "lugWidth": 20,
+   "lume": "BGW9",
+   "model": "WD1016B „Pioneer“, Pistachio Green (Version offen, aktuell V3)",
+   "movement": "Seiko/TMI VH31",
+   "movementKind": "Quarz",
+   "name": "WD1016B Pioneer",
+   "notes": "VH31: Sweep-Sekunde mit 4 Schritten pro Sekunde, Batterie ca. 3 Jahre. Garantie 2 Jahre.",
+   "nr": 4,
+   "photo": "demo-wd1016b",
+   "price": null,
+   "priceNote": null,
+   "purchased": null,
+   "serial": null,
+   "status": "Sammlung",
+   "strap": "Edelstahl, Oyster-Stil, 20 auf 16 mm, verschraubte Glieder",
+   "strapExtra": null,
+   "todos": [
+    {
+     "done": false,
+     "t": "Version klären (V3 hat verschraubte Bandglieder und Logo auf der Schließe)"
+    }
+   ],
+   "tolMax": 20,
+   "tolMin": -20,
+   "tolUnit": "s/Monat",
+   "waterM": 100,
+   "weight": null,
+   "id": "wd1016b"
+  },
+  {
+   "bezel": null,
+   "bph": 21600,
+   "brand": "Merkur",
+   "category": "Chronograph",
+   "color": "#2F7D45",
+   "crown": "Mit rotem Ring, zwei Drücker",
+   "crystal": "Saphirglas",
+   "dealer": null,
+   "dial": "Grün mit Farbverlauf, schwarzer Querbalken, weiße Hilfszifferblätter bei 3 und 9",
+   "diameter": 40,
+   "favorite": false,
+   "hands": "Leuchtende Stabzeiger, roter Chrono-Sekundenzeiger",
+   "height": null,
+   "homage": "Tudor Oysterdate „Monte Carlo“",
+   "lugToLug": null,
+   "lugWidth": null,
+   "lume": null,
+   "model": "Sport Panda Chronograph, Grün 40 mm (auch als FOB verkauft)",
+   "movement": "Seagull ST1901",
+   "movementKind": "Handaufzug",
+   "name": "Merkur Bi-Compax",
+   "notes": "ST1901: Schaltrad, 19 Steine, ca. 38 h Gangreserve, kein Sekundenstopp. Ohne Schwanenhals-Feinregulierung. Toleranz ±60 s/Tag als Alltagsziel, keine Werksangabe.",
+   "nr": 5,
+   "photo": "demo-merkur",
+   "price": null,
+   "priceNote": null,
+   "purchased": null,
+   "serial": null,
+   "status": "Sammlung",
+   "strap": "Grünes Textilband mit beigem Mittelstreifen, Dornschließe",
+   "strapExtra": null,
+   "todos": [
+    {
+     "done": false,
+     "t": "Maße nachmessen (Höhe, Lug-to-Lug, Bandanstoß)"
+    },
+    {
+     "done": true,
+     "t": "Gangwerte mit der Zeitwaage messen"
+    },
+    {
+     "done": false,
+     "t": "Lift-Winkel des ST1901 für die Amplitude prüfen"
+    }
+   ],
+   "tolMax": 60,
+   "tolMin": -60,
+   "tolUnit": "s/Tag",
+   "waterM": 50,
+   "weight": null,
+   "id": "merkur"
+  },
+  {
+   "bezel": "Schwarz, Aluminium mit BGW9-Leuchtpunkt, 120 Klicks",
+   "bph": null,
+   "brand": "Watchdives",
+   "category": "Taucher",
+   "color": "#6E6A86",
+   "crown": "Verschraubt",
+   "crystal": "Gewölbtes Saphirglas mit Entspiegelung",
+   "dealer": null,
+   "dial": "Grau-schwarz mit Sonnenschliff",
+   "diameter": 37,
+   "favorite": false,
+   "hands": null,
+   "height": 11.1,
+   "homage": "Seiko 62MAS (1965)",
+   "lugToLug": 45.5,
+   "lugWidth": 20,
+   "lume": "BGW9",
+   "model": "WD1965 (Version offen, aktuell V2), Sunray Gray",
+   "movement": "Seiko/TMI VH31",
+   "movementKind": "Quarz",
+   "name": "WD1965 Grau",
+   "notes": "Lünettendurchmesser 38 mm. Paar mit der WD1965 Blau.",
+   "nr": 6,
+   "photo": "demo-wd1965",
+   "price": null,
+   "priceNote": null,
+   "purchased": null,
+   "serial": null,
+   "status": "Sammlung",
+   "strap": "Schwarzes Waffel-Kautschukband",
+   "strapExtra": "Ab Werk Edelstahlband (vorhanden?)",
+   "todos": [
+    {
+     "done": false,
+     "t": "Zifferblattvariante bestätigen"
+    },
+    {
+     "done": false,
+     "t": "Werk bestätigen (VH31)"
+    },
+    {
+     "done": false,
+     "t": "Klären, ob das Stahlband vorhanden ist"
+    }
+   ],
+   "tolMax": 20,
+   "tolMin": -20,
+   "tolUnit": "s/Monat",
+   "waterM": 200,
+   "weight": null,
+   "id": "wd1965-grau"
+  },
+  {
+   "bezel": "Schwarz, Aluminium mit BGW9-Leuchtpunkt, 120 Klicks",
+   "bph": null,
+   "brand": "Watchdives",
+   "category": "Taucher",
+   "color": "#3B6FD4",
+   "crown": "Verschraubt",
+   "crystal": "Gewölbtes Saphirglas mit Entspiegelung",
+   "dealer": null,
+   "dial": "Blau mit Sonnenschliff, gelber Sekundenzeiger",
+   "diameter": 37,
+   "favorite": false,
+   "hands": "Gelber Sekundenzeiger",
+   "height": 11.1,
+   "homage": "Seiko 62MAS (1965)",
+   "lugToLug": 45.5,
+   "lugWidth": 20,
+   "lume": "BGW9",
+   "model": "WD1965 (Version offen, aktuell V2), Blau",
+   "movement": "Seiko/TMI VH31",
+   "movementKind": "Quarz",
+   "name": "WD1965 Blau",
+   "notes": "Lünettendurchmesser 38 mm. Paar mit der WD1965 Grau; das Foto zeigt beide.",
+   "nr": 7,
+   "photo": "demo-wd1965",
+   "price": null,
+   "priceNote": null,
+   "purchased": null,
+   "serial": null,
+   "status": "Sammlung",
+   "strap": "Blaues Waffel-Kautschukband",
+   "strapExtra": "Ab Werk Edelstahlband (vorhanden?)",
+   "todos": [
+    {
+     "done": false,
+     "t": "Zifferblattvariante bestätigen"
+    },
+    {
+     "done": false,
+     "t": "Werk bestätigen (VH31)"
+    },
+    {
+     "done": false,
+     "t": "Klären, ob das Stahlband vorhanden ist"
+    }
+   ],
+   "tolMax": 20,
+   "tolMin": -20,
+   "tolUnit": "s/Monat",
+   "waterM": 200,
+   "weight": null,
+   "id": "wd1965-blau"
+  },
+  {
+   "bezel": "Einseitig drehbar, 120 Klicks, 38 mm, Saphireinlage voll beleuchtet",
+   "bph": null,
+   "brand": "Watchdives",
+   "category": "Taucher",
+   "color": "#D1495B",
+   "crown": "Verschraubt",
+   "crystal": "Saphirglas mit dreifacher Entspiegelung",
+   "dealer": null,
+   "dial": "Mattschwarz, Strichindizes, Doppelindex bei 12, ohne Datum",
+   "diameter": 41,
+   "favorite": true,
+   "hands": "Stundenzeiger weiß, Minutenzeiger mit orangefarbener Spitze",
+   "height": 10.9,
+   "homage": "Omega Seamaster 120 „Baby Ploprof“",
+   "lugToLug": null,
+   "lugWidth": null,
+   "lume": "Super-LumiNova BGW9 oder C3",
+   "model": "Seafarer WD0017 (Premier-Linie)",
+   "movement": "Seiko/TMI VH31 (vermutlich)",
+   "movementKind": "Quarz",
+   "name": "Seafarer",
+   "notes": "Tonneau-Gehäuse, Zifferblatt 29,5 mm. Listenpreis 179 USD (Early-Bird 144 USD).",
+   "nr": 8,
+   "photo": "demo-seafarer",
+   "price": null,
+   "priceNote": null,
+   "purchased": null,
+   "serial": null,
+   "status": "Sammlung",
+   "strap": "Integriertes Edelstahlband, 28 auf 18 mm, Faltschließe mit Druckknopf",
+   "strapExtra": null,
+   "todos": [
+    {
+     "done": false,
+     "t": "Werk bestätigen (VH31)"
+    },
+    {
+     "done": false,
+     "t": "Lug-to-Lug nachmessen"
+    }
+   ],
+   "tolMax": 20,
+   "tolMin": -20,
+   "tolUnit": "s/Monat",
+   "waterM": 200,
+   "weight": null,
+   "id": "seafarer"
+  },
+  {
+   "bezel": "Saphireinlage",
+   "bph": null,
+   "brand": "Watchdives",
+   "category": "Taucher",
+   "color": "#9B6FC2",
+   "crown": null,
+   "crystal": "Saphirglas, ClearView-Entspiegelung",
+   "dealer": null,
+   "dial": "Mattschwarz, feinkörnig, aufgesetzte Indizes; mit oder ohne Datum (offen)",
+   "diameter": 39.5,
+   "favorite": false,
+   "hands": null,
+   "height": 11.2,
+   "homage": "Omega Seamaster 120 „Baby Ploprof“",
+   "lugToLug": 43.5,
+   "lugWidth": null,
+   "lume": "BGW9, ca. 6 h",
+   "model": "Seafarer WD0017B (Premier-Linie)",
+   "movement": "Peacock SL3001 (überarbeitet)",
+   "movementKind": "Automatik",
+   "name": "Seafarer Automatik",
+   "notes": "Auslieferung laut Watchdives in Chargen. Lug-to-Lug ist die Gehäuselänge mit Bandanstoß-Verlängerung.",
+   "nr": 9,
+   "photo": null,
+   "price": null,
+   "priceNote": null,
+   "purchased": null,
+   "serial": null,
+   "status": "Bestellt",
+   "strap": "Dreireihiges Edelstahlband, 16 mm an der Schließe, OTF-Schließe",
+   "strapExtra": null,
+   "todos": [
+    {
+     "done": false,
+     "t": "Lieferung abwarten, Lieferdatum eintragen"
+    },
+    {
+     "done": false,
+     "t": "Zifferblattvariante nachtragen"
+    },
+    {
+     "done": false,
+     "t": "Werkdaten mit der Zeitwaage prüfen (Frequenz, Amplitude)"
+    },
+    {
+     "done": false,
+     "t": "Foto ergänzen"
+    }
+   ],
+   "tolMax": null,
+   "tolMin": null,
+   "tolUnit": "s/Tag",
+   "waterM": null,
+   "weight": null,
+   "id": "seafarer-auto"
+  }
+ ],
+ "measurements": [
+  {
+   "watchId": "ph-2",
+   "kind": "waage",
+   "tag": -58,
+   "zeit": "19:45",
+   "position": "Zifferblatt oben",
+   "rate": 15,
+   "amplitude": 255,
+   "beatError": 0.4,
+   "bph": 21600,
+   "note": "Erste Messung",
+   "id": "demo-m01"
+  },
+  {
+   "watchId": "ph-2",
+   "kind": "waage",
+   "tag": -58,
+   "zeit": "19:52",
+   "position": "Krone unten",
+   "rate": 21,
+   "amplitude": 238,
+   "beatError": 0.4,
+   "bph": 21600,
+   "id": "demo-m02"
+  },
+  {
+   "watchId": "ph-2",
+   "kind": "waage",
+   "tag": -51,
+   "zeit": "08:05",
+   "position": "Zifferblatt oben",
+   "rate": 12.5,
+   "amplitude": 262,
+   "beatError": 0.4,
+   "bph": 21600,
+   "note": "Nach dem Vollaufzug",
+   "id": "demo-m03"
+  },
+  {
+   "watchId": "ph-2",
+   "kind": "waage",
+   "tag": -44,
+   "zeit": "21:10",
+   "position": "Zifferblatt unten",
+   "rate": 13,
+   "amplitude": 258,
+   "beatError": 0.5,
+   "bph": 21600,
+   "id": "demo-m04"
+  },
+  {
+   "watchId": "ph-2",
+   "kind": "waage",
+   "tag": -37,
+   "zeit": "07:40",
+   "position": "Krone links",
+   "rate": 18,
+   "amplitude": 241,
+   "beatError": 0.4,
+   "bph": 21600,
+   "note": "Morgens nach der Nacht in der Box",
+   "method": "mikro",
+   "dur": 60,
+   "quality": 0.85,
+   "calibPpm": 1.8,
+   "id": "demo-m05"
+  },
+  {
+   "watchId": "ph-2",
+   "kind": "waage",
+   "tag": -30,
+   "zeit": "19:20",
+   "position": "Zifferblatt oben",
+   "rate": 11,
+   "amplitude": 266,
+   "beatError": 0.3,
+   "bph": 21600,
+   "id": "demo-m06"
+  },
+  {
+   "watchId": "ph-2",
+   "kind": "waage",
+   "tag": -23,
+   "zeit": "08:15",
+   "position": "Krone oben",
+   "rate": 9.5,
+   "amplitude": 247,
+   "beatError": 0.4,
+   "bph": 21600,
+   "method": "mikro",
+   "dur": 60,
+   "quality": 0.79,
+   "calibPpm": 1.8,
+   "id": "demo-m07"
+  },
+  {
+   "watchId": "ph-2",
+   "kind": "waage",
+   "tag": -16,
+   "zeit": "20:30",
+   "position": "Zifferblatt oben",
+   "rate": 10.5,
+   "amplitude": 270,
+   "beatError": 0.3,
+   "bph": 21600,
+   "note": "Abends nach dem Tragen",
+   "id": "demo-m08"
+  },
+  {
+   "watchId": "ph-2",
+   "kind": "waage",
+   "tag": -9,
+   "zeit": "07:55",
+   "position": "Am Handgelenk",
+   "rate": 8,
+   "beatError": 0.4,
+   "bph": 21600,
+   "method": "mikro",
+   "dur": 60,
+   "quality": 0.79,
+   "calibPpm": 1.8,
+   "id": "demo-m09"
+  },
+  {
+   "watchId": "ph-2",
+   "kind": "waage",
+   "tag": -2,
+   "zeit": "19:05",
+   "position": "Zifferblatt oben",
+   "rate": 9,
+   "amplitude": 268,
+   "beatError": 0.3,
+   "bph": 21600,
+   "id": "demo-m10"
+  },
+  {
+   "watchId": "ph-2",
+   "kind": "vergleich",
+   "tag": -27,
+   "zeit": "09:00",
+   "deviation": 68,
+   "days": 6,
+   "note": "Gegen die Funkuhr am Handy",
+   "id": "demo-m11"
+  },
+  {
+   "watchId": "ph-2",
+   "kind": "vergleich",
+   "tag": -12,
+   "zeit": "09:10",
+   "deviation": 61,
+   "days": 7,
+   "id": "demo-m12"
+  },
+  {
+   "watchId": "ph-4a",
+   "kind": "waage",
+   "tag": -55,
+   "zeit": "20:00",
+   "position": "Zifferblatt oben",
+   "rate": 6,
+   "amplitude": 278,
+   "beatError": 0.2,
+   "bph": 21600,
+   "note": "Erste Messung",
+   "id": "demo-m13"
+  },
+  {
+   "watchId": "ph-4a",
+   "kind": "waage",
+   "tag": -55,
+   "zeit": "20:06",
+   "position": "Krone unten",
+   "rate": 11.5,
+   "amplitude": 252,
+   "beatError": 0.3,
+   "bph": 21600,
+   "id": "demo-m14"
+  },
+  {
+   "watchId": "ph-4a",
+   "kind": "waage",
+   "tag": -48,
+   "zeit": "08:20",
+   "position": "Zifferblatt unten",
+   "rate": 5.5,
+   "amplitude": 274,
+   "beatError": 0.2,
+   "bph": 21600,
+   "id": "demo-m15"
+  },
+  {
+   "watchId": "ph-4a",
+   "kind": "waage",
+   "tag": -41,
+   "zeit": "19:40",
+   "position": "Krone rechts",
+   "rate": 3,
+   "amplitude": 255,
+   "beatError": 0.3,
+   "bph": 21600,
+   "method": "mikro",
+   "dur": 60,
+   "quality": 0.91,
+   "calibPpm": 1.8,
+   "id": "demo-m16"
+  },
+  {
+   "watchId": "ph-4a",
+   "kind": "waage",
+   "tag": -34,
+   "zeit": "07:50",
+   "position": "Zifferblatt oben",
+   "rate": 7,
+   "amplitude": 248,
+   "beatError": 0.2,
+   "bph": 21600,
+   "note": "Nach 24 h Ablauf",
+   "id": "demo-m17"
+  },
+  {
+   "watchId": "ph-4a",
+   "kind": "waage",
+   "tag": -20,
+   "zeit": "20:15",
+   "position": "Zifferblatt oben",
+   "rate": 4.5,
+   "amplitude": 281,
+   "beatError": 0.2,
+   "bph": 21600,
+   "note": "Nach dem Vollaufzug",
+   "id": "demo-m18"
+  },
+  {
+   "watchId": "ph-4a",
+   "kind": "vergleich",
+   "tag": -6,
+   "zeit": "08:30",
+   "deviation": 37,
+   "days": 7,
+   "note": "Nach einer Woche am Arm",
+   "id": "demo-m19"
+  },
+  {
+   "watchId": "merkur",
+   "kind": "waage",
+   "tag": -62,
+   "zeit": "18:30",
+   "position": "Zifferblatt oben",
+   "rate": 22,
+   "amplitude": 248,
+   "beatError": 0.9,
+   "bph": 21600,
+   "note": "Erste Messung",
+   "id": "demo-m20"
+  },
+  {
+   "watchId": "merkur",
+   "kind": "waage",
+   "tag": -62,
+   "zeit": "18:38",
+   "position": "Krone unten",
+   "rate": 34,
+   "amplitude": 221,
+   "beatError": 1.0,
+   "bph": 21600,
+   "id": "demo-m21"
+  },
+  {
+   "watchId": "merkur",
+   "kind": "waage",
+   "tag": -61,
+   "zeit": "18:35",
+   "position": "Zifferblatt oben",
+   "rate": -9,
+   "amplitude": 196,
+   "beatError": 1.1,
+   "bph": 21600,
+   "note": "Nach 24 h Ablauf",
+   "id": "demo-m22"
+  },
+  {
+   "watchId": "merkur",
+   "kind": "waage",
+   "tag": -47,
+   "zeit": "08:00",
+   "position": "Zifferblatt oben",
+   "rate": 18,
+   "amplitude": 252,
+   "beatError": 0.8,
+   "bph": 21600,
+   "note": "Nach dem Vollaufzug",
+   "id": "demo-m23"
+  },
+  {
+   "watchId": "merkur",
+   "kind": "waage",
+   "tag": -40,
+   "zeit": "20:45",
+   "position": "Krone links",
+   "rate": 27,
+   "amplitude": 229,
+   "beatError": 0.9,
+   "bph": 21600,
+   "method": "mikro",
+   "dur": 60,
+   "quality": 0.89,
+   "calibPpm": 1.8,
+   "id": "demo-m24"
+  },
+  {
+   "watchId": "merkur",
+   "kind": "waage",
+   "tag": -33,
+   "zeit": "08:10",
+   "position": "Zifferblatt unten",
+   "rate": 15,
+   "amplitude": 246,
+   "beatError": 0.8,
+   "bph": 21600,
+   "note": "Nach dem Bandwechsel",
+   "id": "demo-m25"
+  },
+  {
+   "watchId": "merkur",
+   "kind": "waage",
+   "tag": -26,
+   "zeit": "19:30",
+   "position": "Zifferblatt oben",
+   "rate": 19.5,
+   "amplitude": 244,
+   "beatError": 0.8,
+   "bph": 21600,
+   "method": "mikro",
+   "dur": 60,
+   "quality": 0.76,
+   "calibPpm": 1.8,
+   "id": "demo-m26"
+  },
+  {
+   "watchId": "merkur",
+   "kind": "waage",
+   "tag": -19,
+   "zeit": "07:45",
+   "position": "Krone oben",
+   "rate": 31,
+   "amplitude": 218,
+   "beatError": 0.9,
+   "bph": 21600,
+   "id": "demo-m27"
+  },
+  {
+   "watchId": "merkur",
+   "kind": "waage",
+   "tag": -12,
+   "zeit": "20:10",
+   "position": "Zifferblatt oben",
+   "rate": 16,
+   "amplitude": 250,
+   "beatError": 0.7,
+   "bph": 21600,
+   "note": "Abends nach dem Tragen",
+   "id": "demo-m28"
+  },
+  {
+   "watchId": "merkur",
+   "kind": "waage",
+   "tag": -5,
+   "zeit": "08:05",
+   "position": "Zifferblatt oben",
+   "rate": 17.5,
+   "amplitude": 251,
+   "beatError": 0.7,
+   "bph": 21600,
+   "note": "Nach dem Vollaufzug",
+   "id": "demo-m29"
+  },
+  {
+   "watchId": "merkur",
+   "kind": "vergleich",
+   "tag": -15,
+   "zeit": "08:40",
+   "deviation": 128,
+   "days": 7,
+   "note": "Gegen die Funkuhr am Handy",
+   "id": "demo-m30"
+  },
+  {
+   "watchId": "seafarer",
+   "kind": "vergleich",
+   "tag": -44,
+   "zeit": "09:00",
+   "deviation": 1,
+   "days": 14,
+   "note": "Gegen die Funkuhr am Handy",
+   "id": "demo-m31"
+  },
+  {
+   "watchId": "seafarer",
+   "kind": "vergleich",
+   "tag": -9,
+   "zeit": "09:00",
+   "deviation": 3,
+   "days": 35,
+   "id": "demo-m32"
+  }
+ ],
+ "wear": [
+  {
+   "tag": -84,
+   "watches": [
+    "merkur"
+   ]
+  },
+  {
+   "tag": -83,
+   "watches": [
+    "ph-2"
+   ]
+  },
+  {
+   "tag": -82,
+   "watches": [
+    "seafarer"
+   ]
+  },
+  {
+   "tag": -81,
+   "watches": [
+    "wd16500"
+   ]
+  },
+  {
+   "tag": -80,
+   "watches": [
+    "seafarer"
+   ]
+  },
+  {
+   "tag": -79,
+   "watches": [
+    "seafarer"
+   ]
+  },
+  {
+   "tag": -78,
+   "watches": [
+    "wd1965-grau"
+   ]
+  },
+  {
+   "tag": -77,
+   "watches": [
+    "merkur"
+   ]
+  },
+  {
+   "tag": -76,
+   "watches": [
+    "seafarer"
+   ]
+  },
+  {
+   "tag": -74,
+   "watches": [
+    "wd1965-grau"
+   ]
+  },
+  {
+   "tag": -71,
+   "watches": [
+    "seafarer"
+   ]
+  },
+  {
+   "tag": -70,
+   "watches": [
+    "merkur"
+   ]
+  },
+  {
+   "tag": -69,
+   "watches": [
+    "wd1965-grau"
+   ]
+  },
+  {
+   "tag": -68,
+   "watches": [
+    "seafarer"
+   ]
+  },
+  {
+   "tag": -66,
+   "watches": [
+    "ph-2"
+   ]
+  },
+  {
+   "tag": -63,
+   "watches": [
+    "merkur"
+   ]
+  },
+  {
+   "tag": -62,
+   "watches": [
+    "wd16500",
+    "seafarer"
+   ]
+  },
+  {
+   "tag": -61,
+   "watches": [
+    "wd1016b"
+   ]
+  },
+  {
+   "tag": -59,
+   "watches": [
+    "seafarer"
+   ]
+  },
+  {
+   "tag": -57,
+   "watches": [
+    "ph-2"
+   ]
+  },
+  {
+   "tag": -56,
+   "watches": [
+    "merkur"
+   ]
+  },
+  {
+   "tag": -55,
+   "watches": [
+    "wd16500"
+   ]
+  },
+  {
+   "tag": -54,
+   "watches": [
+    "ph-2"
+   ]
+  },
+  {
+   "tag": -53,
+   "watches": [
+    "ph-2",
+    "wd16500"
+   ]
+  },
+  {
+   "tag": -52,
+   "watches": [
+    "ph-4a"
+   ]
+  },
+  {
+   "tag": -50,
+   "watches": [
+    "wd1965-blau"
+   ]
+  },
+  {
+   "tag": -49,
+   "watches": [
+    "merkur"
+   ]
+  },
+  {
+   "tag": -48,
+   "watches": [
+    "ph-2"
+   ]
+  },
+  {
+   "tag": -46,
+   "watches": [
+    "ph-4a"
+   ]
+  },
+  {
+   "tag": -45,
+   "watches": [
+    "wd16500"
+   ]
+  },
+  {
+   "tag": -44,
+   "watches": [
+    "wd16500"
+   ]
+  },
+  {
+   "tag": -43,
+   "watches": [
+    "seafarer"
+   ]
+  },
+  {
+   "tag": -42,
+   "watches": [
+    "merkur"
+   ]
+  },
+  {
+   "tag": -40,
+   "watches": [
+    "wd16500"
+   ]
+  },
+  {
+   "tag": -39,
+   "watches": [
+    "seafarer"
+   ]
+  },
+  {
+   "tag": -37,
+   "watches": [
+    "seafarer"
+   ]
+  },
+  {
+   "tag": -36,
+   "watches": [
+    "wd1016b"
+   ]
+  },
+  {
+   "tag": -35,
+   "watches": [
+    "merkur"
+   ]
+  },
+  {
+   "tag": -34,
+   "watches": [
+    "wd1016b"
+   ]
+  },
+  {
+   "tag": -33,
+   "watches": [
+    "wd1965-grau"
+   ]
+  },
+  {
+   "tag": -32,
+   "watches": [
+    "wd1965-blau"
+   ]
+  },
+  {
+   "tag": -31,
+   "watches": [
+    "wd1965-grau"
+   ]
+  },
+  {
+   "tag": -29,
+   "watches": [
+    "wd1965-grau"
+   ]
+  },
+  {
+   "tag": -28,
+   "watches": [
+    "merkur"
+   ]
+  },
+  {
+   "tag": -27,
+   "watches": [
+    "wd1965-grau"
+   ]
+  },
+  {
+   "tag": -26,
+   "watches": [
+    "wd16500"
+   ]
+  },
+  {
+   "tag": -25,
+   "watches": [
+    "seafarer"
+   ]
+  },
+  {
+   "tag": -24,
+   "watches": [
+    "wd16500"
+   ]
+  },
+  {
+   "tag": -23,
+   "watches": [
+    "ph-2"
+   ]
+  },
+  {
+   "tag": -22,
+   "watches": [
+    "ph-2"
+   ]
+  },
+  {
+   "tag": -21,
+   "watches": [
+    "merkur"
+   ]
+  },
+  {
+   "tag": -20,
+   "watches": [
+    "seafarer"
+   ]
+  },
+  {
+   "tag": -19,
+   "watches": [
+    "seafarer"
+   ]
+  },
+  {
+   "tag": -17,
+   "watches": [
+    "seafarer"
+   ]
+  },
+  {
+   "tag": -16,
+   "watches": [
+    "wd1965-grau"
+   ]
+  },
+  {
+   "tag": -15,
+   "watches": [
+    "ph-2"
+   ]
+  },
+  {
+   "tag": -14,
+   "watches": [
+    "merkur"
+   ]
+  },
+  {
+   "tag": -12,
+   "watches": [
+    "seafarer"
+   ]
+  },
+  {
+   "tag": -11,
+   "watches": [
+    "ph-2"
+   ]
+  },
+  {
+   "tag": -8,
+   "watches": [
+    "seafarer"
+   ]
+  },
+  {
+   "tag": -7,
+   "watches": [
+    "merkur"
+   ]
+  },
+  {
+   "tag": -6,
+   "watches": [
+    "wd1965-blau"
+   ]
+  },
+  {
+   "tag": -4,
+   "watches": [
+    "wd1965-grau"
+   ]
+  },
+  {
+   "tag": -3,
+   "watches": [
+    "wd1016b"
+   ]
+  },
+  {
+   "tag": -2,
+   "watches": [
+    "wd1965-blau"
+   ]
+  },
+  {
+   "tag": -1,
+   "watches": [
+    "ph-2"
+   ]
+  }
+ ],
+ "photos": {
+  "demo-merkur": "demo-fotos/merkur.jpg",
+  "demo-ph-2": "demo-fotos/ph-2.jpg",
+  "demo-ph-4a": "demo-fotos/ph-4a.jpg",
+  "demo-seafarer": "demo-fotos/seafarer.jpg",
+  "demo-wd1016b": "demo-fotos/wd1016b.jpg",
+  "demo-wd16500": "demo-fotos/wd16500.jpg",
+  "demo-wd1965": "demo-fotos/wd1965.jpg"
+ }
+}

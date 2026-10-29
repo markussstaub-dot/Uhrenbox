@@ -54,11 +54,25 @@
   ],
   "screenshots": [
     {
-      "src": "screenshot-handy.png",
-      "sizes": "824x1830",
+      "src": "screenshot-handy-1.png",
+      "sizes": "1080x2340",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Sammlung am Handy"
+      "label": "Sammlung mit Fotos"
+    },
+    {
+      "src": "screenshot-handy-2.png",
+      "sizes": "1080x2340",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Detailseite mit Gangkurve"
+    },
+    {
+      "src": "screenshot-handy-3.png",
+      "sizes": "1080x2340",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Tragekalender und Rotation"
     },
     {
       "src": "screenshot-desktop.png",

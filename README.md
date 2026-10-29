@@ -21,6 +21,10 @@ A small web app for your own watch collection: watches with photos, timegrapher 
 
 Neue sichtbare Texte deutsch in `tr('…')` schreiben und die englische Fassung in `EN` (bzw. Texte mit Zahlen in `FN`) oben in `index.html` eintragen. Fehlt die Übersetzung, erscheint auf Englisch der deutsche Text.
 
+## Beispiel-Sammlung
+
+`index.html?demo=1` zeigt die Beispiel-Sammlung in einem eigenen Speicher (IndexedDB `uhrenbox-demo`), die eigene Sammlung bleibt unberührt. Die Daten stehen in `demo.json` und `demo-en.json` (gleiche Daten, nur die Freitexte übersetzt), die Fotos in `demo-fotos/`. Datumsangaben sind relativ zu heute (`tag: -1` = gestern). Beide Dateien bei Änderungen gemeinsam pflegen. Sie kommen absichtlich nicht in den Vorabspeicher von `sw.js`.
+
 ## Neue Version veröffentlichen
 
 In `sw.js` die `VERSION` hochzählen (z. B. `uhrenbox-v2` → `uhrenbox-v3`) und mit hochladen. Sonst bekommen installierte Apps die Änderung nicht. Offene Apps zeigen dann „Neue Version der Uhrenbox ist da – Neu laden“.

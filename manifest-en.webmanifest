@@ -75,14 +75,28 @@
   ],
   "screenshots": [
     {
-      "src": "screenshot-handy.png",
-      "sizes": "824x1830",
+      "src": "screenshot-handy-1-en.png",
+      "sizes": "1080x2340",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Collection on a phone"
+      "label": "Collection with photos"
     },
     {
-      "src": "screenshot-desktop.png",
+      "src": "screenshot-handy-2-en.png",
+      "sizes": "1080x2340",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Watch page with rate chart"
+    },
+    {
+      "src": "screenshot-handy-3-en.png",
+      "sizes": "1080x2340",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Wear calendar and rotation"
+    },
+    {
+      "src": "screenshot-desktop-en.png",
       "sizes": "1280x800",
       "type": "image/png",
       "form_factor": "wide",
