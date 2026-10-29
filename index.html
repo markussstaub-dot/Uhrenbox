@@ -60,6 +60,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 /* top band */
 .top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+.demo-bar { background: var(--accent); color: var(--accent-ink); font-size: 13.5px; text-align: center; padding: 6px 16px; }
+.demo-bar a { color: inherit; font-weight: 600; white-space: nowrap; }
 .top .wrap { display: flex; align-items: center; gap: 20px; padding-block: 10px; flex-wrap: wrap; }
 .brand { display: flex; align-items: center; gap: 10px; }
 .brand h1 { font-size: 26px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
@@ -103,7 +105,7 @@ main { padding-block: 24px 64px; }
 .ctabs { display: flex; gap: 6px; margin-bottom: 10px; }
 .ctools { display: flex; gap: 8px; margin-bottom: 12px; }
 .ctools input[type=search] { flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
-.ctools select { padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.ctools select { width: auto; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
 .cgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 12px 10px; }
 .pf { display: flex; align-items: center; gap: 10px; padding: 6px 0; cursor: pointer; }
 .pf input { width: 20px; height: 20px; accent-color: var(--accent); }
@@ -318,6 +320,7 @@ img { max-width: 100%; }
 <body>
 
 <header class="top">
+  <div id="demo-bar" class="demo-bar" hidden></div>
   <div class="wrap">
     <div class="brand">
       <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M16 16 L16 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M16 16 L22 19" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="16" r="1.8" fill="currentColor"/></svg>
@@ -388,6 +391,13 @@ const EN = {
   'Nummer': 'Number', 'Name': 'Name', 'Zuletzt getragen': 'Last worn', 'Zuletzt gemessen': 'Last measured',
   'Noch keine Uhren gespeichert. Füge oben deine erste Uhr hinzu.': 'No watches yet. Add your first watch above.',
   'Keine Uhr passt zu diesem Filter.': 'No watch matches this filter.',
+  // Beispiel-Sammlung (SPEC-demo.md)
+  'Beispiel-Sammlung': 'Sample collection', 'Beispiel-Sammlung ansehen': 'View sample collection', 'Beispiel-Sammlung neu laden': 'Reload sample collection',
+  'Beispiel-Sammlung – deine eigenen Daten sind nicht betroffen.': 'Sample collection – your own data is not affected.', 'Zur eigenen Sammlung': 'Back to my collection',
+  'Beispiel-Sammlung wird geladen …': 'Loading sample collection …', 'Die Beispiel-Sammlung braucht einmal Internet.': 'The sample collection needs an internet connection once.',
+  'Nochmal versuchen': 'Try again',
+  'Neun Uhren mit Fotos, Messungen und Tragetagen zum Ausprobieren. Sie liegt in einem eigenen Speicher, deine Sammlung bleibt unberührt.': 'Nine watches with photos, measurements and wear days to try out. It lives in its own storage, your collection stays untouched.',
+  'Beim Neuladen gehen Änderungen an der Beispiel-Sammlung verloren.': 'Reloading discards any changes to the sample collection.',
   // Einstellungen
   'Automatisch (Gerät)': 'Automatic (device)', 'Gilt nur für dieses Gerät. Ausgeblendete Felder behalten ihre Werte, sie werden nur nicht angezeigt.': 'Applies to this device only. Hidden fields keep their values, they are just not shown.',
   'Ansicht': 'Display', 'Leere Felder auf der Detailseite ausblenden': 'Hide empty fields on the detail page', 'Marke unter den Kacheln der Sammlung zeigen': 'Show brand below the collection tiles',
@@ -576,6 +586,8 @@ const FN = {
     document.getElementById('manifest').href = LANG === 'en' ? 'manifest-en.webmanifest' : 'manifest.webmanifest';
     document.querySelectorAll('[data-t]').forEach(el => { el.dataset.t ||= el.textContent; el.textContent = tr(el.dataset.t); });
     document.querySelectorAll('[data-t-aria]').forEach(el => el.setAttribute('aria-label', tr(el.dataset.tAria)));
+    const bar = document.getElementById('demo-bar');
+    if (DEMO) { bar.hidden = false; bar.innerHTML = `${tr('Beispiel-Sammlung – deine eigenen Daten sind nicht betroffen.')} <a href="${esc(location.pathname)}">${tr('Zur eigenen Sammlung')}</a>`; }
   }
 
   const nf = (v, d = 1) => (v == null || v === '' || isNaN(v)) ? null : Number(v).toLocaleString(LOC(), { maximumFractionDigits: d });
@@ -600,14 +612,19 @@ const FN = {
   }
   const photoErr = er => tr(er?.code === 'unsupported_type' ? 'Dieses Bildformat geht nicht. Nimm JPG, PNG oder WebP.' : er?.code === 'too_large' ? 'Das Foto ist zu groß.' : 'Hochladen fehlgeschlagen. Bitte noch einmal versuchen.');
 
+  // ---------- Beispiel-Sammlung (SPEC-demo.md): ?demo=1 hat eigenen Speicher und eigene Schlüssel, die echte Sammlung bleibt unberührt ----------
+  const DEMO = new URLSearchParams(location.search).get('demo') === '1';
+  const STORE = DEMO ? 'uhrenbox-demo' : 'uhrenbox';   // Name der IndexedDB und Präfix der Geräte-Einstellungen
+  const demoHref = () => `${location.pathname}?demo=1&neu=1&lang=${LANG}`;   // neu=1: jedes Mal frisch laden
+
   // ---------- Ansicht (pro Gerät, nicht in der Sicherung): Reiter, Sortierung, Felder ----------
-  const PREF_KEY = 'uhrenbox.ansicht';
+  const PREF_KEY = STORE + '.ansicht';
   const pref = (() => { try { return JSON.parse(localStorage.getItem(PREF_KEY)) || {}; } catch { return {}; } })();
   function savePref(patch) { Object.assign(pref, patch); try { localStorage.setItem(PREF_KEY, JSON.stringify(pref)); } catch (e) {} }
 
   // ---------- Sicherungs-Status und Speicher (pro Gerät) ----------
   // meta: { lastBackup: ISO, changes: Anzahl Änderungen seit der letzten Sicherung, snoozeUntil: ISO }
-  const META_KEY = 'uhrenbox.meta';
+  const META_KEY = STORE + '.meta';
   const meta = (() => { try { return JSON.parse(localStorage.getItem(META_KEY)) || {}; } catch { return {}; } })();
   function saveMeta(patch) { Object.assign(meta, patch); try { localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch (e) {} }
   const daysSince = iso => Math.floor((Date.now() - new Date(iso)) / 864e5);
@@ -618,7 +635,7 @@ const FN = {
   const INSTALL = { prompt: null };   // gemerktes beforeinstallprompt-Ereignis
 
   function backupDue() {
-    if (!S.watches.length) return false;
+    if (DEMO || !S.watches.length) return false;
     if (meta.snoozeUntil && new Date(meta.snoozeUntil) > new Date()) return false;
     return !meta.lastBackup || daysSince(meta.lastBackup) >= 14 || (meta.changes || 0) >= 10;
   }
@@ -749,7 +766,9 @@ const FN = {
     if (sort === 'measured') for (const m of S.measurements) if (!zuletzt[m.watchId] || m.at > zuletzt[m.watchId]) zuletzt[m.watchId] = m.at;
     shown = [...shown].sort(sort === 'name' ? (a, b) => String(a.name).localeCompare(b.name, LANG)
       : sort === 'worn' || sort === 'measured' ? (a, b) => String(zuletzt[b.id] || '').localeCompare(String(zuletzt[a.id] || '')) || byNr(a, b) : byNr);
-    if (!shown.length) return `<div class="empty">${!S.watches.length ? tr('Noch keine Uhren gespeichert. Füge oben deine erste Uhr hinzu.') : q ? tr('coll.noq', esc(S.q)) : tr('Keine Uhr passt zu diesem Filter.')}</div>`;
+    if (!S.watches.length) return `<div class="empty">${DEMO ? S.demo === 'fehler' ? `<p>${tr('Die Beispiel-Sammlung braucht einmal Internet.')}</p><button class="btn" data-act="demo-load">${tr('Nochmal versuchen')}</button>` : tr('Beispiel-Sammlung wird geladen …')
+      : `<p>${tr('Noch keine Uhren gespeichert. Füge oben deine erste Uhr hinzu.')}</p><button class="btn" data-act="demo">${tr('Beispiel-Sammlung ansehen')}</button>`}</div>`;
+    if (!shown.length) return `<div class="empty">${q ? tr('coll.noq', esc(S.q)) : tr('Keine Uhr passt zu diesem Filter.')}</div>`;
     return `<div class="cgrid">${shown.map(miniCard).join('')}</div>`;
   }
   function miniCard(w) {
@@ -780,6 +799,10 @@ const FN = {
       </section>
       <section class="panel"><h3>${tr('Felder auf der Detailseite')}</h3>
         <div class="pf-grid">${DETAIL_FELDER.map(([titel, fs]) => `<div><div class="label" style="margin-bottom:4px">${tr(titel)}</div>${fs.map(([k, l]) => sw(k, !hide.includes(k), l)).join('')}</div>`).join('')}</div>
+      </section>
+      <section class="panel"><h3>${tr('Beispiel-Sammlung')}</h3>
+        <p class="muted" style="margin:0 0 10px">${tr(DEMO ? 'Beim Neuladen gehen Änderungen an der Beispiel-Sammlung verloren.' : 'Neun Uhren mit Fotos, Messungen und Tragetagen zum Ausprobieren. Sie liegt in einem eigenen Speicher, deine Sammlung bleibt unberührt.')}</p>
+        <button class="btn" data-act="${DEMO ? 'demo-load' : 'demo'}">${tr(DEMO ? 'Beispiel-Sammlung neu laden' : 'Beispiel-Sammlung ansehen')}</button>
       </section>`;
   }
 
@@ -1519,7 +1542,7 @@ const FN = {
       wear: Object.keys(S.wear).sort().map(d => ({ date: d, watches: S.wear[d], ...(S.wearShots[d] ? { shots: S.wearShots[d] } : {}) })),
       photos,
     };
-    const file = new File([JSON.stringify(data)], `uhrenbox-${tr('sicherung')}-${todayStr()}.json`, { type: 'application/json' });
+    const file = new File([JSON.stringify(data)], `uhrenbox-${DEMO ? 'demo-' : ''}${tr('sicherung')}-${todayStr()}.json`, { type: 'application/json' });
     // am Handy übers Teilen-Menü (OneDrive, Drive, Mail …), sonst als normaler Download
     if (matchMedia('(pointer: coarse)').matches && navigator.canShare?.({ files: [file] })) {
       try { await navigator.share({ files: [file], title: tr('Uhrenbox-Sicherung') }); return backupDone(); }
@@ -1541,18 +1564,39 @@ const FN = {
     const n = data.watches.length;
     if (!confirm(tr('imp.ask', fmtDate(data.exportedAt), n))) return;
     try {
-      const photos = new Map();
-      for (const [id, url] of Object.entries(data.photos || {})) { try { photos.set(id, await (await fetch(url)).blob()); } catch {} }
-      await LOCAL.replaceAll({
-        watches: data.watches,
-        measurements: data.measurements || [],
-        wear: (data.wear || []).map(x => ({ id: x.date, date: x.date, watches: x.watches, ...(x.shots ? { shots: x.shots } : {}) })),
-      }, photos);
+      await fillStore(data);
       saveMeta({ lastBackup: data.exportedAt || new Date().toISOString(), changes: 0 });   // Stand entspricht genau dieser Sicherung
       scheduleStore();
       S.cmpSel = null; go('sammlung');
       toast(tr('imp.done', n));
     } catch (er) { console.error(er); toast(tr('Laden fehlgeschlagen.')); }
+  }
+
+  // Sicherung (oder Beispiel-Sammlung) in den Speicher schreiben, ersetzt alles
+  async function fillStore(data) {
+    const photos = new Map();
+    for (const [id, url] of Object.entries(data.photos || {})) { try { photos.set(id, await (await fetch(url)).blob()); } catch {} }
+    await LOCAL.replaceAll({
+      watches: data.watches,
+      measurements: data.measurements || [],
+      wear: (data.wear || []).map(x => ({ id: x.date, date: x.date, watches: x.watches, ...(x.shots ? { shots: x.shots } : {}) })),
+    }, photos);
+  }
+  // Beispiel-Sammlung: Datei nach Sprache, Tage relativ zu heute (tag: -1 = gestern) werden hier zu echten Daten
+  async function loadDemo() {
+    S.demo = 'laden'; render();
+    try {
+      const r = await fetch(LANG === 'en' ? 'demo-en.json' : 'demo.json', { cache: 'no-cache' });
+      if (!r.ok) throw new Error(r.status);
+      const data = await r.json();
+      const day = (tag, zeit = '12:00') => { const d = new Date(); d.setDate(d.getDate() + tag); d.setHours(...zeit.split(':').map(Number), 0, 0); return d; };
+      await fillStore({
+        ...data,
+        measurements: data.measurements.map(({ tag, zeit, ...m }) => ({ ...m, at: day(tag, zeit).toISOString() })),
+        wear: data.wear.map(({ tag, ...x }) => ({ ...x, date: todayStr(day(tag)) })),
+      });
+      S.demo = null; S.cmpSel = null; S.diaryDate = todayStr(); go(S.view === 'einstellungen' ? 'sammlung' : S.view);
+    } catch (er) { console.error(er); S.demo = 'fehler'; render(); toast(tr('Die Beispiel-Sammlung braucht einmal Internet.')); }
   }
 
   // ---------- writes ----------
@@ -1666,6 +1710,8 @@ const FN = {
       case 'diary-today': S.diaryDate = todayStr(); render(); break;
       case 'wristcheck': openWc(true); break;
       case 'export': exportJson(); break;
+      case 'demo': location.href = demoHref(); break;
+      case 'demo-load': loadDemo(); break;
       case 'snooze-backup': saveMeta({ snoozeUntil: new Date(Date.now() + 3 * 864e5).toISOString() }); render(); break;
       case 'install': {
         const p = INSTALL.prompt; if (!p) break;
@@ -1812,7 +1858,7 @@ const FN = {
   const LOCAL = (() => {
     let idb; const cache = { watches: new Map(), measurements: new Map(), wear: new Map() }; const subs = { watches: [], measurements: [], wear: [] };
     const open = () => new Promise((res, rej) => {
-      const r = indexedDB.open('uhrenbox', 1);
+      const r = indexedDB.open(STORE, 1);
       r.onupgradeneeded = () => { for (const c of [...COLS, 'photos']) r.result.createObjectStore(c); };
       r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
     });
@@ -1907,8 +1953,14 @@ const FN = {
   // ---------- boot ----------
   setupSW();
   const shortcut = new URLSearchParams(location.search).get('aktion');
-  if (shortcut) { try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {} }
-  LANG = pickLang(); applyLang();
+  if (shortcut) { try { history.replaceState(null, '', location.pathname + (DEMO ? '?demo=1' : '') + location.hash); } catch (e) {} }
+  LANG = pickLang();
+  const demoNeu = DEMO && new URLSearchParams(location.search).has('neu');
+  if (demoNeu) {   // Sprache der eigenen Sammlung übernehmen, danach gilt der Schalter in den Einstellungen der Demo; erst alle Uhren zeigen
+    savePref({ lang: LANG, tab: 'alle' });
+    try { history.replaceState(null, '', location.pathname + '?demo=1' + location.hash); } catch (e) {}
+  }
+  applyLang();
   fromHash(); render();
   (async () => {
     try { await LOCAL.init(); }
@@ -1935,6 +1987,7 @@ const FN = {
       if (!S.editing && !S.creating && !S.mEditing) render();
     });
     if (shortcut) queueMicrotask(() => runShortcut(shortcut));   // nach den ersten Snapshots
+    if (DEMO) queueMicrotask(() => { if (demoNeu || !S.watches.length) loadDemo(); });   // auch nach den ersten Snapshots
   })();
 })();
 </script>
