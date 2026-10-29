@@ -112,11 +112,16 @@ Bezug: `SPEC-zeitwaage.md` (M2 Gang/Abfallfehler umgesetzt, M3 Amplitude in Arbe
   geht, wofür es genutzt wird (Prüfen und Verbessern der Zeitwaage), dass man die Löschung per Mail verlangen kann.
 - **[fest]** In der Spende stehen: Aufnahme, technische Werte, Kaliber, Handy-Modell, Tagesdatum, freiwillige
   Bemerkung. **Nicht**: Seriennummer, Fotos, Kaufpreis, Uhrenname, Standort, Name oder Mailadresse in den Dateien.
-- **[Vorschlag]** Eigene Einwilligung für **Veröffentlichung als Testdatei** im öffentlichen Repo (Häkchen, Voreinstellung
+- **[fest, 29.10.2026]** Eigene Einwilligung für **Veröffentlichung als Testdatei** im öffentlichen Repo (Häkchen, Voreinstellung
   aus). Ohne Häkchen bleibt die Aufnahme privat in `zeitwaage-labor/aufnahmen/`.
+- **[Vorschlag, 29.10.2026]** **Datenschutzhinweis direkt im Spenden-Dialog** statt eigener Datenschutzseite (passt zu
+  „klein halten“, Offen 5). Drei bis vier Sätze über dem Knopf „Senden …“: Zweck (Prüfen und Verbessern der
+  Zeitwaage), Empfänger (Markus, Spenden-Adresse), Umgang mit der Mailadresse (nur für Rückfragen, nach dem Einsortieren
+  gelöscht), Veröffentlichung nur mit Häkchen, Löschung jederzeit per Mail. Bei Stufe 0 derselbe Text in der Anleitung.
+  Datenschutz damit dort, wo Daten tatsächlich fließen, und nur für die, die spenden.
 - **[fest]** Beim Empfang per Mail hat Markus die Mailadresse des Spenders, das ist ein personenbezogenes Datum. Spenden
   getrennt von der Adresse ablegen, Mails nach dem Einsortieren löschen.
-- **[offen]** **Impressum und Datenschutzerklärung für GitHub Pages.** Heute privat und kostenlos; mit öffentlicher
+- **[entschieden, 29.10.2026: klein halten, siehe Offen 5]** **Impressum und Datenschutzerklärung für GitHub Pages.** Heute privat und kostenlos; mit öffentlicher
   Vorstellung und Spendenaufruf wird „rein privat“ fraglich, auch ohne Bezahlteil. Dazu loggt GitHub als Hoster
   IP-Adressen der Besucher, auch ohne eigenen Server. Klären: Impressum (Name, ladungsfähige Anschrift, Mail) ja/nein,
   kurze Datenschutzseite in der App (Hoster GitHub, keine Erfassung, Spenden nur per eigener Mail).
@@ -165,10 +170,14 @@ Bezug: `SPEC-zeitwaage.md` (M2 Gang/Abfallfehler umgesetzt, M3 Amplitude in Arbe
 
 1. ~~Freeware oder Premium?~~ **[fest, 28.10.2026]** Freeware. Die Zeitwaage (M2–M4) bekommt keine
    Premium-Kennzeichnung und keinen Bezahlteil; Monetarisierung war nur eine vage Idee.
-2. **[offen]** **Wohin gehen Spenden?** Vorschlag: eigenes Postfach nur dafür (z. B. ein neues Gmail-Konto für die
-   Uhrenbox), nicht die private Adresse; die Adresse steht dann öffentlich im Aufruf und in der App.
-3. **[offen]** Stufe 0 (nur Anleitung) zuerst, oder gleich mit Knopf in den Aufruf?
-4. **[offen]** Dürfen gespendete Aufnahmen mit Einwilligung als Testdateien ins öffentliche Repo?
-5. **[offen]** Impressum und Datenschutzseite: selbst klären, oder die Vorstellung bewusst klein halten („privates
-   Bastelprojekt“)?
+2. **[fest, 29.10.2026]** **Spenden gehen an ein eigenes Gmail-Konto nur für die Uhrenbox**, nicht an die private
+   Adresse; die Adresse steht im Aufruf und in der App. Markus legt es selbst an (mit 2-Faktor). **[offen]** genaue
+   Adresse, danach in Dialog und Anleitung eintragen.
+3. **[fest, 29.10.2026]** Stufe 0 zuerst (nur Anleitung, nichts bauen). Spenden-Knopf erst, wenn mehr als eine
+   Handvoll Spenden kommen. Der Anleitungstext samt Datenschutzhinweis liegt privat außerhalb des Repos.
+4. **[fest, 29.10.2026]** Ja, gespendete Aufnahmen dürfen ins öffentliche Repo, aber nur mit eigenem Häkchen
+   (Voreinstellung aus). Ohne Häkchen bleiben sie privat in `zeitwaage-labor/aufnahmen/spenden/`.
+5. **[fest, 29.10.2026]** Bewusst klein halten („privates Bastelprojekt“, kein öffentlicher Aufruf): vorerst kein
+   Impressum und keine Datenschutzseite. Wird die Uhrenbox später öffentlich vorgestellt, vorher beides klären
+   (Vorschlag: c/o-Adresse statt Wohnadresse, kurze Datenschutzseite in der App).
 6. **[offen]** Marke/Modell freiwillig in der Spende erlauben (siehe 1)?
