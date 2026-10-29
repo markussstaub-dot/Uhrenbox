@@ -98,6 +98,23 @@ main { padding-block: 24px 64px; }
 
 /* watch grid */
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+/* Sammlung: kleine Foto-Kacheln (nur Bild, Name, Marke), Reiter Favoriten/Alle, Suche und Sortierung */
+.ctabs { display: flex; gap: 6px; margin-bottom: 10px; }
+.ctools { display: flex; gap: 8px; margin-bottom: 12px; }
+.ctools input[type=search] { flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.ctools select { padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.cgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 12px 10px; }
+.pf { display: flex; align-items: center; gap: 10px; padding: 6px 0; cursor: pointer; }
+.pf input { width: 20px; height: 20px; accent-color: var(--accent); }
+.pf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px 24px; }
+.mcard { cursor: pointer; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.mcard .ph { aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: var(--sunk); border: 1px solid var(--line); position: relative; }
+.mcard .ph img, .mcard .ph svg, .mcard .ph .dial-ph { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mcard .ph .pill { position: absolute; left: 6px; bottom: 6px; font-size: 11px; background: var(--surface); }
+.mcard .ph .star { position: absolute; right: 6px; top: 4px; color: #F2C14E; text-shadow: 0 1px 4px rgba(0,0,0,.6); font-size: 16px; }
+.mcard:hover .ph { border-color: var(--muted); }
+.mcard .nm { font-weight: 600; font-size: 14px; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mcard .br { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: -2px; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; display: flex; flex-direction: column; cursor: pointer; transition: border-color .15s, box-shadow .15s; }
 .card:hover { border-color: var(--muted); box-shadow: var(--shadow); }
 .card .ph { aspect-ratio: 4 / 3; background: var(--sunk); position: relative; overflow: hidden; max-width: 100%; }
@@ -347,7 +364,7 @@ img { max-width: 100%; }
     galleryFilter: 'alle', galleryItems: [], lb: null,   // lb: { list: [{id, cap}], i }
   };
   const PHOTO_URLS = new Map();   // Foto-ID -> lokale Bild-URL
-  const VIEWS = ['sammlung', 'galerie', 'messungen', 'tagebuch', 'vergleich'];
+  const VIEWS = ['sammlung', 'galerie', 'messungen', 'tagebuch', 'vergleich', 'einstellungen'];
   const app = document.getElementById('app');
 
   // ---------- helpers ----------
@@ -377,6 +394,11 @@ img { max-width: 100%; }
     else toast(`${what} fehlgeschlagen. Bitte noch einmal versuchen.`);
   }
   const photoErr = er => er?.code === 'unsupported_type' ? 'Dieses Bildformat geht nicht. Nimm JPG, PNG oder WebP.' : er?.code === 'too_large' ? 'Das Foto ist zu groß.' : 'Hochladen fehlgeschlagen. Bitte noch einmal versuchen.';
+
+  // ---------- Ansicht (pro Gerät, nicht in der Sicherung): Reiter, Sortierung, Felder ----------
+  const PREF_KEY = 'uhrenbox.ansicht';
+  const pref = (() => { try { return JSON.parse(localStorage.getItem(PREF_KEY)) || {}; } catch { return {}; } })();
+  function savePref(patch) { Object.assign(pref, patch); try { localStorage.setItem(PREF_KEY, JSON.stringify(pref)); } catch (e) {} }
 
   // ---------- Sicherungs-Status und Speicher (pro Gerät) ----------
   // meta: { lastBackup: ISO, changes: Anzahl Änderungen seit der letzten Sicherung, snoozeUntil: ISO }
@@ -479,21 +501,34 @@ img { max-width: 100%; }
     if (!S.db) return;
     if (!S.loaded.watches) return;
     const v = S.view;
-    app.innerHTML = v === 'detail' ? renderDetail() : v === 'galerie' ? renderGallery() : v === 'messungen' ? renderMeasurements() : v === 'tagebuch' ? renderDiary() : v === 'vergleich' ? renderCompare() : renderCollection();
+    app.innerHTML = v === 'einstellungen' ? renderSettings() : v === 'detail' ? renderDetail() : v === 'galerie' ? renderGallery() : v === 'messungen' ? renderMeasurements() : v === 'tagebuch' ? renderDiary() : v === 'vergleich' ? renderCompare() : renderCollection();
   }
 
   // ----- Sammlung -----
   function renderCollection() {
     if (S.creating) return renderWatchForm(null);
-    const ws = [...S.watches].sort(byNr);
-    const owned = ws.filter(w => w.status !== 'Bestellt' && w.status !== 'Verkauft');
-    const priced = owned.filter(w => typeof w.price === 'number');
-    const sum = priced.reduce((a, w) => a + w.price, 0);
-    const today = S.wear[todayStr()] || [];
-    const mech = owned.filter(isMech).length;
-    const last30 = Object.keys(S.wear).filter(d => (new Date() - parseDay(d)) / 864e5 < 30).length;
+    const ws = S.watches, owned = ws.filter(w => w.status !== 'Bestellt' && w.status !== 'Verkauft');
+    const favs = ws.filter(w => w.favorite).length, tab = pref.tab === 'alle' || !favs ? 'alle' : 'fav';
     const filters = [['alle', 'Alle'], ['mech', 'Mechanisch'], ['quarz', 'Quarz'], ['taucher', 'Taucher'], ['chrono', 'Chronograph'], ['bestellt', 'Bestellt']];
-    const shown = ws.filter(w => {
+    return `
+      <div class="view-head">
+        <div><h2>Sammlung</h2><p>${owned.length} ${owned.length === 1 ? 'Uhr' : 'Uhren'}${ws.length > owned.length ? `, ${ws.length - owned.length} bestellt` : ''}</p></div>
+        <div class="actions">${S.canWrite ? `${owned.length ? '<button class="btn primary" data-act="wristcheck">📷 Was trage ich?</button>' : ''}<button class="btn${owned.length ? '' : ' primary'}" data-act="new-watch">+ Uhr</button>` : ''}<button class="btn" data-act="export" title="Alle Uhren, Messungen, Tragetage und Fotos als Datei sichern">Sichern</button><label class="btn" for="import-in" title="Eine Sicherung wieder einlesen">Laden</label><input id="import-in" type="file" accept=".json,application/json" hidden><button class="btn" data-nav="einstellungen" aria-label="Einstellungen" title="Einstellungen">⚙</button></div>
+      </div>
+      ${backupBanner()}
+      <div class="ctabs">${favs ? `<button class="chip" data-ctab="fav" aria-pressed="${tab === 'fav'}">★ Favoriten (${favs})</button>` : ''}<button class="chip" data-ctab="alle" aria-pressed="${tab === 'alle'}">Alle (${ws.length})</button></div>
+      ${tab === 'alle' ? `<div class="ctools"><input type="search" id="coll-q" placeholder="Suchen: Name, Marke, Kaliber" value="${esc(S.q || '')}" aria-label="Uhren suchen">
+        <select id="coll-sort" aria-label="Sortieren">${[['nr', 'Nummer'], ['name', 'Name'], ['worn', 'Zuletzt getragen'], ['measured', 'Zuletzt gemessen']].map(([k, l]) => `<option value="${k}" ${(pref.sort || 'nr') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+      <div class="chips" style="margin-bottom:12px">${filters.map(([k, l]) => `<button class="chip" data-filter="${k}" aria-pressed="${S.filter === k}">${l}</button>`).join('')}</div>` : ''}
+      <div id="coll-grid">${collGrid(tab)}</div>
+    `;
+  }
+  // nur das Raster, damit Tippen ins Suchfeld den Fokus behält
+  function collGrid(tab = pref.tab === 'alle' || !S.watches.some(w => w.favorite) ? 'alle' : 'fav') {
+    const q = (S.q || '').trim().toLowerCase();
+    let shown = S.watches.filter(w => {
+      if (tab === 'fav') return w.favorite;
+      if (q && ![w.name, w.brand, w.model, w.movement, w.homage].some(v => String(v || '').toLowerCase().includes(q))) return false;
       switch (S.filter) {
         case 'mech': return isMech(w);
         case 'quarz': return !isMech(w) && w.movementKind;
@@ -503,39 +538,40 @@ img { max-width: 100%; }
         default: return true;
       }
     });
-    return `
-      <div class="view-head">
-        <div><h2>Sammlung</h2><p>${owned.length} ${owned.length === 1 ? 'Uhr' : 'Uhren'} im Kasten${ws.length > owned.length ? `, ${ws.length - owned.length} bestellt` : ''}</p></div>
-        <div class="actions"><button class="btn" data-act="export" title="Alle Uhren, Messungen, Tragetage und Fotos als Datei sichern">Sichern</button><label class="btn" for="import-in" title="Eine Sicherung wieder einlesen">Laden</label><input id="import-in" type="file" accept=".json,application/json" hidden>${S.canWrite ? `${owned.length ? '<button class="btn primary" data-act="wristcheck">📷 Was trage ich?</button>' : ''}<button class="btn${owned.length ? '' : ' primary'}" data-act="new-watch">+ Uhr hinzufügen</button>` : ''}</div>
-      </div>
-      ${backupBanner()}
-      <div class="summary">
-        <div><div class="label">Uhren</div><div class="big">${owned.length}</div><div class="sub">${mech} mechanisch, ${owned.length - mech} Quarz</div></div>
-        <div><div class="label">Bekannter Kaufpreis</div><div class="big">${sum ? nf(sum, 0) + ' €' : '–'}</div><div class="sub">${priced.length} von ${owned.length} Preisen eingetragen</div></div>
-        <div><div class="label">Heute am Handgelenk</div><div class="big" style="font-size:22px;padding-block:4px">${today.length ? today.map(id => esc(W(id)?.name || '?')).join(', ') : '–'}</div><div class="sub">${last30} ${last30 === 1 ? 'Tragetag' : 'Tragetage'} in den letzten 30 Tagen</div></div>
-        <div><div class="label">Messungen</div><div class="big">${S.measurements.length}</div><div class="sub">${new Set(S.measurements.map(m => m.watchId)).size === 1 ? '1 Uhr' : new Set(S.measurements.map(m => m.watchId)).size + ' Uhren'} gemessen</div></div>
-      </div>
-      <div class="chips" style="margin-bottom:16px">${filters.map(([k, l]) => `<button class="chip" data-filter="${k}" aria-pressed="${S.filter === k}">${l}</button>`).join('')}</div>
-      ${shown.length ? `<div class="grid">${shown.map(card).join('')}</div>` : `<div class="empty">${ws.length ? 'Keine Uhr passt zu diesem Filter.' : 'Noch keine Uhren gespeichert. Füge oben deine erste Uhr hinzu.'}</div>`}
-    `;
+    const zuletzt = {};   // id → letzter Tag (getragen) bzw. Zeitpunkt (gemessen)
+    const sort = tab === 'fav' ? 'nr' : pref.sort || 'nr';
+    if (sort === 'worn') for (const [d, ids] of Object.entries(S.wear)) for (const id of ids) if (!zuletzt[id] || d > zuletzt[id]) zuletzt[id] = d;
+    if (sort === 'measured') for (const m of S.measurements) if (!zuletzt[m.watchId] || m.at > zuletzt[m.watchId]) zuletzt[m.watchId] = m.at;
+    shown = [...shown].sort(sort === 'name' ? (a, b) => String(a.name).localeCompare(b.name, 'de')
+      : sort === 'worn' || sort === 'measured' ? (a, b) => String(zuletzt[b.id] || '').localeCompare(String(zuletzt[a.id] || '')) || byNr(a, b) : byNr);
+    if (!shown.length) return `<div class="empty">${!S.watches.length ? 'Noch keine Uhren gespeichert. Füge oben deine erste Uhr hinzu.' : q ? `Keine Uhr passt zu „${esc(S.q)}“.` : 'Keine Uhr passt zu diesem Filter.'}</div>`;
+    return `<div class="cgrid">${shown.map(miniCard).join('')}</div>`;
   }
-  function card(w) {
-    const days = wearDaysOf(w.id);
-    const wornToday = (S.wear[todayStr()] || []).includes(w.id);
-    const specs = [w.diameter && `⌀ ${nf(w.diameter)} mm`, w.lugToLug && `L2L ${nf(w.lugToLug)}`, w.waterM && `${nf(w.waterM, 0)} m`].filter(Boolean);
-    return `<article class="card" data-open="${esc(w.id)}" tabindex="0" aria-label="${esc(watchLabel(w))} öffnen">
-      <div class="ph">${photoHtml(w)}<span class="nr">${w.nr ?? ''}</span>
-        <div class="badges">${w.favorite ? '<span class="pill fav">Favorit</span>' : ''}${w.status === 'Bestellt' ? '<span class="pill ordered" style="background:var(--surface)">Bestellt</span>' : ''}</div></div>
-      <div class="body">
-        <div class="title"><h3>${esc(w.name)}</h3><span class="pill"><span class="dot" style="background:${esc(w.color || 'var(--muted)')}"></span>${esc(w.movementKind || '–')}</span></div>
-        <div class="homage">${esc(w.brand || '')}${w.homage ? ` · nach ${esc(w.homage)}` : ''}</div>
-        <div class="specs">${specs.map(s => `<span>${s}</span>`).join('')}</div>
-        <div class="foot">
-          <span>${days.length ? `${days.length} Tragetag${days.length > 1 ? 'e' : ''} · zuletzt ${fmtDate(parseDay(days[days.length - 1]))}` : 'Noch nicht getragen'}</span>
-          ${S.canWrite && w.status !== 'Bestellt' ? `<button class="wear-btn" data-wear-today="${esc(w.id)}" aria-pressed="${wornToday}">${wornToday ? 'Heute getragen' : 'Heute tragen'}</button>` : ''}
-        </div>
-      </div>
+  function miniCard(w) {
+    return `<article class="mcard" data-open="${esc(w.id)}" tabindex="0" aria-label="${esc(watchLabel(w))} öffnen">
+      <div class="ph">${photoHtml(w)}${w.favorite ? '<span class="star" aria-hidden="true">★</span>' : ''}${w.status === 'Bestellt' ? '<span class="pill ordered">Bestellt</span>' : ''}</div>
+      <div class="nm">${esc(w.name)}</div>${pref.brand !== false && w.brand ? `<div class="br">${esc(w.brand)}</div>` : ''}
     </article>`;
+  }
+  // ----- Einstellungen (pro Gerät): welche Felder die Detailseite zeigt -----
+  const DETAIL_FELDER = [
+    ['Stammdaten', [['homage', 'Vorbild'], ['dial', 'Zifferblatt'], ['hands', 'Zeiger'], ['bezel', 'Lünette'], ['purchased', 'Gekauft'], ['price', 'Kaufpreis'], ['dealer', 'Händler'], ['serial', 'Seriennummer']]],
+    ['Gehäuse', [['diameter', 'Durchmesser'], ['lugToLug', 'Lug-to-Lug'], ['height', 'Höhe'], ['lugWidth', 'Bandanstoß'], ['waterM', 'Wasserdicht'], ['crystal', 'Glas'], ['crown', 'Krone'], ['lume', 'Leuchtmasse'], ['weight', 'Gewicht']]],
+    ['Werk', [['movement', 'Kaliber'], ['movementKind', 'Art'], ['bph', 'Frequenz'], ['liftAngle', 'Hebungswinkel'], ['tol', 'Toleranz']]],
+    ['Band', [['strap', 'Aktuelles Band'], ['strapExtra', 'Weitere Bänder']]],
+  ];
+  function renderSettings() {
+    const hide = pref.hide || [], sw = (id, an, text) => `<label class="pf"><input type="checkbox" data-pf="${id}" ${an ? 'checked' : ''}><span>${text}</span></label>`;
+    return `
+      <button class="btn ghost back" data-nav="sammlung">← Sammlung</button>
+      <div class="view-head"><div><h2>Einstellungen</h2><p>Gilt nur für dieses Gerät. Ausgeblendete Felder behalten ihre Werte, sie werden nur nicht angezeigt.</p></div></div>
+      <section class="panel"><h3>Ansicht</h3>
+        ${sw('opt:leer', pref.leer !== false, 'Leere Felder auf der Detailseite ausblenden')}
+        ${sw('opt:brand', pref.brand !== false, 'Marke unter den Kacheln der Sammlung zeigen')}
+      </section>
+      <section class="panel"><h3>Felder auf der Detailseite</h3>
+        <div class="pf-grid">${DETAIL_FELDER.map(([titel, fs]) => `<div><div class="label" style="margin-bottom:4px">${titel}</div>${fs.map(([k, l]) => sw(k, !hide.includes(k), l)).join('')}</div>`).join('')}</div>
+      </section>`;
   }
 
   // ----- Detail -----
@@ -545,13 +581,20 @@ img { max-width: 100%; }
     if (S.editing) return renderWatchForm(w);
     const ms = S.measurements.filter(m => m.watchId === w.id).sort((a, b) => String(a.at).localeCompare(String(b.at)));
     const days = wearDaysOf(w.id);
-    const f = (k, l, v) => { const val = v ?? w[k]; const has = val != null && val !== ''; return `<dt>${l}</dt><dd class="${has ? '' : 'open'}">${has ? esc(val) : 'offen'}</dd>`; };
+    const f = (k, l, v) => {
+      if ((pref.hide || []).includes(k)) return '';   // in den Einstellungen ausgeblendet
+      const val = v ?? w[k]; const has = val != null && val !== '';
+      if (!has && pref.leer !== false) return '';     // leere Felder standardmäßig weglassen
+      return `<dt>${l}</dt><dd class="${has ? '' : 'open'}">${has ? esc(val) : 'offen'}</dd>`;
+    };
+    const sec = (titel, inhalt) => inhalt.trim() ? `<section class="panel"><h3>${titel}</h3><dl class="facts">${inhalt}</dl></section>` : '';
     const mm = (k) => w[k] != null && w[k] !== '' ? nf(w[k], 2) + ' mm' : null;
     const todos = w.todos || [];
     const tol = w.tolMin != null && w.tolMax != null ? `${signed(w.tolMin, 0)} bis ${signed(w.tolMax, 0)} ${esc(w.tolUnit || 's/Tag')}` : null;
     const priceTxt = typeof w.price === 'number' ? `${nf(w.price, 0)} €${w.priceNote ? ' · ' + w.priceNote : ''}` : (w.priceNote || null);
     return `
       <button class="btn ghost back" data-nav="sammlung">← Sammlung</button>
+      ${S.canWrite && w.status !== 'Bestellt' && !(S.mEditing && S.mEditing.watchId === w.id) ? `<button class="btn mic-btn" style="margin-bottom:12px" data-act="measure-watch" data-w="${esc(w.id)}">${isQuarzWerk(w) ? '⏱ Gang abgleichen (Funkuhr)' : '🎙 Messen'}</button>` : ''}
       <div class="detail">
         <div class="stack">
           <section class="hero">
@@ -577,18 +620,12 @@ img { max-width: 100%; }
           ${measurePanel(w, ms)}
         </div>
         <div class="stack">
-          <section class="panel"><h3>Stammdaten</h3><dl class="facts">
-            ${f('homage', 'Vorbild')}${f('dial', 'Zifferblatt')}${f('hands', 'Zeiger')}${f('bezel', 'Lünette')}
-            ${f('purchased', 'Gekauft')}${f('price', 'Kaufpreis', priceTxt)}${f('dealer', 'Händler')}${f('serial', 'Seriennummer')}
-          </dl></section>
-          <section class="panel"><h3>Gehäuse</h3><dl class="facts">
-            ${f('diameter', 'Durchmesser', mm('diameter'))}${f('lugToLug', 'Lug-to-Lug', mm('lugToLug'))}${f('height', 'Höhe', mm('height'))}${f('lugWidth', 'Bandanstoß', mm('lugWidth'))}
-            ${f('waterM', 'Wasserdicht', w.waterM ? nf(w.waterM, 0) + ' m' : null)}${f('crystal', 'Glas')}${f('crown', 'Krone')}${f('lume', 'Leuchtmasse')}${f('weight', 'Gewicht')}
-          </dl></section>
-          <section class="panel"><h3>Werk</h3><dl class="facts">
-            ${f('movement', 'Kaliber')}${f('movementKind', 'Art')}${f('bph', 'Frequenz', w.bph ? nf(w.bph, 0) + ' A/h' : null)}${w.liftAngle ? f('liftAngle', 'Hebungswinkel', nf(w.liftAngle, 0) + '°') : ''}${f('tol', 'Toleranz', tol)}
-          </dl></section>
-          <section class="panel"><h3>Band</h3><dl class="facts">${f('strap', 'Aktuell')}${f('strapExtra', 'Weitere')}</dl></section>
+          ${sec('Stammdaten', f('homage', 'Vorbild') + f('dial', 'Zifferblatt') + f('hands', 'Zeiger') + f('bezel', 'Lünette')
+            + f('purchased', 'Gekauft') + f('price', 'Kaufpreis', priceTxt) + f('dealer', 'Händler') + f('serial', 'Seriennummer'))}
+          ${sec('Gehäuse', f('diameter', 'Durchmesser', mm('diameter')) + f('lugToLug', 'Lug-to-Lug', mm('lugToLug')) + f('height', 'Höhe', mm('height')) + f('lugWidth', 'Bandanstoß', mm('lugWidth'))
+            + f('waterM', 'Wasserdicht', w.waterM ? nf(w.waterM, 0) + ' m' : null) + f('crystal', 'Glas') + f('crown', 'Krone') + f('lume', 'Leuchtmasse') + f('weight', 'Gewicht'))}
+          ${sec('Werk', f('movement', 'Kaliber') + f('movementKind', 'Art') + f('bph', 'Frequenz', w.bph ? nf(w.bph, 0) + ' A/h' : null) + f('liftAngle', 'Hebungswinkel', w.liftAngle ? nf(w.liftAngle, 0) + '°' : null) + f('tol', 'Toleranz', tol))}
+          ${sec('Band', f('strap', 'Aktuell') + f('strapExtra', 'Weitere'))}
           <section class="panel">
             <div class="panel-head"><h3>Offene Punkte</h3><span class="label">${todos.filter(t => !t.done).length} offen</span></div>
             ${todos.length ? todos.map((t, i) => `<label class="todo ${t.done ? 'done' : ''}"><input type="checkbox" data-todo="${i}" ${t.done ? 'checked' : ''} ${S.canWrite ? '' : 'disabled'}><span>${esc(t.t)}</span>${S.canWrite ? `<button class="btn ghost small" data-todo-del="${i}" aria-label="Punkt entfernen" style="margin-left:auto">×</button>` : ''}</label>`).join('') : '<p class="muted" style="margin:0">Nichts offen.</p>'}
@@ -684,7 +721,7 @@ img { max-width: 100%; }
       ${S.mEditing && S.mEditing.watchId === w.id ? measureForm(S.mEditing) : ''}
       ${readout}
       ${ms.length >= 1 ? `<div class="chart">${rateChart(ms, w)}</div>` : `<p class="muted" style="margin:0">${mech ? 'Noch keine Zeitwaagen-Messung. Trage Gang, Amplitude und Abfallfehler ein.' : 'Quarzwerke misst du über einige Wochen gegen eine Funkuhr: Abweichung in Sekunden und Zeitraum in Tagen eintragen.'}</p>`}
-      ${ms.length ? measureTable(ms, false) : ''}
+      ${ms.length ? measureTable(ms, false, 3) : ''}
       ${w.tolMin != null ? `<p class="muted" style="margin:0;font-size:12.5px">Grünes Band: Werkstoleranz ${signed(w.tolMin, 0)} bis ${signed(w.tolMax, 0)} ${esc(unit)}.</p>` : ''}
     </section>`;
   }
@@ -715,8 +752,11 @@ img { max-width: 100%; }
   }
   function niceStep(raw) { const p = Math.pow(10, Math.floor(Math.log10(raw || 1))); const n = raw / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p; }
 
-  function measureTable(ms, withWatch) {
-    const rows = [...ms].sort((a, b) => String(b.at).localeCompare(String(a.at)));
+  // max: nur die neuesten zeigen (Detailseite), mit Knopf zum Aufklappen
+  function measureTable(ms, withWatch, max = 0) {
+    const alle = [...ms].sort((a, b) => String(b.at).localeCompare(String(a.at)));
+    const offen = !max || S.msAlle === ms[0]?.watchId, rows = offen ? alle : alle.slice(0, max);
+    const mehr = max && alle.length > max ? `<button class="btn small ghost" data-act="ms-alle" data-w="${esc(ms[0].watchId)}" style="margin-top:6px">${offen ? 'Nur die letzten ' + max + ' zeigen' : `Alle Messungen (${alle.length})`}</button>` : '';
     return `<div class="tbl-wrap"><table>
       <thead><tr><th>Datum</th>${withWatch ? '<th>Uhr</th>' : ''}<th>Lage / Zeitraum</th><th class="num">Gang</th><th class="num">Amplitude</th><th class="num">Abfallfehler</th><th>Notiz</th>${S.canWrite ? '<th></th>' : ''}</tr></thead>
       <tbody>${rows.map(m => {
@@ -732,7 +772,7 @@ img { max-width: 100%; }
           <td>${esc(m.note || '')}${m.photo ? ` <a href="${blobUrl(m.photo)}" target="_blank" rel="noopener">Foto</a>` : ''}</td>
           ${S.canWrite ? `<td style="white-space:nowrap">${del ? `<button class="btn small danger" data-m-del-yes="${esc(m.id)}">Löschen</button> <button class="btn small ghost" data-act="cancel-confirm">Nein</button>` : `<button class="btn small ghost" data-m-edit="${esc(m.id)}">Ändern</button><button class="btn small ghost" data-m-del="${esc(m.id)}" aria-label="Messung löschen">×</button>`}</td>` : ''}
         </tr>`;
-      }).join('')}</tbody></table></div>`;
+      }).join('')}</tbody></table></div>${mehr}`;
   }
 
   function measureForm(m) {
@@ -1323,7 +1363,7 @@ img { max-width: 100%; }
 
   // ---------- events ----------
   document.addEventListener('click', async e => {
-    const t = e.target.closest('[data-nav],[data-open],[data-act],[data-filter],[data-mfilter],[data-wear-today],[data-wear],[data-day],[data-range],[data-cmp],[data-todo-del],[data-m-del],[data-m-del-yes],[data-m-edit],[data-lb-watch],[data-lb-gal],[data-gfilter],[data-cover],[data-ph-del],[data-ph-del-yes],[data-shot]');
+    const t = e.target.closest('[data-ctab],[data-nav],[data-open],[data-act],[data-filter],[data-mfilter],[data-wear-today],[data-wear],[data-day],[data-range],[data-cmp],[data-todo-del],[data-m-del],[data-m-del-yes],[data-m-edit],[data-lb-watch],[data-lb-gal],[data-gfilter],[data-cover],[data-ph-del],[data-ph-del-yes],[data-shot]');
     if (S.lb) {
       if (e.target.closest('[data-lb-close]') || e.target.id === 'lb' || e.target.classList?.contains('stage')) return closeLb();
       const st = e.target.closest('[data-lb-step]'); if (st) return stepLb(Number(st.dataset.lbStep));
@@ -1355,6 +1395,7 @@ img { max-width: 100%; }
     }
     if (!t) return;
     const d = t.dataset;
+    if (d.ctab) { savePref({ tab: d.ctab }); return render(); }
     if (d.shot != null) { const day = S.diaryDate; openLb((S.wear[day] || []).filter(id => S.wearShots[day]?.[id]).map(id => ({ id: S.wearShots[day][id], cap: `${W(id)?.name || '?'} am ${fmtDate(parseDay(day))}` })), Number(d.shot)); S.lb.from = t; return; }
     if (d.lbWatch) { const w = W(d.lbWatch); openLb(photosOf(w).map((id, i) => ({ id, cap: `${w.name}, Foto ${i + 1}` })), Number(d.i)); S.lb.from = t; return; }
     if (d.lbGal != null) { openLb(S.galleryItems, Number(d.lbGal)); S.lb.from = t; return; }
@@ -1403,6 +1444,14 @@ img { max-width: 100%; }
       case 'add-m': S.mEditing = { watchId: d.w || S.watches[0]?.id }; render(); break;
       case 'cancel-m': S.mEditing = null; render(); break;
       case 'zw-open': openZw(t.closest('form')); break;
+      case 'ms-alle': S.msAlle = S.msAlle === d.w ? null : d.w; render(); break;
+      case 'measure-watch': {   // aus der Detailseite: Uhr mitnehmen, Automatik gleich ins Messfenster, Quarz zum Abgleich
+        const w = W(d.w), quarz = isQuarzWerk(w);
+        S.mEditing = { watchId: w.id, kind: quarz ? 'vergleich' : 'waage' }; render();
+        const f = document.querySelector('form[data-form="measure"]'); f?.scrollIntoView({ block: 'start' });
+        if (f && !quarz) openZw(f);
+        break;
+      }
       case 'm-to-vergleich': mToVergleich(); break;
       case 'diary-today': S.diaryDate = todayStr(); render(); break;
       case 'wristcheck': openWc(true); break;
@@ -1425,7 +1474,11 @@ img { max-width: 100%; }
     }
     if (S.wc && e.key === 'Escape') { e.preventDefault(); return closeWc(); }
     if (S.zw && e.key === 'Escape') { e.preventDefault(); return closeZw(); }
-    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.card[data-open]')) { e.preventDefault(); go('detail', e.target.dataset.open); }
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.card[data-open],.mcard[data-open]')) { e.preventDefault(); go('detail', e.target.dataset.open); }
+  });
+  document.addEventListener('input', e => {
+    if (e.target.id !== 'coll-q') return;
+    S.q = e.target.value; const g = document.getElementById('coll-grid'); if (g) g.innerHTML = collGrid();
   });
   document.addEventListener('change', async e => {
     const t = e.target;
@@ -1445,6 +1498,14 @@ img { max-width: 100%; }
       if (k.hebung && !el.liftAngle.value) el.liftAngle.value = k.hebung;
       return toast(`${k.name}: ${[k.art, k.bph && nf(k.bph, 0) + ' A/h', k.periode && `${1 / k.periode} Schritte/s`, k.hebung && `Hebungswinkel ${k.hebung}°`, k.nichtHoerbar && 'akustisch nicht messbar'].filter(Boolean).join(', ')}`);
     }
+    if (t.dataset.pf) {   // Einstellungen: Schalter speichern, sofort wirksam
+      const k = t.dataset.pf;
+      if (k === 'opt:leer') savePref({ leer: t.checked });
+      else if (k === 'opt:brand') savePref({ brand: t.checked });
+      else savePref({ hide: t.checked ? (pref.hide || []).filter(x => x !== k) : [...new Set([...(pref.hide || []), k])] });
+      return;
+    }
+    if (t.id === 'coll-sort') { savePref({ sort: t.value }); return render(); }
     if (t.id === 'import-in') { const f = t.files?.[0]; t.value = ''; if (f) importJson(f); return; }
     if (t.id === 'wc-cam' || t.id === 'wc-gal') { const f = t.files?.[0]; t.value = ''; return wcPhoto(f); }
     if (t.id === 'wf-photo') {
