@@ -123,23 +123,24 @@ Bezug: `SPEC-zeitwaage.md` (M2 Gang/Abfallfehler umgesetzt, M3 Amplitude in Arbe
 
 ## 4. Vor dem Aufruf fertig
 
-- **[fest]** **M2 gepusht und am Fold6 über GitHub Pages ohne USB getestet** (laut Roadmap lokal committet, nicht
+- **[erledigt, 28.10.2026]** **M2 gepusht und am Fold6 über GitHub Pages ohne USB getestet** (laut Roadmap lokal committet, nicht
   gepusht; Live-Test über HTTPS steht in `SPEC-zeitwaage.md` noch offen). Dazu einmal als installierte PWA.
-- **[fest]** **Leise Quarzuhren**: Die Moonswatch wird teils nicht erkannt. Vor dem Aufruf entweder die Erkennung
+- **[erledigt, 29.10.2026: Quarz wird nicht mehr akustisch gemessen, das Messfenster verweist auf den Abgleich mit
+  Funkuhr]** **Leise Quarzuhren**: Die Moonswatch wird teils nicht erkannt. Vor dem Aufruf entweder die Erkennung
   verbessern oder eine klare Meldung „Ticks nicht erkannt: Boden direkt aufs untere Mikrofon, stiller Raum, 2 min
   warten“ statt Leere oder Fantasiewerten. Quarz in der App als „experimentell“ kennzeichnen; Mecaquartz (6 Schritte/s) ist
   für das Handymikrofon nicht hörbar, das auch so sagen.
-- **[fest]** **Ehrlicher Hinweis im Messfenster**: „Handy-Zeitwaage: Trend und grober Wert, kein Witschi.“ Einmal
-  sichtbar, nicht bei jeder Messung.
-- **[fest]** **Kurzanleitung im Messfenster** (3–4 Zeilen, einklappbar): Uhr mit dem Boden aufs untere Mikrofon, weiche
+- **[erledigt, 29.10.2026]** **Ehrlicher Hinweis im Messfenster**: „Handy-Zeitwaage: Trend und grober Wert, kein Witschi.“ Einmal
+  sichtbar, nicht bei jeder Messung. Umgesetzt als erste Zeile der Kurzanleitung.
+- **[erledigt, 29.10.2026]** **Kurzanleitung im Messfenster** (3–4 Zeilen, einklappbar): Uhr mit dem Boden aufs untere Mikrofon, weiche
   Unterlage, still sein, 20 s warten (Quarz 2 min); Lage wählen; „Übernehmen“ trägt die Werte ins Formular.
 - **[fest]** **Sprache**: Die App ist nur deutsch; Aufrufe in anderen Sprachen erst mit englischer Fassung (Roadmap
   „Englische Version“).
 - **[Vorschlag]** **Amplitude** nur zeigen, wenn M3 eine Güte „gut“ liefert; sonst ausblenden statt „experimentell“
   mit fragwürdigen Werten. Gerade die Amplitude ist aber das, wofür Referenzen gebraucht werden: Im Aufruf gezielt um
   Zeitwaagen-Werte bitten, auch wenn die Uhrenbox selbst noch keine Amplitude zeigt.
-- **[Vorschlag]** **App-Version sichtbar** (z. B. unten neben dem Speicher-Hinweis), damit Rückmeldungen zuzuordnen sind.
-- **[Vorschlag]** Getestet nur mit **Android/Chrome**; iPhone ungetestet, so auch in der App sagen.
+- **[erledigt, 29.10.2026: „Version 12“ in der Fußzeile, gelesen aus dem Cache-Namen in `sw.js`]** **App-Version sichtbar** (z. B. unten neben dem Speicher-Hinweis), damit Rückmeldungen zuzuordnen sind.
+- **[erledigt, 29.10.2026: steht in der Kurzanleitung]** Getestet nur mit **Android/Chrome**; iPhone ungetestet, so auch in der App sagen.
 - **[offen]** Kalibrier-Oberfläche (Takt gegen Systemzeit) vorher bauen? Für das Fold6 kaum nötig; bei fremden Handys
   zeigen erst die Spenden, ob sie gebraucht wird. Vorschlag: nicht vorher, sondern nach den ersten Referenzen.
 

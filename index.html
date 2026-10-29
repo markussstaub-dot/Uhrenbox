@@ -281,6 +281,8 @@ fieldset { border: 0; padding: 0; margin: 0; display: contents; }
 .zw .warn { border-left: 3px solid var(--warn); color: var(--ink); }
 .zw canvas { width: 100%; height: 170px; display: block; background: var(--sunk); border-radius: 8px; }
 .zw details summary { cursor: pointer; color: var(--muted); font-size: 13.5px; }
+.zw .kurz { background: var(--sunk); border-radius: 8px; padding: 8px 10px; }
+.zw .kurz ul { margin: 6px 0 0; padding-left: 18px; font-size: 13.5px; line-height: 1.45; }
 .zw .foot { display: flex; gap: 8px; margin-top: auto; padding-top: 4px; }
 .zw .foot .btn { flex: 1; justify-content: center; padding: 11px 12px; font-size: 15px; }
 .wd-labels { display: grid; grid-template-rows: 14px repeat(7, 16px); gap: 3px; font-size: 10.5px; color: var(--muted); font-family: var(--f-mono); }
@@ -451,7 +453,11 @@ const EN = {
   'an der Uhr eingetragen': 'set on the watch', 'mechanisch, wird erkannt': 'mechanical, being detected', 'wird erkannt': 'being detected',
   'Quarzuhr: Ihr Gang ist kleiner als das, was das Handymikrofon in Minuten auflöst, und viele Quarzwerke sind gar nicht hörbar. Genauer ist der <b>Abgleich mit Funkuhr</b> über einige Wochen.': 'Quartz watch: its rate is smaller than what a phone microphone can resolve in minutes, and many quartz movements cannot be heard at all. A <b>check against atomic time</b> over a few weeks is more accurate.',
   'Als Quarzwerk speichern': 'Save as quartz movement', 'Zeitwaage konnte nicht geladen werden. Einmal mit Netz öffnen, dann geht sie offline.': 'The timegrapher could not be loaded. Open it once while online, then it works offline.',
-  'Uhr mit dem Boden aufs Mikrofon legen (unten am Handy), weiche Unterlage, stiller Raum. Die ersten 2 s nach dem Auflegen zählen nicht.': 'Place the watch caseback-down on the microphone (bottom of the phone), on a soft surface, in a quiet room. The first 2 s after placing it do not count.',
+  'Kurzanleitung': 'Quick guide', 'Handy-Zeitwaage: Trend und grober Wert, kein Witschi.': 'Phone timegrapher: trend and rough value, not a Witschi.',
+  'Getestet mit Android und Chrome, auf dem iPhone noch nicht.': 'Tested with Android and Chrome, not yet on iPhone.',
+  'Uhr mit dem Boden aufs Mikrofon legen (unten am Handy), weiche Unterlage, stiller Raum, Display anlassen.': 'Place the watch caseback-down on the microphone (bottom of the phone), on a soft surface, in a quiet room, with the display on.',
+  'Lage wählen, „Messung starten“ und die Uhr etwa 20 s ruhig liegen lassen. Die ersten 2 s nach dem Auflegen zählen nicht.': 'Choose the position, tap “Start measurement” and leave the watch still for about 20 s. The first 2 s after placing it do not count.',
+  '„Übernehmen“ trägt die Werte ins Formular, danach „Messung eintragen“.': '“Apply” fills the values into the form, then tap “Log measurement”.',
   'Zeitwaagen-Streifen: Abstand jedes Ticks zum Soll-Raster, Steigung = Gang': 'Timegrapher trace: offset of each tick from the reference grid, slope = rate',
   'Erweitert': 'Advanced', 'aus der Uhr': 'from the watch', 'Mikrofon': 'Microphone', 'Aufnahme speichern (WAV, letzte bis zu 2 min)': 'Save recording (WAV, last 2 min max.)',
   'Übernehmen': 'Apply', 'Stoppen': 'Stop', 'Neu starten': 'Restart', 'Messung starten': 'Start measurement', 'ms Abfallfehler': 'ms beat error', 'gehört:': 'heard:',
@@ -634,6 +640,9 @@ const FN = {
     try {
       const st = navigator.storage;
       S.store = { persisted: st?.persisted ? await st.persisted() : null, usage: st?.estimate ? (await st.estimate()).usage : null };
+      // App-Version aus dem Cache-Namen des Service Workers (sw.js: VERSION), damit Rückmeldungen zuzuordnen sind
+      const vs = self.caches ? (await caches.keys()).map(k => /^uhrenbox-v(\d+)$/.exec(k)?.[1]).filter(Boolean).map(Number) : [];
+      S.store.version = vs.length ? Math.min(...vs) : null;   // liegt ein Update bereit, läuft noch die ältere
     } catch { S.store = null; }
     renderFoot();
   }
@@ -647,6 +656,7 @@ const FN = {
     else if (st?.persisted === false) parts.push(`<span class="warn-text">${tr('Speicher nicht dauerhaft')}</span>`);
     if (st?.usage) parts.push(tr('store.used', fmtBytes(st.usage)));
     parts.push(meta.lastBackup ? tr('backup.last', relDays(meta.lastBackup)) : tr('Noch nie gesichert'));
+    if (st?.version) parts.push(`Version ${st.version}`);
     let html = parts.join(' · ');
     if (!isStandalone()) {
       if (INSTALL.prompt) html += ` · <button class="linkish" data-act="install">${tr('Als App installieren')}</button>`;
@@ -1190,7 +1200,13 @@ const FN = {
   // Ablauf: Mikrofon → AudioWorklet → Ringpuffer (2 min) → alle 2 s die letzten 20 s (Quarz: 120 s) auswerten.
   // Testschalter für den Browser am PC: ?zwtest=<WAV-Pfad> spielt eine Aufnahme statt des Mikrofons ein.
   const POSITIONS = ['Zifferblatt oben', 'Zifferblatt unten', 'Krone unten', 'Krone oben', 'Krone links', 'Krone rechts', 'Am Handgelenk'];
-  const ZW_KEY = 'uhrenbox.zeitwaage';   // Geräte-Einstellungen (nicht in der Sicherung): { calibPpm }
+  const ZW_KEY = 'uhrenbox.zeitwaage';   // Geräte-Einstellungen (nicht in der Sicherung): { calibPpm, kurzZu }
+  // lesen, mit Argument zusätzlich Felder setzen
+  function zwPrefs(neu) {
+    let p = {}; try { p = JSON.parse(localStorage.getItem(ZW_KEY)) || {}; } catch (e) {}
+    if (neu) { p = { ...p, ...neu }; try { localStorage.setItem(ZW_KEY, JSON.stringify(p)); } catch (e) {} }
+    return p;
+  }
   const medianOf = a => { const s = a.filter(v => v != null && isFinite(v)).sort((x, y) => x - y); return s.length ? s[s.length >> 1] : null; };
   const deN = (v, d = 1) => v == null ? '–' : Number(v).toLocaleString(LOC(), { minimumFractionDigits: d, maximumFractionDigits: d });
   const sgn = (v, d = 1) => v == null ? '–' : (v >= 0 ? '+' : '−') + deN(Math.abs(v), d);
@@ -1222,7 +1238,7 @@ const FN = {
     let lib;
     try { lib = S.zwLib ||= await import('./zeitwaage.js'); }
     catch (er) { console.error(er); return toast(tr('Zeitwaage konnte nicht geladen werden. Einmal mit Netz öffnen, dann geht sie offline.')); }
-    let calib = 0; try { calib = Number(JSON.parse(localStorage.getItem(ZW_KEY))?.calibPpm) || 0; } catch (e) {}
+    const calib = Number(zwPrefs().calibPpm) || 0;
     S.zw = { w, lib, pos: form.elements.position?.value || POSITIONS[0], calib, manual: null, devId: null, devs: [], run: null,
       gute: [], hoer: [], unruhig: 0, lang: false, last: null, msg: '', saved: false };
     if (zwFreq(S.zw).quarz) S.zw.msg = quarzHinweis(false);
@@ -1239,7 +1255,11 @@ const FN = {
       <div class="head"><h2>${tr('Zeitwaage')}</h2><button class="btn ghost" data-act="zw-close" aria-label="${tr('Schließen')}">✕</button></div>
       <p class="muted" style="margin:0">${esc(watchLabel(z.w))} · ${tr('Frequenz')} <span id="zw-fq">${f.bph ? bphTxt(f.bph) + ', ' : ''}${esc(f.how)}</span></p>
       <div class="field"><label for="zw-pos">${tr('Lage')}</label><select id="zw-pos">${POSITIONS.map(p => opt(esc(p), esc(tv(p)), p === z.pos)).join('')}</select></div>
-      <p class="notice" style="margin:0">${tr('Uhr mit dem Boden aufs Mikrofon legen (unten am Handy), weiche Unterlage, stiller Raum. Die ersten 2 s nach dem Auflegen zählen nicht.')}</p>
+      <details class="kurz" id="zw-kurz" ${zwPrefs().kurzZu ? '' : 'open'}><summary>${tr('Kurzanleitung')}</summary><ul>
+        <li><b>${tr('Handy-Zeitwaage: Trend und grober Wert, kein Witschi.')}</b> ${tr('Getestet mit Android und Chrome, auf dem iPhone noch nicht.')}</li>
+        <li>${tr('Uhr mit dem Boden aufs Mikrofon legen (unten am Handy), weiche Unterlage, stiller Raum, Display anlassen.')}</li>
+        <li>${tr('Lage wählen, „Messung starten“ und die Uhr etwa 20 s ruhig liegen lassen. Die ersten 2 s nach dem Auflegen zählen nicht.')}</li>
+        <li>${tr('„Übernehmen“ trägt die Werte ins Formular, danach „Messung eintragen“.')}</li></ul></details>
       <div class="actions"><button class="btn primary" data-act="zw-go" id="zw-go"></button><span id="zw-status" class="muted" role="status" style="font-size:13.5px"></span></div>
       <div id="zw-msg"></div>
       <div class="vals" id="zw-vals"></div>
@@ -1252,6 +1272,7 @@ const FN = {
       </div></details>
       <div class="foot"><button class="btn primary" data-act="zw-take" id="zw-take">${tr('Übernehmen')}</button><button class="btn" data-act="zw-close">${tr('Abbrechen')}</button></div>
     </div>`;
+    el.querySelector('#zw-kurz').addEventListener('toggle', e => zwPrefs({ kurzZu: !e.target.open }));
     zwShow();
   }
 
@@ -1305,6 +1326,7 @@ const FN = {
   async function zwStart() {
     if (zwFreq(S.zw).quarz) { S.zw.msg = quarzHinweis(false); return zwShow(''); }
     const z = S.zw, lib = z.lib, test = new URLSearchParams(location.search).get('zwtest');
+    zwPrefs({ kurzZu: true });   // Kurzanleitung samt Hinweis einmal offen zeigen, ab der nächsten Messung eingeklappt
     if (!test && (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia)) return zwShow(tr('Kein Mikrofon: Die Seite braucht eine sichere Verbindung (HTTPS, z. B. über GitHub Pages).'));
     zwStop();
     Object.assign(z, { gute: [], hoer: [], unruhig: 0, lang: false, last: null, msg: '', rest: null });
@@ -1891,6 +1913,7 @@ const FN = {
         bar.querySelector('button').onclick = () => { reloading = true; w.postMessage('skipWaiting'); };
       };
       offer(reg.waiting);
+      navigator.serviceWorker.ready.then(refreshStore);   // beim ersten Besuch steht die Version erst nach dem Installieren fest
       reg.addEventListener('updatefound', () => { const w = reg.installing; w?.addEventListener('statechange', () => { if (w.state === 'installed') offer(w); }); });
       setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);   // bei langer Nutzung ab und zu nachsehen
     }).catch(() => {});
