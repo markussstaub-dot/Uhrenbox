@@ -76,6 +76,7 @@ main { padding-block: 24px 64px; }
 .view-head p { margin: 4px 0 0; color: var(--muted); }
 
 .btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); padding: 7px 12px; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 14px; }
+a.btn { color: inherit; text-decoration: none; }   /* Link im Knopf-Look (Spendenseite) */
 .btn:hover { border-color: var(--muted); }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .btn.primary:hover { filter: brightness(1.05); }
@@ -407,6 +408,8 @@ const EN = {
   'Automatisch (Gerät)': 'Automatic (device)', 'Gilt nur für dieses Gerät. Ausgeblendete Felder behalten ihre Werte, sie werden nur nicht angezeigt.': 'Applies to this device only. Hidden fields keep their values, they are just not shown.',
   'Ansicht': 'Display', 'Leere Felder auf der Detailseite ausblenden': 'Hide empty fields on the detail page', 'Marke unter den Kacheln der Sammlung zeigen': 'Show brand below the collection tiles',
   'Felder auf der Detailseite': 'Fields on the detail page',
+  'Gefällt dir die Uhrenbox?': 'Enjoying Uhrenbox?', 'Kaffee ausgeben': 'Buy me a coffee',
+  'Die App ist kostenlos und bleibt es. Wenn sie dir gefällt, hilft ein Kaffee, die nächste zu bauen.': 'This app is free and will stay free. If you enjoy it, a coffee helps build the next one.',
   // Felder (Detailseite, Formular, Vergleich)
   'Stammdaten': 'Basics', 'Vorbild': 'Homage to', 'Zifferblatt': 'Dial', 'Zeiger': 'Hands', 'Lünette': 'Bezel', 'Gekauft': 'Purchased', 'Kaufpreis': 'Price',
   'Händler': 'Dealer', 'Seriennummer': 'Serial number', 'Gehäuse': 'Case', 'Durchmesser': 'Diameter', 'Lug-to-Lug': 'Lug-to-lug', 'Höhe': 'Thickness', 'Bandanstoß': 'Lug width',
@@ -632,6 +635,7 @@ const FN = {
   const DEMO = new URLSearchParams(location.search).get('demo') === '1';
   const STORE = DEMO ? 'uhrenbox-demo' : 'uhrenbox';   // Name der IndexedDB und Präfix der Geräte-Einstellungen
   const demoHref = () => `${location.pathname}?demo=1&neu=1&lang=${LANG}`;   // neu=1: jedes Mal frisch laden
+  const KOFI = 'https://ko-fi.com/markusbaut';   // Spendenseite (Einstellungen), Adresse hier anpassen
 
   // ---------- Ansicht (pro Gerät, nicht in der Sicherung): Reiter, Sortierung, Felder ----------
   const PREF_KEY = STORE + '.ansicht';
@@ -847,6 +851,10 @@ const FN = {
       <section class="panel"><h3>${tr('Beispiel-Sammlung')}</h3>
         <p class="muted" style="margin:0 0 10px">${tr(DEMO ? 'Beim Neuladen gehen Änderungen an der Beispiel-Sammlung verloren.' : 'Neun Uhren mit Fotos, Messungen und Tragetagen zum Ausprobieren. Sie liegt in einem eigenen Speicher, deine Sammlung bleibt unberührt.')}</p>
         <button class="btn" data-act="${DEMO ? 'demo-load' : 'demo'}">${tr(DEMO ? 'Beispiel-Sammlung neu laden' : 'Beispiel-Sammlung ansehen')}</button>
+      </section>
+      <section class="panel"><h3>${tr('Gefällt dir die Uhrenbox?')}</h3>
+        <p class="muted" style="margin:0 0 10px">${tr('Die App ist kostenlos und bleibt es. Wenn sie dir gefällt, hilft ein Kaffee, die nächste zu bauen.')}</p>
+        <a class="btn" href="${KOFI}" target="_blank" rel="noopener">☕ ${tr('Kaffee ausgeben')}</a>
       </section>`;
   }
 
