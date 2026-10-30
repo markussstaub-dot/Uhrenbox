@@ -20,7 +20,7 @@ Basis-Funktion, kostenlos, ohne KI. „Was trage ich gerade?“ → Foto → Uhr
   - in den letzten 3 Tagen getragen → +2 („zuletzt am …“)
   - an diesem Wochentag in den letzten 8 Wochen getragen → +1,5 je Mal („oft am Dienstag“)
   - sonst: am längsten nicht getragen bzw. noch nie → kleiner Bonus, damit auch „mal wieder“-Uhren auftauchen („seit 24 Tagen nicht am Arm“)
-- **[fest]** Aufbau für später: `wristSuggestions(tag)` liefert eine sortierte Liste `{ uhr, punkte, grund }`. Eine spätere lokale Erkennung (Premium) bekommt Liste + Foto und **sortiert nur um** (`reorder(liste, foto)`), die Oberfläche bleibt gleich. Heute ist `reorder` leer.
+- **[fest]** Aufbau für später: `wristSuggestions(tag)` liefert eine sortierte Liste `{ uhr, punkte, grund }`. Eine spätere lokale Erkennung (kostenlos, kein Premium – entschieden 30.10.2026) bekommt Liste + Foto und **sortiert nur um** (`reorder(liste, foto)`), die Oberfläche bleibt gleich. Heute ist `reorder` leer.
 
 ## Daten
 
